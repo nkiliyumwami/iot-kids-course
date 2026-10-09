@@ -1,9 +1,11 @@
 name: Daily lesson
 
-# Builds the next lesson in ROADMAP.md every morning and opens a pull request for review.
+# Builds the next lesson in ROADMAP.md every morning, opens a pull request as a record, and publishes it
+# straight away by merging it (the owner reviews afterwards and asks @claude for changes).
 # GitHub cron is in UTC: 10:54 UTC is 6:54 am in New York in summer (5:54 am in winter).
 # Scheduled runs can start a few minutes late. To start one by hand, either click "Run workflow" on the
 # Actions tab, or open an issue whose title starts with "Build the next lesson" (Claude can do that for you).
+# To change a published lesson, open an issue whose title starts with "Change:" and describe what you want.
 on:
   schedule:
     - cron: '54 10 * * *'
@@ -15,6 +17,7 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
+  pages: write
   id-token: write
   actions: read
 
@@ -24,10 +27,10 @@ concurrency:
 
 jobs:
   lesson:
-    # From an issue: only "Build the next lesson…" issues opened by the owner, a collaborator or a GitHub App.
+    # From an issue: only "Build the next lesson…" or "Change:…" issues opened by the owner, a collaborator or a GitHub App.
     if: >-
       github.event_name != 'issues' ||
-      (startsWith(github.event.issue.title, 'Build the next lesson') &&
+      ((startsWith(github.event.issue.title, 'Build the next lesson') || startsWith(github.event.issue.title, 'Change:')) &&
        (contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association) ||
         github.event.issue.user.type == 'Bot'))
     runs-on: ubuntu-latest
@@ -68,17 +71,21 @@ jobs:
             Read AGENT.md and ROADMAP.md in full, then follow AGENT.md exactly. Use the `gh` CLI (already logged in)
             for everything on GitHub.
 
-            1. Check open pull requests (`gh pr list`). If the owner (@${{ github.repository_owner }}) left review comments
-               on an open lesson pull request that don't mention @claude, address them on that pull request's branch,
-               push, reply briefly, and stop for today. Comments that mention @claude are handled by another workflow.
+            ${{ (github.event_name == 'issues' && startsWith(github.event.issue.title, 'Change:')) && format('THIS RUN IS A CHANGE REQUEST, not a new lesson. The owner opened issue #{0}: "{1}". Read it with `gh issue view {0}`. Make exactly that change (keeping every rule in AGENT.md), test it with tools/check.sh, commit on a new branch change/issue-{0}, open a pull request that says "Closes #{0}", and merge it as in step 6 below. Then comment the pull request link on the issue. Skip steps 1-5.', github.event.issue.number, github.event.issue.title) || '' }}
+
+            1. Check open pull requests (`gh pr list`). If a lesson pull request from an earlier run is still open
+               (it was left unmerged because something was broken), fix it first, test it, merge it as in step 6,
+               and stop for today. Comments that mention @claude are handled by another workflow; leave those alone.
             2. Otherwise build the first unchecked lesson in ROADMAP.md, keeping the one-new-idea rule, the
                "Why is it built this way?" teaching style, the ESP32 model and the lesson-1 look.
-               If a lesson pull request from an earlier run is still open, branch from that lesson's branch so the
-               course stays in order, and say so in the new pull request.
             3. Test it with tools/check.sh and look at every screenshot; fix anything broken before committing.
             4. Mark the lesson ready in course.js, tick it in ROADMAP.md and add a dated log line.
             5. Commit on a new branch lesson/<slug>, push it, and open a pull request into main titled
                "Lesson N: <title>" with `gh pr create`. Describe the new idea, the new part and code, the wiring,
                the "Why?" questions and what you tested.
-            6. Never push to main and never merge.
+            6. Publish it: if your checks passed (no script errors, nothing broken in the screenshots), merge your own
+               pull request with `gh pr merge <number> --merge --delete-branch`, then ask GitHub Pages to rebuild with
+               `gh api -X POST repos/${{ github.repository }}/pages/builds || true`. If something is still broken that
+               you could not fix, do not merge: leave the pull request open and explain the problem in it.
+               Never push to main directly; always go through the pull request.
             ${{ github.event_name == 'issues' && format('7. This run was started by issue #{0}. When you finish, comment on that issue with the pull request link (or what blocked you) and close it with `gh issue close {0}`.', github.event.issue.number) || '' }}
