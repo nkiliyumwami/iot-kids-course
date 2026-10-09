@@ -6,7 +6,7 @@ One new idea per lesson. Each daily run takes the first unchecked item. See `AGE
 
 - [x] **1. My First Traffic Light** (`01-traffic-light`): outputs. ESP32 switches D25/D26/D27 to light three LEDs
   through 330 Ω resistors. `Pin(…, Pin.OUT)`, `value()`, `while True:`, `time.sleep()`.
-- [ ] **2. Make It Yours: Light Patterns** (`02-patterns`): no new hardware. Variables for the times, a
+- [x] **2. Make It Yours: Light Patterns** (`02-patterns`): no new hardware. Variables for the times, a
   `set_lights(r, y, g)` function so each phase is one line, and `print()` to see what the program is doing
   (show the Thonny console). Challenge: design your own pattern.
 - [ ] **3. The Pedestrian Button** (`03-pedestrian-button`): a push button on a safe input pin.
@@ -37,3 +37,4 @@ an extra interactive demo, or fixes from the course owner's comments. Add any ne
 ## Log
 
 - 2026-10-09: Course set up. Lesson 1 moved from the original prototype, with a course home page, progress saving and this roadmap.
+- 2026-10-09: Built lesson 2 (`02-patterns`). No new hardware: named variables (`RED_S`…), a `set_lights(r, y, g)` function and `print()` with a simulated Thonny Shell. Pattern presets (classic, warning flasher, light chase) with sliders are the "make it yours" challenge. Checked with `tools/check.sh` (desktop and 400 px, no script errors, no sideways scroll), clicked through presets and the quiz. Left to do: nothing known; the Shell is a simulation, not real Thonny output.

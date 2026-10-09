@@ -7,7 +7,7 @@
       idea: 'Outputs: the ESP32 switches pins on and off to light three LEDs.',
       hardware: 'ESP32 DevKit, breadboard, 3 LEDs, 3 × 330 Ω resistors, jumper wires',
       code: 'Pin(…, Pin.OUT), value(1) / value(0), while True:, time.sleep()' },
-    { n: 2, slug: '02-patterns', title: 'Make It Yours: Light Patterns', unit: 1, status: 'planned', minutes: 40,
+    { n: 2, slug: '02-patterns', title: 'Make It Yours: Light Patterns', unit: 1, status: 'ready', minutes: 40,
       idea: 'Same circuit, smarter code: name things and reuse them.',
       hardware: 'Nothing new',
       code: 'variables, a set_lights() function, print()' },
