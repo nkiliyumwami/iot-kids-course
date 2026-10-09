@@ -1,0 +1,97 @@
+# Exported by three-d-stage
+newmtl pcb_charcoal
+Kd 0.0437 0.0467 0.0513
+Ks 0.2000 0.2000 0.2000
+Ns 50
+d 1.0000
+
+newmtl plastic_black
+Kd 0.0070 0.0070 0.0070
+Ks 0.2000 0.2000 0.2000
+Ns 80
+d 1.0000
+
+newmtl gold_pins
+Kd 0.6939 0.4564 0.1022
+Ks 0.2000 0.2000 0.2000
+Ns 130
+d 1.0000
+
+newmtl pad_ctrl
+Kd 0.3231 0.1590 0.6724
+Ks 0.2000 0.2000 0.2000
+Ns 110
+d 1.0000
+
+newmtl pad_inonly
+Kd 0.0284 0.3864 0.3663
+Ks 0.2000 0.2000 0.2000
+Ns 110
+d 1.0000
+
+newmtl pad_gpio
+Kd 0.0497 0.4233 0.1441
+Ks 0.2000 0.2000 0.2000
+Ns 110
+d 1.0000
+
+newmtl pad_care
+Kd 0.6939 0.3231 0.0242
+Ks 0.2000 0.2000 0.2000
+Ns 110
+d 1.0000
+
+newmtl pad_gnd
+Kd 0.1144 0.1144 0.1144
+Ks 0.2000 0.2000 0.2000
+Ns 110
+d 1.0000
+
+newmtl pad_power
+Kd 0.7454 0.1022 0.0782
+Ks 0.2000 0.2000 0.2000
+Ns 110
+d 1.0000
+
+newmtl pad_comm
+Kd 0.0685 0.2747 0.7454
+Ks 0.2000 0.2000 0.2000
+Ns 110
+d 1.0000
+
+newmtl module_pcb
+Kd 0.0232 0.0284 0.0423
+Ks 0.2000 0.2000 0.2000
+Ns 60
+d 1.0000
+
+newmtl shield_metal
+Kd 0.5841 0.6038 0.6376
+Ks 0.2000 0.2000 0.2000
+Ns 136
+d 1.0000
+
+newmtl antenna_copper
+Kd 0.5776 0.3278 0.0648
+Ks 0.2000 0.2000 0.2000
+Ns 120
+d 1.0000
+
+newmtl led_red
+Kd 0.7454 0.0595 0.0423
+Ks 0.2000 0.2000 0.2000
+Ns 140
+d 1.0000
+
+newmtl led_blue
+Kd 0.0423 0.3515 0.7454
+Ks 0.2000 0.2000 0.2000
+Ns 140
+d 1.0000
+
+newmtl ceramic_tan
+Kd 0.4851 0.3613 0.2086
+Ks 0.2000 0.2000 0.2000
+Ns 80
+d 1.0000
+
