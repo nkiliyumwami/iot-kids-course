@@ -54,7 +54,18 @@ https://nkiliyumwami.github.io/iot-kids-course/. Read this whole file and `ROADM
   `<a class="pin-link" href="../../pins.html?pin=D<number>" target="_blank" rel="noopener">🔍 …</a>`. Keep repeating
   that `Pin(n)` means GPIO n (printed Dn on the board), not the n-th pin along the header. Never pick input-only pins
   (D34, D35, VP, VN) for outputs, and avoid start-up pins (D2, D5, D12, D15) and TX0/RX0 for new parts. If you add or
-  change facts about a pin, update the `PINS` list in `pins.html` too. The board model is `assets/models/esp32-devkit-v1.glb`.
+  change facts about a pin, update the `PINS` list in `assets/esp32/board.js` (shared by `pins.html` and Lesson 0).
+  The board model is `assets/models/esp32-devkit-v1.glb`.
+- **Maker words: real terms, never scary.** We are training future engineers, so always teach the real name, but
+  plain words come first: say what it does in everyday words, then "engineers call this a …". One new term at a time,
+  only when the learner needs it. Every term lives in `WORDS` in `assets/esp32/board.js` (term, how to say it, plain
+  meaning, a sentence an engineer would say). Add new terms there. A lesson can include
+  `../../assets/esp32/board.js`, call `ESP32.initWords()` and use `ESP32.chip('gpio')` to show a tappable word that is
+  saved in the learner's word book. Never put an unexplained acronym on screen.
+- **Lesson 0 (`00-meet-esp32`, Pin Detective)** is the learners' first lesson: missions on the 3D board (find the brain,
+  antenna, USB port, GND, power pins, light the blue LED, the Pin(25) = D25 trick, a pin hunt). After it they already
+  know: microcontroller, module, antenna, IoT, USB, pin, header, GND, voltage, 3V3, GPIO, output and GPIO number.
+  Later lessons can use those words (as chips) without re-explaining them in full.
 - Only use code that really works on MicroPython for ESP32. Keep programs short and readable.
 
 ## Visual and interaction rules

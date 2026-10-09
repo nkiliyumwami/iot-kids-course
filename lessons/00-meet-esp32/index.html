@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lesson 0: Pin Detective · IoT for Young Makers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Lesson 0: a short mission on the real 3D board. Each step asks the learner to DO something (spin, find, tap,
+   run a line of code) and rewards it with one new "maker word": plain words first, then the real engineering name. */
+:root {
+  --bg: #E3EBF0; --surface: #FFFFFF; --surface-2: #F1F5F8; --ink: #15202A; --muted: #526170; --line: #D2DCE3;
+  --accent: #0A7480; --accent-strong: #075A63; --accent-soft: #DAEEF0; --hl: #F2B705; --good: #2E9E57; --try: #D9821A;
+  --code-bg: #13202A; --code-ink: #E3ECF1;
+  --font-display: 'Baloo 2', 'Trebuchet MS', system-ui, sans-serif;
+  --font-body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --font-code: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--hl); outline-offset: 2px; }
+.app { display: grid; grid-template-rows: auto 1fr; height: 100%; padding: 12px 16px 16px; gap: 10px; }
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.top a.back { font-weight: 800; color: var(--accent-strong); text-decoration: none; font-size: 13px; }
+.top h1 { font-family: var(--font-display); font-weight: 800; font-size: 26px; margin: 0; line-height: 1.05; }
+.top p { margin: 0; color: var(--muted); font-size: 13px; }
+.prog { margin-left: auto; display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 13px; color: var(--muted); }
+.bar { width: 160px; height: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 99px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .4s; }
+.bookbtn { border: 2px solid var(--hl); background: #FFF6D6; border-radius: 999px; padding: 4px 12px; font-weight: 800; font-size: 13px; cursor: pointer; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(330px, 420px); gap: 14px; min-height: 0; }
+.viewport { position: relative; min-height: 0; border-radius: 18px; overflow: hidden; background: #F3F7FA; border: 1px solid var(--line); }
+#scene, #scene canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#scene canvas { touch-action: none; cursor: grab; }
+.labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.reset { position: absolute; top: 12px; right: 12px; border: 0; background: var(--accent); color: #fff; border-radius: 999px; padding: 9px 16px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 16px rgba(10,116,128,.3); }
+.vhint { position: absolute; left: 12px; bottom: 10px; margin: 0; font-size: 12px; font-weight: 700; color: var(--muted); pointer-events: none; }
+.counter { position: absolute; left: 12px; top: 12px; background: var(--surface); border: 2px solid var(--hl); border-radius: 14px; padding: 6px 12px; font-family: var(--font-display); font-weight: 800; font-size: 18px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; min-height: 0; display: grid; grid-template-rows: 1fr auto; overflow: hidden; }
+.scroll { overflow: auto; padding: 16px; display: grid; gap: 12px; align-content: start; grid-auto-rows: max-content; }
+.guide { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; align-items: start; }
+.guide svg { width: 72px; height: 84px; }
+.eyebrow { font-weight: 800; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+.guide h2 { font-family: var(--font-display); font-size: 25px; line-height: 1.1; margin: 0 0 4px; }
+.guide p { margin: 4px 0; }
+.task { border: 2px solid var(--accent); background: var(--accent-soft); border-radius: 14px; padding: 10px 12px; }
+.task b.t { display: block; font-family: var(--font-display); font-size: 18px; }
+.task .count { font-weight: 800; color: var(--accent-strong); }
+.task.done { border-color: var(--good); background: #E3F5EA; }
+.task.done b.t::after { content: ' ✓'; color: var(--good); }
+.feedback { border-radius: 12px; padding: 8px 12px; font-weight: 700; animation: fbIn .25s ease-out; }
+.feedback.good { background: #E3F5EA; border-left: 5px solid var(--good); }
+.feedback.try { background: #FFF1DF; border-left: 5px solid var(--try); }
+@keyframes fbIn { from { transform: translateY(6px); opacity: 0 } to { transform: none; opacity: 1 } }
+.unlock { display: flex; align-items: center; gap: 10px; background: #FFF6D6; border: 2px dashed var(--hl); border-radius: 14px; padding: 8px 12px; font-weight: 800; }
+.unlock { flex-wrap: wrap; }
+.unlock .w, .words-strip .w { white-space: nowrap; }
+.unlock .w { font-size: 17px; }
+.lab { border: 2px solid #3aa0ff; border-radius: 12px; padding: 10px 12px; background: #EEF6FF; }
+.lab pre { margin: 6px 0; background: var(--code-bg); color: var(--code-ink); border-radius: 10px; padding: 8px 10px; font-family: var(--font-code); font-size: 13px; white-space: pre-wrap; }
+.lab .row { display: flex; flex-wrap: wrap; gap: 8px; }
+.lab button, .opt-btn { border: 0; border-radius: 10px; padding: 8px 12px; font-weight: 800; cursor: pointer; }
+.lab button { font-family: var(--font-code); font-weight: 600; background: var(--code-bg); color: var(--code-ink); }
+.lab button.ran { outline: 3px solid var(--good); }
+.code-inline, code { font-family: var(--font-code); background: var(--surface-2); border-radius: 6px; padding: 0 5px; font-size: .92em; }
+.seg { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+.seg button { border: 0; background: none; border-radius: 999px; padding: 5px 12px; font-weight: 800; font-size: 13px; cursor: pointer; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.opts { display: grid; gap: 8px; }
+.opt-btn { text-align: left; background: var(--surface-2); border: 2px solid var(--line); }
+.opt-btn:hover { border-color: var(--accent); }
+.opt-btn.right { background: #E3F5EA; border-color: var(--good); }
+.opt-btn.wrong { background: #FFF1DF; border-color: var(--try); }
+.stars { font-size: 34px; letter-spacing: 4px; }
+.done-card { border: 2px solid var(--hl); background: #FFFBEA; border-radius: 16px; padding: 12px 14px; }
+.done-card h3 { font-family: var(--font-display); margin: 0 0 4px; font-size: 22px; }
+.done-card .links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 2px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 16px; font-weight: 800; cursor: pointer; text-decoration: none; color: var(--ink); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 6px 16px rgba(10,116,128,.3); }
+.btn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.nav { display: flex; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--line); background: var(--surface); }
+.nav .btn.primary { margin-left: auto; }
+.words-strip { font-size: 13px; color: var(--muted); }
+@media (max-width: 860px) {
+  .app { height: auto; min-height: 100%; }
+  main { grid-template-columns: minmax(0, 1fr); }
+  .viewport { height: 56vh; min-height: 360px; }
+  .panel { overflow: visible; }
+  .scroll { overflow: visible; }
+  .nav { position: sticky; bottom: 0; border-radius: 0 0 18px 18px; }
+  .prog { margin-left: 0; }
+  .bar { width: 110px; }
+}
+@media (prefers-reduced-motion: reduce) { .feedback { animation: none; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <a class="back" href="../../index.html">← All lessons</a>
+      <h1>Pin Detective</h1>
+      <p>Lesson 0 · Meet your ESP32 before you build anything</p>
+    </div>
+    <div class="prog"><span id="progressText">Step 1 of 12</span><div class="bar" aria-hidden="true"><i id="barFill"></i></div>
+      <button type="button" class="bookbtn" data-wordbook>📖 My words <span id="wordCount"></span></button></div>
+  </header>
+  <main>
+    <section class="viewport" aria-label="3D ESP32 board">
+      <div id="scene"></div>
+      <div class="labels" id="labels"></div>
+      <div class="counter" id="counter" hidden></div>
+      <button class="reset" id="resetView" type="button">↺ Reset view</button>
+      <p class="vhint">Drag to spin · Pinch or scroll to zoom · Tap parts and pins</p>
+    </section>
+    <aside class="panel">
+      <div class="scroll" id="scroll" aria-live="polite">
+        <div class="guide">
+          <svg viewBox="0 0 72 84" aria-hidden="true"><circle cx="36" cy="30" r="20" fill="#F5C9A0"/><rect x="16" y="50" width="40" height="30" rx="10" fill="#1F3A68"/></svg>
+          <div><div class="eyebrow" id="eyebrow"></div><h2 id="stepTitle"></h2><div id="stepText"></div></div>
+        </div>
+        <div id="taskBox"></div>
+        <div id="fbBox"></div>
+        <div id="extraBox"></div>
+        <p class="words-strip" id="wordsStrip"></p>
+      </div>
+      <div class="nav">
+        <button type="button" class="btn" id="prevBtn">← Back</button>
+        <button type="button" class="btn primary" id="nextBtn">Next →</button>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="../../course.js"></script>
+<script src="../../assets/ohm/ohm.js"></script>
+<script src="../../assets/rewards.js"></script>
+<script src="../../assets/esp32/board.js"></script>
+<script>
+(function () {
+  'use strict';
+  const LESSON_SLUG = '00-meet-esp32';
+  const E = window.ESP32, esc = E.esc, chip = E.chip;
+  const $ = (s) => document.querySelector(s);
+  const NEUTRAL = '#6B7883';
+  E.initWords();
+  const countWords = () => { $('#wordCount').textContent = `(${E.book.list().length})`; };
+  document.addEventListener('makerword', countWords); countWords();
+
+  /* ---------- what the learner has discovered so far ---------- */
+  const st = { labels: false, mode: 'printed', groups: new Set(), done: new Set(), words: [] };
+  const pin = (name) => E.PINS.find((p) => p.printed === name);
+  const colourOf = (p) => { const g = E.groupOf(p); return st.groups.has(g) ? E.GROUPS[g].css : NEUTRAL; };
+  let selectedPins = new Set();
+
+  const viewer = E.createViewer({
+    host: $('#scene'), layer: $('#labels'), model: '../../assets/models/esp32-devkit-v1.glb',
+    onPin: (p, el) => cur().onPin && cur().onPin(p, el),
+    onPart: (k) => cur().onPart && cur().onPart(k),
+    label: (p) => ({ show: st.labels, color: colourOf(p), cls: selectedPins.has(p) ? 'sel' : '',
+      text: st.mode === 'gpio' ? (p.gpio != null ? 'GPIO' + p.gpio : p.printed) : p.printed,
+      aria: p.printed + (p.gpio != null ? ', GPIO ' + p.gpio : '') }),
+  });
+  function repaint() {
+    if (!viewer) return;
+    E.PINS.forEach((p) => { viewer.setPadColor(p.node, colourOf(p)); viewer.setPadGlow(p.node, selectedPins.has(p)); });
+    viewer.refresh();
+  }
+  function flash(el, ok) { if (!el) return; el.classList.remove('good', 'bad'); void el.offsetWidth; el.classList.add(ok ? 'good' : 'bad'); }
+
+  /* ---------- small helpers for the panel ---------- */
+  const PART_NAMES = { esp_wroom_32_module: 'metal module (the brain!)', pcb_antenna: 'Wi-Fi antenna', micro_usb: 'USB port', button_en: 'EN (restart) button',
+    button_boot: 'BOOT button', power_led: 'red power light', blue_led_gpio2: 'blue LED', ams1117_regulator: 'voltage regulator', cp2102_bridge: 'USB-to-serial chip', pcb: 'circuit board' };
+  const partName = (k) => PART_NAMES[k] || 'circuit board';
+  function say(html, good) {
+    const d = document.createElement('div');
+    d.className = 'feedback ' + (good ? 'good' : 'try');
+    d.innerHTML = html;
+    $('#fbBox').replaceChildren(d);
+  }
+  function task(title, body) { $('#taskBox').innerHTML = `<div class="task" id="task"><b class="t">🎯 ${title}</b>${body ? `<div id="taskBody">${body}</div>` : ''}</div>`; }
+  function taskBody(html) { const b = $('#taskBody'); if (b) b.innerHTML = html; }
+  function complete(wordKeys, msg) {
+    const s = cur();
+    if (!st.done.has(step)) st.done.add(step);
+    const t = $('#task'); if (t) t.classList.add('done');
+    if (msg) say(msg, true);
+    (wordKeys || []).forEach((k) => { E.book.add(k); if (!st.words.includes(k)) st.words.push(k); });
+    if (wordKeys && wordKeys.length) {
+      $('#extraBox').insertAdjacentHTML('afterbegin', `<div class="unlock">🔑 New maker word${wordKeys.length > 1 ? 's' : ''}: ${wordKeys.map((k) => chip(k)).join(' ')} <span class="small" style="font-weight:700">tap to read</span></div>`);
+      E.showWord(wordKeys[0]);
+    }
+    s.completed = true;
+    updateNav(); stripWords();
+  }
+  function stripWords() {
+    $('#wordsStrip').innerHTML = st.words.length ? `Words you’ve found today: ${st.words.map((k) => chip(k)).join(' ')}` : '';
+  }
+  // find-the-pins tasks: targets is a list of printed names; wrong taps get a friendly hint, and after 3 misses we glow the answer
+  function finder(targets, opts) {
+    const found = new Set(); let misses = 0;
+    const body = () => `<span class="count">${found.size} of ${targets.length} found</span>`;
+    return {
+      body,
+      onPin(p, el) {
+        if (cur().completed) return;
+        if (targets.includes(p.node) && !found.has(p.node)) {
+          found.add(p.node); flash(el, true); selectedPins.add(p);
+          if (opts.onFind) opts.onFind(p);
+          repaint(); taskBody(body());
+          if (found.size === targets.length) opts.onDone(); else say(opts.more ? opts.more(p) : `Yes, that’s ${esc(p.printed)}! Find the other one.`, true);
+        } else if (found.has(p.node)) {
+          say('You already found that one. Look for another!', false);
+        } else {
+          misses++; flash(el, false);
+          say(opts.wrong(p) + (misses >= 3 ? ' <b>Hint:</b> look for the glowing pin.' : ''), false);
+          if (misses >= 3) targets.forEach((n) => { if (!found.has(n)) viewer.setPadGlow(n, true); });
+        }
+      },
+    };
+  }
+
+  /* ---------- the mission ---------- */
+  let step = 0;
+  const STEPS = [
+    { eyebrow: 'Mission briefing', title: 'Meet your ESP32',
+      text: `<p>This little board will be the brain of every project in this course: a traffic light, a buzzer, even something you control from a phone.</p>
+             <p>Today you’re a <b>pin detective</b>. You’ll explore the board, find its secrets, and learn the real words engineers use. Each mission unlocks a <b>maker word</b>.</p>`,
+      enter() {
+        task('Spin the board', 'Drag on the board to turn it around. Look underneath too!');
+        const a0 = viewer.controls.getAzimuthalAngle(), p0 = viewer.controls.getPolarAngle();
+        const check = () => {
+          if (cur() !== STEPS[0] || STEPS[0].completed) return;
+          const da = Math.abs(viewer.controls.getAzimuthalAngle() - a0), dp = Math.abs(viewer.controls.getPolarAngle() - p0);
+          if (da > 0.6 || dp > 0.5) complete(['microcontroller'], 'Nice spin! This board is built around a <b>microcontroller</b>: a tiny computer on a single chip.');
+        };
+        viewer.controls.addEventListener('change', check);
+        this.leave = () => viewer.controls.removeEventListener('change', check);
+      } },
+
+    { eyebrow: 'Mission 1', title: 'Find the brain',
+      text: `<p>Every computer has a brain that runs the program. On this board the brain hides under a shiny metal lid.</p>`,
+      enter() { task('Tap the brain of the board'); },
+      onPart(k) {
+        if (this.completed) return;
+        if (k === 'esp_wroom_32_module') complete(['module'], 'Found it! The metal box is the <b>ESP-WROOM-32 module</b>. Inside: the ESP32 chip, its memory and its radio. Your code will run in here, about 240 million tiny steps every second.');
+        else say(`That’s the ${partName(k)}. Keep looking: the brain is under a shiny metal lid.`, false);
+      },
+      onPin() { say('That’s a pin. The brain is bigger, and shiny!', false); } },
+
+    { eyebrow: 'Mission 2', title: 'How does it reach the internet?',
+      text: `<p>Your ESP32 can join Wi-Fi without any wires. To do that, it needs something that sends and catches invisible radio waves.</p>`,
+      enter() { task('Find the Wi-Fi antenna', 'Hint: it’s a zig-zag gold line near the brain.'); },
+      onPart(k) {
+        if (this.completed) return;
+        if (k === 'pcb_antenna') complete(['antenna', 'iot'], `Yes! The zig-zag copper line is the <b>antenna</b>. Because your board can go online, the things you build become part of the ${chip('iot', 'Internet of Things')}.`);
+        else say('Close, but no. Look for a zig-zag gold line at the end of the brain.', false);
+      },
+      onPin() { say('Not a pin this time. Look for the zig-zag line!', false); } },
+
+    { eyebrow: 'Mission 3', title: 'Wake it up',
+      text: `<p>Right now the board is asleep: it has no power. Where would you plug in a cable to give it power and send it your code?</p>`,
+      enter() { viewer.setPower(false); task('Plug in the board', 'Tap the place where the cable goes.'); },
+      leave() { viewer.setPower(st.done.has(3)); },
+      onPart(k) {
+        if (this.completed) return;
+        if (k === 'micro_usb') { viewer.setPower(true); complete(['usb'], 'Click! It’s plugged in. See the <b>red power LED</b> light up? The <b>USB port</b> brings power in, and later it will carry your programs from the computer.'); }
+        else say(`That’s the ${partName(k)}. The cable plugs into a small silver socket at the end of the board.`, false);
+      },
+      onPin() { say('Not a pin. Look for the silver socket at the end of the board.', false); } },
+
+    { eyebrow: 'Mission 4', title: 'Count the legs',
+      text: `<p>See the two rows of metal legs? They are called <b>pins</b>, and they connect the board to wires, lights and sensors. Each one has a name printed next to it.</p>`,
+      enter() {
+        st.labels = true; repaint();
+        const seen = new Set();
+        task('Tap 3 different pins to read their names', '<span class="count">0 of 3</span>');
+        this.onPin = (p, el) => {
+          if (this.completed) return;
+          seen.add(p); flash(el, true); selectedPins.add(p); repaint();
+          taskBody(`<span class="count">${seen.size} of 3</span>`);
+          if (seen.size < 3) say(`That’s <b>${esc(p.printed)}</b>. Try another one!`, true);
+          else { selectedPins.clear(); repaint(); complete(['pin', 'header'], 'Detective count: <b>30 pins</b>, 15 on each side. A row of pins is called a <b>header</b>, so this board has two headers.'); }
+        };
+      } },
+
+    { eyebrow: 'Mission 5', title: 'Find the road home',
+      text: `<p>Electricity is like a runner on a loop: it leaves the board, does its job (like lighting an LED), and must come <b>back home</b>. No way home, no light!</p>
+             <p>The way home is called <b>ground</b>, and the board prints it as <code>GND</code>.</p>`,
+      enter() {
+        const f = finder(['L14_GND', 'R14_GND'], {
+          onFind: () => { st.groups.add('gnd'); },
+          more: () => 'Yes! That’s one GND. There’s another one on the other side.',
+          wrong: (p) => `That’s <b>${esc(p.printed)}</b>. Ground pins say GND.`,
+          onDone: () => { selectedPins.clear(); repaint(); complete(['gnd'], 'Both found! Ground pins are now <b>dark grey</b>. They’re joined inside the board, so you can use either one.'); },
+        });
+        this.onPin = f.onPin; task('Find both GND pins', f.body());
+      } },
+
+    { eyebrow: 'Mission 6', title: 'Find the power pins',
+      text: `<p>Two pins give electricity to other parts. One gives a gentle <b>3.3 volts</b>, printed <code>3V3</code>. One brings in about <b>5 volts</b> from the USB cable, printed <code>VIN</code>.</p>
+             <p>A <b>volt</b> measures how hard electricity pushes, like water pressure in a pipe.</p>`,
+      enter() {
+        const f = finder(['R15_3V3', 'L15_VIN'], {
+          onFind: () => { st.groups.add('power'); },
+          more: (p) => `Found <b>${esc(p.printed)}</b>! Now find the other power pin.`,
+          wrong: (p) => `That’s <b>${esc(p.printed)}</b>. Look for 3V3 and VIN, near the bottom.`,
+          onDone: () => { selectedPins.clear(); repaint(); complete(['voltage', 'v33'], `Power pins are now <b>red</b>. Safety rule for every engineer: never connect a power pin straight to GND. That’s a ${chip('short', 'short circuit')}, and parts get hot.`); },
+        });
+        this.onPin = f.onPin; task('Find 3V3 and VIN', f.body());
+      } },
+
+    { eyebrow: 'Mission 7', title: 'Wake up the blue LED',
+      text: `<p>There’s a tiny blue light on the board, and it’s wired to pin <b>D2</b>. Your program can switch that pin on and off. That’s what most pins are for!</p>`,
+      enter() {
+        const self = this; let ran = new Set();
+        task('Find D2, then run the code');
+        this.onPin = (p, el) => {
+          if (self.completed) return;
+          if (p.printed !== 'D2') { flash(el, false); say(`That’s <b>${esc(p.printed)}</b>. D2 is on the right side, near the bottom.`, false); return; }
+          flash(el, true); selectedPins.add(p); repaint();
+          say('That’s D2! Now be the programmer: run the lines below.', true);
+          $('#extraBox').innerHTML = `<div class="lab"><b>💻 Your first program (MicroPython)</b>
+            <pre>from machine import Pin
+led = Pin(2, Pin.OUT)   # pin 2 sends electricity out</pre>
+            <div class="row"><button type="button" data-led="1">▶ led.value(1)</button><button type="button" data-led="0">▶ led.value(0)</button></div>
+            <p class="small" id="labOut">Run both lines: one turns it on, one turns it off.</p></div>`;
+          $('#extraBox').querySelectorAll('[data-led]').forEach((b) => b.addEventListener('click', () => {
+            const on = b.dataset.led === '1';
+            viewer.setBlue(on); b.classList.add('ran'); ran.add(b.dataset.led);
+            $('#labOut').innerHTML = on ? '💡 Pin 2 now pushes out 3.3 volts. The blue LED is ON!' : '🌑 Pin 2 is back to 0 volts. The LED is OFF.';
+            if (ran.size === 2 && !self.completed) {
+              st.groups.add('gpio'); selectedPins.clear(); repaint();
+              complete(['gpio', 'output'], `You just controlled hardware with code! Pins like this are called <b>GPIO</b> pins (General-Purpose Input/Output). The <b>green</b> pins are free GPIO pins for your projects.`);
+            }
+          }));
+        };
+      },
+      leave() { viewer.setBlue(false); } },
+
+    { eyebrow: 'Mission 8', title: 'The name trick',
+      text: `<p>Here’s a secret that confuses lots of grown-ups. In code we write a <b>GPIO number</b>, like <code>Pin(25)</code>.</p>
+             <p>Where is pin 25? Count along the board… or is there a better way?</p>`,
+      enter() {
+        const self = this;
+        task('Tap the pin that Pin(25) means');
+        this.onPin = (p, el) => {
+          if (self.completed) return;
+          if (p.gpio === 25) {
+            flash(el, true); selectedPins.add(p); repaint();
+            complete(['gpionum'], `Brilliant! <code>Pin(25)</code> means <b>GPIO 25</b>, printed <b>D25</b>. It is the 8th pin on its side, not the 25th! Flip the labels below to see each pin’s GPIO number.`);
+            $('#extraBox').insertAdjacentHTML('beforeend', `<div class="seg" role="group" aria-label="Label style"><button type="button" data-m="printed" aria-pressed="true">Printed name</button><button type="button" data-m="gpio" aria-pressed="false">GPIO number</button></div>`);
+            $('#extraBox').querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => {
+              st.mode = b.dataset.m; repaint();
+              $('#extraBox').querySelectorAll('[data-m]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+            }));
+          } else if (p.node === 'R10_GPIO16') {
+            flash(el, false); say('Counting all 30 legs gets you here, but this is <b>RX2</b> (GPIO 16). Code doesn’t count legs! Look for the pin printed <b>D25</b>.', false);
+          } else {
+            flash(el, false); say(`That’s <b>${esc(p.printed)}</b>${p.gpio != null ? `, which is GPIO ${p.gpio}` : ''}. Pin(25) means GPIO 25. Which pin has 25 in its printed name?`, false);
+          }
+        };
+      },
+      leave() { st.mode = 'printed'; repaint(); } },
+
+    { eyebrow: 'Mission 9', title: 'Pins with a special job',
+      text: `<p>A few pins already have a job, like talking to your computer, restarting the board, or only listening. They’re now <b>orange</b>.</p>
+             <p>Good engineers check a pin’s job before they use it.</p>`,
+      enter() {
+        st.groups.add('special'); repaint();
+        const self = this;
+        task('Tap an orange pin to read its job');
+        this.onPin = (p, el) => {
+          if (self.completed) return;
+          if (E.groupOf(p) !== 'special') { flash(el, false); say(`${esc(p.printed)} isn’t orange. Try an orange one!`, false); return; }
+          flash(el, true);
+          const word = { care: 'boot', comm: 'serial', ctrl: 'reset', inonly: 'input' }[p.type];
+          complete([word], `<b>${esc(p.printed)}:</b> ${E.linkWords(p.text)}`);
+        };
+      } },
+
+    { eyebrow: 'Mission 10', title: 'Pin hunt!',
+      text: `<p>Time to prove your detective skills. Officer Ohm calls out a pin and you find it, fast!</p>`,
+      enter() {
+        const self = this;
+        const Q = [
+          ['Find D27', (p) => p.printed === 'D27'],
+          ['Find a GND pin', (p) => p.type === 'gnd'],
+          ['Find the pin for <code>Pin(26)</code>', (p) => p.gpio === 26],
+          ['Find 3V3', (p) => p.printed === '3V3'],
+          ['Find GPIO 32', (p) => p.gpio === 32],
+          ['Find the pin wired to the blue LED', (p) => p.gpio === 2],
+        ];
+        let i = 0, misses = 0;
+        const counter = $('#counter');
+        const show = () => {
+          counter.hidden = false; counter.innerHTML = `🔎 ${Q[i][0]}`;
+          task(`${i + 1} of ${Q.length}: ${Q[i][0]}`);
+        };
+        show();
+        this.leave = () => { counter.hidden = true; };
+        this.onPin = (p, el) => {
+          if (self.completed) return;
+          if (Q[i][1](p)) {
+            flash(el, true); i++;
+            if (i < Q.length) { say(['Got it!', 'Sharp eyes!', 'Correct!', 'Detective skills!', 'Yes!'][i % 5], true); show(); }
+            else {
+              const stars = misses <= 1 ? 3 : misses <= 3 ? 2 : 1;
+              counter.innerHTML = '⭐'.repeat(stars);
+              complete([], `<div class="stars">${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</div>Pin hunt complete with ${misses} miss${misses === 1 ? '' : 'es'}! ${stars === 3 ? 'A true pin detective.' : 'Try again any time to get 3 stars.'}`);
+            }
+          } else { misses++; flash(el, false); say(`That’s ${esc(p.printed)}. Keep looking!`, false); }
+        };
+      } },
+
+    { eyebrow: 'Final check', title: 'Detective quiz',
+      text: `<p>Three quick questions and the <b>Pin Detective</b> badge is yours.</p>`,
+      enter() {
+        const self = this;
+        const QS = [
+          ['In code, what does <code>Pin(25)</code> mean?', ['The 25th pin along the board', 'GPIO 25, printed D25 on the board', '25 volts'], 1,
+            'Code uses the GPIO number. GPIO 25 is printed D25, the 8th pin on its side.'],
+          ['Which pin is the road home for electricity?', ['3V3', 'D2', 'GND'], 2, 'GND (ground) is 0 volts: every circuit ends there.'],
+          ['What is a microcontroller?', ['A tiny computer on one chip that controls things', 'A very small remote control', 'A type of battery'], 0,
+            'It runs your program to control lights, sounds and sensors.'],
+        ];
+        let q = 0;
+        const render = () => {
+          const [text, opts] = QS[q];
+          task(`Question ${q + 1} of ${QS.length}`, `<p style="margin:4px 0 8px">${text}</p><div class="opts">${opts.map((o, i) => `<button type="button" class="opt-btn" data-o="${i}">${o}</button>`).join('')}</div>`);
+          $('#taskBox').querySelectorAll('[data-o]').forEach((b) => b.addEventListener('click', () => {
+            const [, , right, why] = QS[q];
+            if (+b.dataset.o === right) {
+              b.classList.add('right'); say(`✓ Right! ${why}`, true);
+              setTimeout(() => { q++; if (q < QS.length) render(); else finish(); }, 1300);
+            } else { b.classList.add('wrong'); say('Not quite. Have another look and try again!', false); }
+          }));
+        };
+        const finish = () => {
+          complete([], null);
+          const next = window.COURSE.nextLesson(LESSON_SLUG);
+          $('#taskBox').innerHTML = '';
+          $('#extraBox').innerHTML = `<div class="done-card" id="quizDone"><h3>🕵️ Mission complete, Pin Detective!</h3>
+            <p>You found the brain, the antenna and the USB port, tracked down GND and power, switched on an LED with code, and cracked the name trick.</p>
+            <p>You collected <b>${E.book.list().length}</b> maker words. Engineers really use every one of them!</p>
+            <div class="links">${next ? `<a class="btn primary" href="../${next.slug}/index.html">Next: Lesson ${next.n}, ${esc(next.title)} →</a>` : ''}
+            <button type="button" class="btn" data-wordbook>📖 Review my words</button><a class="btn" href="../../pins.html">🔍 Pin Explorer</a></div></div>`;
+          window.COURSE.saveProgress(LESSON_SLUG, { step, steps: STEPS.length, done: true });
+          setTimeout(() => { const r = document.querySelector('#quizDone .reward') || $('#quizDone'); r.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, 400);
+        };
+        render();
+      } },
+  ];
+  const cur = () => STEPS[step];
+
+  /* ---------- navigation ---------- */
+  function updateNav() {
+    const s = cur();
+    $('#prevBtn').disabled = step === 0;
+    const last = step === STEPS.length - 1;
+    $('#nextBtn').hidden = last;
+    $('#nextBtn').disabled = !s.completed && !st.done.has(step);
+    $('#nextBtn').textContent = s.completed || st.done.has(step) ? 'Next mission →' : 'Do the mission first';
+  }
+  function go(i) {
+    const old = cur();
+    if (old && old.leave) old.leave();
+    step = Math.max(0, Math.min(STEPS.length - 1, i));
+    const s = cur();
+    s.completed = st.done.has(step);
+    if (step >= 4) st.labels = true; // pin names appear from "Count the legs" onwards
+    selectedPins.clear(); repaint();
+    $('#eyebrow').textContent = s.eyebrow;
+    $('#stepTitle').textContent = s.title;
+    $('#stepText').innerHTML = s.text;
+    $('#taskBox').innerHTML = ''; $('#fbBox').innerHTML = ''; $('#extraBox').innerHTML = '';
+    $('#progressText').textContent = `Step ${step + 1} of ${STEPS.length}`;
+    $('#barFill').style.width = ((step + 1) / STEPS.length * 100) + '%';
+    delete s.onPin; if (STEPS[step]._onPin) s.onPin = STEPS[step]._onPin;
+    s.enter && s.enter.call(s);
+    if (st.done.has(step) && step !== STEPS.length - 1) { const t = $('#task'); if (t) t.classList.add('done'); }
+    updateNav(); stripWords();
+    $('#scroll').scrollTop = 0;
+    if (window.COURSE) window.COURSE.saveProgress(LESSON_SLUG, { step, steps: STEPS.length });
+  }
+  // keep each step's original onPin (some steps define it in enter(), which re-runs on every visit)
+  STEPS.forEach((s) => { if (s.onPin) s._onPin = s.onPin; });
+  $('#prevBtn').addEventListener('click', () => go(step - 1));
+  $('#nextBtn').addEventListener('click', () => go(step + 1));
+  $('#resetView').addEventListener('click', () => viewer && viewer.home(true));
+
+  if (!viewer) return;
+  viewer.ready.then(() => {
+    // returning learners keep what they discovered; everyone starts from the briefing
+    const prog = (window.COURSE.readProgress()[LESSON_SLUG]) || {};
+    if (prog.done) { STEPS.forEach((_, i) => { if (i < STEPS.length - 1) st.done.add(i); }); st.labels = true; ['gnd', 'power', 'gpio', 'special'].forEach((g) => st.groups.add(g)); }
+    viewer.setPower(!!prog.done); // the board starts unplugged until mission 3
+    go(0);
+  });
+  window.__lesson = { goTo: (i) => go(i), get step() { return step; }, viewer, STEPS, done: (i) => { st.done.add(i); updateNav(); } };
+})();
+</script>
+</body>
+</html>

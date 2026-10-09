@@ -8,11 +8,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-/* Layout: same lab-bench look as the lessons. 3D board on the left with a label on every pin, pin details on the right. */
+/* Layout: 3D board on the left with a label on every pin, the pin's card on the right.
+   Two views: Explorer (4 simple groups, plain words first) and Pro (7 engineering groups, code open). */
 :root {
   --bg: #E3EBF0; --surface: #FFFFFF; --surface-2: #F1F5F8; --ink: #15202A; --muted: #526170; --line: #D2DCE3;
   --accent: #0A7480; --accent-strong: #075A63; --accent-soft: #DAEEF0; --hl: #F2B705;
-  --t-power: #D9443A; --t-gnd: #3D4148; --t-gpio: #2E9E57; --t-inonly: #1F9C93; --t-comm: #3B6FD8; --t-care: #D9821A; --t-ctrl: #8A5CD6;
   --code-bg: #13202A; --code-ink: #E3ECF1;
   --font-display: 'Baloo 2', 'Trebuchet MS', system-ui, sans-serif;
   --font-body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
@@ -26,62 +26,73 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 button { font: inherit; color: inherit; }
 :focus-visible { outline: 3px solid var(--hl); outline-offset: 2px; }
 .app { display: grid; grid-template-rows: auto auto 1fr; height: 100%; padding: 12px 16px 16px; gap: 10px; }
-.top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; }
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
 .top a.back { font-weight: 800; color: var(--accent-strong); text-decoration: none; font-size: 13px; }
 .top h1 { font-family: var(--font-display); font-weight: 800; font-size: 26px; margin: 0; line-height: 1.05; }
 .top p { margin: 0; color: var(--muted); font-size: 13px; }
-.seg { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px; margin-left: auto; }
+.tools { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; align-items: center; }
+.seg { display: inline-flex; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
 .seg button { border: 0; background: none; border-radius: 999px; padding: 5px 12px; font-weight: 800; font-size: 13px; cursor: pointer; color: var(--muted); }
 .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
-.legend { display: flex; flex-wrap: wrap; gap: 6px; }
+.bookbtn { border: 2px solid var(--hl); background: #FFF6D6; border-radius: 999px; padding: 4px 12px; font-weight: 800; font-size: 13px; cursor: pointer; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .legend button { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 3px 10px 3px 4px; font-weight: 800; font-size: 13px; cursor: pointer; }
 .legend button i { width: 18px; height: 18px; border-radius: 50%; }
 .legend button[aria-pressed="true"] { outline: 2px solid var(--ink); }
-.legend .hint { color: var(--muted); font-size: 13px; align-self: center; }
-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 400px); gap: 14px; min-height: 0; }
+.legend .hint { color: var(--muted); font-size: 13px; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 410px); gap: 14px; min-height: 0; }
 .viewport { position: relative; min-height: 0; border-radius: 18px; overflow: hidden; background: #F3F7FA; border: 1px solid var(--line); }
 #scene, #scene canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 #scene canvas { touch-action: none; cursor: grab; }
 .labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
-.pl {
-  position: absolute; left: 0; top: 0; pointer-events: auto; cursor: pointer; white-space: nowrap;
-  font-family: var(--font-code); font-weight: 600; font-size: 11.5px; line-height: 1; padding: 3px 7px; border-radius: 6px;
-  color: #fff; border: 2px solid transparent; box-shadow: 0 1px 4px rgba(21,32,42,.25); transition: opacity .15s;
-}
-.pl.left { transform: translate(calc(-100% - 10px), -50%); }
-.pl.right { transform: translate(10px, -50%); }
-.pl.sel { border-color: var(--hl); box-shadow: 0 0 0 3px rgba(242,183,5,.5); }
-.pl.dim { opacity: .18; }
 .reset { position: absolute; top: 12px; right: 12px; border: 0; background: var(--accent); color: #fff; border-radius: 999px; padding: 9px 16px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 16px rgba(10,116,128,.3); }
 .vhint { position: absolute; left: 12px; bottom: 10px; margin: 0; font-size: 12px; font-weight: 700; color: var(--muted); pointer-events: none; }
-.side { left: 12px; top: 12px; position: absolute; display: flex; gap: 6px; font-family: var(--font-display); font-weight: 800; font-size: 13px; color: var(--muted); pointer-events: none; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: auto; padding: 16px; min-height: 0; display: grid; gap: 12px; align-content: start; grid-auto-rows: max-content; }
-.welcome { display: grid; grid-template-columns: 80px minmax(0,1fr); gap: 12px; align-items: center; }
-.welcome img { width: 80px; }
-.welcome h2, .detail h2 { font-family: var(--font-display); font-size: 24px; line-height: 1.1; margin: 0 0 4px; }
+.welcome { display: grid; grid-template-columns: 76px minmax(0,1fr); gap: 12px; align-items: center; }
+.welcome img { width: 76px; }
+.panel h2 { font-family: var(--font-display); font-size: 24px; line-height: 1.1; margin: 0 0 4px; }
+.panel p { margin: 4px 0; }
+.mission { display: flex; gap: 10px; align-items: center; background: linear-gradient(135deg, #0A7480, #075A63); color: #fff; border-radius: 14px; padding: 12px 14px; text-decoration: none; }
+.mission b { font-family: var(--font-display); font-size: 18px; display: block; line-height: 1.1; }
+.mission span { font-size: 13px; opacity: .9; }
+.mission .go { margin-left: auto; font-size: 24px; font-weight: 800; }
+.groups p { margin: 6px 0; }
 .tag { display: inline-block; color: #fff; font-weight: 800; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 6px; }
+.big { font-size: 17px; font-weight: 700; }
 .names { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
 .names span { background: var(--surface-2); border-radius: 8px; padding: 2px 8px; font-family: var(--font-code); font-size: 13px; }
-.detail p { margin: 6px 0; }
-.can { display: flex; flex-wrap: wrap; gap: 6px; }
-.can span { border-radius: 999px; padding: 2px 10px; font-weight: 800; font-size: 13px; background: var(--accent-soft); color: var(--accent-strong); }
-.can span.no { background: var(--surface-2); color: #8A96A0; text-decoration: line-through; }
+.can { display: grid; gap: 6px; }
+.can div { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-radius: 10px; padding: 6px 10px; background: var(--accent-soft); font-weight: 800; }
+.can div.no { background: var(--surface-2); color: #8A96A0; }
+.can div.no .yn::before { content: '✗ no'; }
+.can div .yn::before { content: '✓ yes'; }
+.can small { font-weight: 700; color: var(--muted); font-size: 12px; }
 .note { background: #FFF6D6; border-radius: 10px; padding: 8px 10px; font-size: 14px; }
 .note.info { background: var(--accent-soft); }
+.trick { border: 2px dashed var(--accent); border-radius: 12px; padding: 8px 12px; font-size: 14px; }
+.trick code, .code-inline { font-family: var(--font-code); background: var(--surface-2); border-radius: 6px; padding: 0 5px; }
+details.code { border-radius: 12px; background: var(--surface-2); }
+details.code > summary { cursor: pointer; font-weight: 800; padding: 8px 12px; }
+details.code[open] > summary { border-bottom: 1px solid var(--line); }
+details.code .exs { display: grid; gap: 10px; padding: 10px; }
 .ex { border-radius: 12px; overflow: hidden; background: var(--code-bg); }
 .ex .head { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px 6px 12px; background: #0D171F; color: #9FB3C0; font-weight: 800; font-size: 13px; }
 .ex .head button { border: 1px solid #36505F; background: #1C2E3A; color: var(--code-ink); border-radius: 8px; padding: 2px 10px; font-weight: 800; font-size: 12px; cursor: pointer; }
 .ex pre { margin: 0; padding: 10px 12px; color: var(--code-ink); font-family: var(--font-code); font-size: 12.5px; line-height: 1.55; white-space: pre; overflow-x: auto; }
 .ex .c { color: #8FA8B5; font-style: italic; }
+.lab { border: 2px solid #3aa0ff; border-radius: 12px; padding: 10px 12px; background: #EEF6FF; }
+.lab b { display: block; margin-bottom: 4px; }
+.lab .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.lab button { border: 0; border-radius: 10px; padding: 8px 12px; font-family: var(--font-code); font-weight: 600; background: var(--code-bg); color: var(--code-ink); cursor: pointer; }
+.back-btn { justify-self: start; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; font-weight: 800; cursor: pointer; }
 .small { color: var(--muted); font-size: 13px; }
 .links { display: flex; flex-wrap: wrap; gap: 8px; }
 .links a { font-weight: 800; color: var(--accent-strong); font-size: 14px; }
-.fail { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; font-weight: 700; }
 @media (max-width: 860px) {
   .app { height: auto; min-height: 100%; }
   main { grid-template-columns: minmax(0, 1fr); }
   .viewport { height: 62vh; min-height: 380px; }
-  .seg { margin-left: 0; }
+  .tools { margin-left: 0; }
 }
 </style>
 </head>
@@ -91,21 +102,28 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 400px)
     <div>
       <a class="back" href="index.html">← All lessons</a>
       <h1>ESP32 Pin Explorer</h1>
-      <p>ESP32 DevKit V1 (30 pins), the board used in every lesson</p>
+      <p>ESP32 DevKit V1 · 30 pins · the board in every lesson</p>
     </div>
-    <div class="seg" role="group" aria-label="Pin label style">
-      <button type="button" data-mode="printed" aria-pressed="true">Printed name</button>
-      <button type="button" data-mode="gpio" aria-pressed="false">GPIO number</button>
-      <button type="button" data-mode="pos" aria-pressed="false">Header position</button>
+    <div class="tools">
+      <div class="seg" role="group" aria-label="View">
+        <button type="button" data-view="kid" aria-pressed="true">🧭 Explorer</button>
+        <button type="button" data-view="pro" aria-pressed="false">🛠️ Pro</button>
+      </div>
+      <div class="seg" role="group" aria-label="Pin label style">
+        <button type="button" data-mode="printed" aria-pressed="true">Printed name</button>
+        <button type="button" data-mode="gpio" aria-pressed="false">GPIO number</button>
+        <button type="button" data-mode="pos" aria-pressed="false" data-pro-only>Header position</button>
+      </div>
+      <button type="button" class="bookbtn" data-wordbook>📖 My words <span id="wordCount"></span></button>
     </div>
   </header>
-  <div class="legend" id="legend" aria-label="Pin types: click to highlight"></div>
+  <div class="legend" id="legend" aria-label="Pin groups: tap to highlight"></div>
   <main>
-    <section class="viewport" id="viewport" aria-label="3D ESP32 board">
+    <section class="viewport" aria-label="3D ESP32 board">
       <div id="scene"></div>
       <div class="labels" id="labels"></div>
       <button class="reset" id="resetView" type="button">↺ Reset view</button>
-      <p class="vhint">Drag to spin · Scroll or pinch to zoom · Click a pin label or a part of the board</p>
+      <p class="vhint">Drag to spin · Pinch or scroll to zoom · Tap a pin or a part</p>
     </section>
     <aside class="panel" id="panel" aria-live="polite"></aside>
   </main>
@@ -114,290 +132,152 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 400px)
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="assets/esp32/board.js"></script>
 <script>
 (function () {
   'use strict';
+  const E = window.ESP32, esc = E.esc, chip = E.chip;
   const $ = (s) => document.querySelector(s);
-  const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const panel = $('#panel');
+  let view = 'kid', mode = 'printed', filter = null, selected = null;
+  try { if (localStorage.getItem('iotkids.pinsView') === 'pro') view = 'pro'; } catch (e) {}
+  E.initWords();
+  const countWords = () => { $('#wordCount').textContent = `(${E.book.list().length})`; };
+  document.addEventListener('makerword', countWords); countWords();
 
-  /* ---------- pin facts (ESP32 DevKit V1, 30-pin, ESP-WROOM-32) ---------- */
-  const TYPES = {
-    power:  { name: 'Power',          css: 'var(--t-power)',  hex: 0xD9443A, blurb: 'Gives or takes electricity to run things.' },
-    gnd:    { name: 'Ground',         css: 'var(--t-gnd)',    hex: 0x3D4148, blurb: '0 volts: the way back for every circuit.' },
-    gpio:   { name: 'Free to use',    css: 'var(--t-gpio)',   hex: 0x2E9E57, blurb: 'Great for your projects: outputs and inputs.' },
-    inonly: { name: 'Input only',     css: 'var(--t-inonly)', hex: 0x1F9C93, blurb: 'Can listen to sensors, but can’t power an LED.' },
-    comm:   { name: 'USB / serial',   css: 'var(--t-comm)',   hex: 0x3B6FD8, blurb: 'Used to talk to your computer. Leave them free.' },
-    care:   { name: 'Use with care',  css: 'var(--t-care)',   hex: 0xD9821A, blurb: 'Work, but they matter when the board starts up.' },
-    ctrl:   { name: 'Reset',          css: 'var(--t-ctrl)',   hex: 0x8A5CD6, blurb: 'Restarts the ESP32.' },
-  };
-  const TOUCH = { 4: 'T0', 2: 'T2', 15: 'T3', 13: 'T4', 12: 'T5', 14: 'T6', 27: 'T7', 33: 'T8', 32: 'T9' };
-  const ADC1 = [32, 33, 34, 35, 36, 39], ADC2 = [4, 2, 15, 13, 12, 14, 27, 25, 26];
-  const P = (node, side, pos, printed, gpio, type, text, extra) => ({ node, side, pos, printed, gpio, type, text, extra: extra || '' });
-  const PINS = [
-    P('L01_EN', 'L', 1, 'EN', null, 'ctrl', 'The restart pin. Connecting it to GND, or pressing the EN button, restarts the ESP32, like switching it off and on again.'),
-    P('L02_GPIO36', 'L', 2, 'VP', 36, 'inonly', 'An input-only pin. It can listen to a sensor and measure analog values, but it can’t send electricity out to an LED.', 'It has no built-in pull-up resistor, so a button needs its own resistor here.'),
-    P('L03_GPIO39', 'L', 3, 'VN', 39, 'inonly', 'An input-only pin, good for reading analog sensors like a light sensor.', 'No built-in pull-up resistor.'),
-    P('L04_GPIO34', 'L', 4, 'D34', 34, 'inonly', 'An input-only pin. A great choice for an analog sensor, even when Wi-Fi is on.', 'No built-in pull-up resistor.'),
-    P('L05_GPIO35', 'L', 5, 'D35', 35, 'inonly', 'An input-only pin. A great choice for an analog sensor, even when Wi-Fi is on.', 'No built-in pull-up resistor.'),
-    P('L06_GPIO32', 'L', 6, 'D32', 32, 'gpio', 'A free pin you can use for almost anything: LEDs, buttons, analog sensors (even with Wi-Fi on) and touch.'),
-    P('L07_GPIO33', 'L', 7, 'D33', 33, 'gpio', 'A free pin: LEDs, buttons, analog sensors (even with Wi-Fi on) and touch.'),
-    P('L08_GPIO25', 'L', 8, 'D25', 25, 'gpio', 'A free pin, and our red traffic light in Lesson 1! It can also make in-between voltages with its DAC.', 'Analog reading on this pin stops working while Wi-Fi is on.'),
-    P('L09_GPIO26', 'L', 9, 'D26', 26, 'gpio', 'A free pin, and our yellow light in Lesson 1. It has a DAC too.', 'Analog reading on this pin stops working while Wi-Fi is on.'),
-    P('L10_GPIO27', 'L', 10, 'D27', 27, 'gpio', 'A free pin, and our green light in Lesson 1. It can also sense touch.', 'Analog reading on this pin stops working while Wi-Fi is on.'),
-    P('L11_GPIO14', 'L', 11, 'D14', 14, 'gpio', 'A free pin that can also sense touch.', 'It sends a few quick pulses while the board starts up, so an LED here may flicker for a moment.'),
-    P('L12_GPIO12', 'L', 12, 'D12', 12, 'care', 'Works as a normal pin, but it’s a “start-up” pin: if something pulls it HIGH while the ESP32 boots, the board may not start.', 'Leave it unconnected when you plug the board in, or pick another pin.'),
-    P('L13_GPIO13', 'L', 13, 'D13', 13, 'gpio', 'A free pin that can also sense touch.'),
-    P('L14_GND', 'L', 14, 'GND', null, 'gnd', 'Ground, 0 volts. Every circuit needs a path back here. In Lesson 1 the ground rail connects to this pin.'),
-    P('L15_VIN', 'L', 15, 'VIN', null, 'power', 'Power in: about 5 volts from the USB cable. It can power things that need 5 V.', 'Never connect VIN straight to 3V3 or GND.'),
-    P('R01_GPIO23', 'R', 1, 'D23', 23, 'gpio', 'A free pin. Often used to talk to displays and memory cards (SPI).'),
-    P('R02_GPIO22', 'R', 2, 'D22', 22, 'gpio', 'A free pin. Often used as SCL for I²C sensors and small screens.'),
-    P('R03_GPIO1', 'R', 3, 'TX0', 1, 'comm', 'Talks to your computer through the USB cable (it sends data). This is how print() messages reach you.', 'If you connect things here, uploading code and print() can stop working. Leave it free.'),
-    P('R04_GPIO3', 'R', 4, 'RX0', 3, 'comm', 'Listens to your computer through the USB cable (it receives data).', 'Leave it free, or uploading code may fail.'),
-    P('R05_GPIO21', 'R', 5, 'D21', 21, 'gpio', 'A free pin. Often used as SDA for I²C sensors and small screens.'),
-    P('R06_GPIO19', 'R', 6, 'D19', 19, 'gpio', 'A free pin. Often used for SPI devices.'),
-    P('R07_GPIO18', 'R', 7, 'D18', 18, 'gpio', 'A free pin. Often used for SPI devices.'),
-    P('R08_GPIO5', 'R', 8, 'D5', 5, 'care', 'A “start-up” pin. Fine for an LED once the board is running, but it sends a few pulses while starting up.', 'Don’t pull it LOW while the board starts.'),
-    P('R09_GPIO17', 'R', 9, 'TX2', 17, 'gpio', 'A free pin. It can also be the “send” wire of a second serial port.'),
-    P('R10_GPIO16', 'R', 10, 'RX2', 16, 'gpio', 'A free pin. It can also be the “receive” wire of a second serial port.'),
-    P('R11_GPIO4', 'R', 11, 'D4', 4, 'gpio', 'A free pin that can also sense touch.', 'Analog reading on this pin stops working while Wi-Fi is on.'),
-    P('R12_GPIO2', 'R', 12, 'D2', 2, 'care', 'Connected to the blue LED on the board, so it’s perfect for your first blink! It’s also a start-up pin.', 'It must be LOW or unconnected when you upload code.'),
-    P('R13_GPIO15', 'R', 13, 'D15', 15, 'care', 'A start-up pin that controls the messages printed when the board starts. Fine for LEDs.', 'Avoid pulling it LOW while the board starts.'),
-    P('R14_GND', 'R', 14, 'GND', null, 'gnd', 'Another ground pin, 0 volts. All GND pins are joined inside the board.'),
-    P('R15_3V3', 'R', 15, '3V3', null, 'power', 'Gives out 3.3 volts to power small sensors.', 'Never connect 3V3 straight to GND: that is a short circuit.'),
-  ];
-  function abilities(p) {
-    if (p.gpio == null) return [];
-    const g = p.gpio, inOnly = g >= 34;
-    const a = [];
-    if (!inOnly) a.push('out');
-    a.push('in');
-    if (ADC1.includes(g) || ADC2.includes(g)) a.push('adc');
-    if (TOUCH[g]) a.push('touch');
-    if (!inOnly) a.push('pwm');
-    if (g === 25 || g === 26) a.push('dac');
-    return a;
-  }
-  const ABILITY_NAMES = { out: 'Output (LED)', in: 'Input (button)', adc: 'Analog read', touch: 'Touch', pwm: 'PWM (dimming, sound)', dac: 'DAC (real voltages)' };
-  function examples(p) {
-    const g = p.gpio, a = abilities(p), out = [];
-    if (a.includes('out')) out.push(['Turn an LED on and off', `from machine import Pin\nimport time\n\nled = Pin(${g}, Pin.OUT)\nwhile True:\n    led.value(1)   # on\n    time.sleep(0.5)\n    led.value(0)   # off\n    time.sleep(0.5)`]);
-    if (a.includes('in')) out.push(['Read a button', g >= 34
-      ? `from machine import Pin\n\n# no built-in pull-up here: add a 10 kΩ resistor to 3V3\nbutton = Pin(${g}, Pin.IN)\nprint(button.value())   # 1 or 0`
-      : `from machine import Pin\n\nbutton = Pin(${g}, Pin.IN, Pin.PULL_UP)\nprint(button.value())   # 0 while pressed`]);
-    if (a.includes('adc')) out.push(['Read an analog sensor', `from machine import ADC, Pin\n\nsensor = ADC(Pin(${g}))\nsensor.atten(ADC.ATTN_11DB)   # read the full 0-3.3 V\nprint(sensor.read())          # 0 to 4095`]);
-    if (a.includes('touch')) out.push(['Sense a touch', `from machine import TouchPad, Pin\n\npad = TouchPad(Pin(${g}))\nprint(pad.read())   # smaller number when touched`]);
-    if (a.includes('pwm')) out.push(['Dim an LED (PWM)', `from machine import Pin, PWM\n\nled = PWM(Pin(${g}), freq=1000)\nled.duty(256)   # 0 = off ... 1023 = full`]);
-    if (a.includes('dac')) out.push(['Make a voltage (DAC)', `from machine import DAC, Pin\n\ndac = DAC(Pin(${g}))\ndac.write(128)   # about 1.65 V (0-255)`]);
-    return out;
-  }
-  const PARTS = {
-    esp_wroom_32_module: ['ESP-WROOM-32 module: the brain', 'The metal box hides the ESP32 chip, its memory and the Wi-Fi and Bluetooth radio. Your MicroPython program runs in here.'],
-    pcb_antenna: ['Wi-Fi antenna', 'The zig-zag copper line is the antenna. Keep metal and wires away from it for the best Wi-Fi.'],
-    micro_usb: ['Micro-USB port', 'Power and your code come in through here. Use a data cable, not a charge-only one.'],
-    button_en: ['EN button (restart)', 'Press it to restart your program from the beginning, the same as connecting the EN pin to GND.'],
-    button_boot: ['BOOT button', 'Hold it while installing new firmware, if your computer can’t connect. Most tools press it for you.'],
-    power_led: ['Red power LED', 'Lights up whenever the board has power.'],
-    blue_led_gpio2: ['Blue LED (GPIO2)', 'Wired to GPIO2 on the board. Try Pin(2, Pin.OUT).value(1) to light it! Selecting D2 makes it blink here.'],
-    ams1117_regulator: ['AMS1117 voltage regulator', 'Turns the 5 V from USB into the 3.3 V the ESP32 needs, so the chip doesn’t get too much.'],
-    cp2102_bridge: ['CP2102 USB-to-serial chip', 'Translates between USB and the ESP32’s serial pins (TX0/RX0), so your computer and the board can talk.'],
-    pcb: ['Circuit board', 'The board holds all the parts and connects them with thin copper tracks.'],
-  };
-
-  /* ---------- 3D ---------- */
-  const host = $('#scene');
-  if (!window.THREE || !THREE.GLTFLoader) { host.innerHTML = '<div class="fail">The 3D library could not load. Check your internet connection and reload.</div>'; return; }
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
-  renderer.outputEncoding = THREE.sRGBEncoding;
-  host.appendChild(renderer.domElement);
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xf3f7fa);
-  const camera = new THREE.PerspectiveCamera(36, 1, 0.5, 2000);
-  const controls = new THREE.OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true; controls.minDistance = 25; controls.maxDistance = 220;
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xb8c4cc, 0.9));
-  const sun = new THREE.DirectionalLight(0xffffff, 0.85); sun.position.set(40, 90, 60); scene.add(sun);
-  const fill = new THREE.DirectionalLight(0xffffff, 0.3); fill.position.set(-50, 30, -40); scene.add(fill);
-  const HOME = { p: new THREE.Vector3(0, 82, 46), t: new THREE.Vector3(0, 0, 1) };
-  function home() { camera.position.copy(HOME.p); controls.target.copy(HOME.t); }
-  home();
-  $('#resetView').addEventListener('click', home);
-
-  const S = 1000; // model is in metres; work in millimetres
-  const padMeshes = {}, padMats = {}, labelEls = [], pickables = [];
-  let blueLed = null, selected = null, typeFilter = null, mode = 'printed';
-
-  new THREE.GLTFLoader().load('assets/models/esp32-devkit-v1.glb', (gltf) => {
-    const root = gltf.scene;
-    root.scale.setScalar(S);
-    scene.add(root);
-    root.traverse((o) => {
-      if (o.name && o.name.startsWith('pad_')) {
-        const key = o.name.slice(4);
-        o.material = o.material.clone();
-        padMeshes[key] = o; padMats[key] = o.material;
-      }
-      if (o.name === 'blue_led_body' && o.material) { o.material = o.material.clone(); blueLed = o.material; }
-      if (o.isMesh) pickables.push(o);
-    });
-    buildLabels();
-    const q = new URLSearchParams(location.search).get('pin');
-    if (q) { const p = PINS.find((x) => x.printed.toLowerCase() === q.toLowerCase() || ('gpio' + x.gpio) === q.toLowerCase()); if (p) selectPin(p); else showWelcome(); }
-    else showWelcome();
-  }, undefined, () => { host.innerHTML = '<div class="fail">The board model could not load. Please reload the page.</div>'; });
-
-  /* ---------- labels ---------- */
+  const groupKey = (p) => (view === 'kid' ? E.groupOf(p) : p.type);
+  const groups = () => (view === 'kid' ? E.GROUPS : E.TYPES);
+  const colour = (p) => groups()[groupKey(p)].css;
   function labelText(p) {
     if (mode === 'gpio') return p.gpio != null ? 'GPIO' + p.gpio : p.printed;
-    if (mode === 'pos') return (p.side === 'L' ? 'L' : 'R') + p.pos;
+    if (mode === 'pos') return p.side + p.pos;
     return p.printed;
   }
-  function buildLabels() {
-    const layer = $('#labels');
-    PINS.forEach((p) => {
-      const el = document.createElement('button');
-      el.type = 'button';
-      el.className = 'pl ' + (p.side === 'L' ? 'left' : 'right');
-      el.style.background = TYPES[p.type].css;
-      el.setAttribute('aria-label', `${p.printed}${p.gpio != null ? ', GPIO ' + p.gpio : ''}, ${TYPES[p.type].name}`);
-      el.addEventListener('click', () => selectPin(p));
-      layer.appendChild(el);
-      labelEls.push({ el, p });
-    });
-    refreshLabels();
-  }
-  function refreshLabels() {
-    labelEls.forEach(({ el, p }) => {
-      el.textContent = labelText(p);
-      el.classList.toggle('sel', selected === p);
-      el.classList.toggle('dim', !!typeFilter && p.type !== typeFilter);
-    });
-  }
-  const v = new THREE.Vector3();
-  function placeLabels() {
-    const w = host.clientWidth, h = host.clientHeight;
-    labelEls.forEach(({ el, p }) => {
-      const m = padMeshes[p.node];
-      if (!m) return;
-      m.getWorldPosition(v);
-      v.project(camera);
-      const show = v.z < 1;
-      el.style.display = show ? '' : 'none';
-      if (show) el.style.left = ((v.x + 1) / 2 * w).toFixed(1) + 'px', el.style.top = ((1 - v.y) / 2 * h).toFixed(1) + 'px';
-    });
-  }
 
-  /* ---------- legend + mode ---------- */
-  const legend = $('#legend');
-  Object.keys(TYPES).forEach((k) => {
-    const b = document.createElement('button');
-    b.type = 'button'; b.setAttribute('aria-pressed', 'false'); b.title = TYPES[k].blurb;
-    b.innerHTML = `<i style="background:${TYPES[k].css}"></i>${TYPES[k].name}`;
-    b.addEventListener('click', () => {
-      typeFilter = typeFilter === k ? null : k;
-      [...legend.querySelectorAll('button')].forEach((x) => x.setAttribute('aria-pressed', 'false'));
-      if (typeFilter) b.setAttribute('aria-pressed', 'true');
-      refreshLabels(); refreshPads();
-    });
-    legend.appendChild(b);
+  const viewer = E.createViewer({
+    host: $('#scene'), layer: $('#labels'), model: 'assets/models/esp32-devkit-v1.glb',
+    onPin: (p) => selectPin(p), onPart: (k) => selectPart(k),
+    label: (p) => ({ text: labelText(p), color: colour(p), aria: `${p.printed}${p.gpio != null ? ', GPIO ' + p.gpio : ''}, ${groups()[groupKey(p)].name}`,
+      cls: (selected === p ? 'sel' : '') + (filter && groupKey(p) !== filter ? ' dim' : '') }),
   });
-  legend.insertAdjacentHTML('beforeend', '<span class="hint">Tap a colour to highlight those pins</span>');
-  document.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => {
-    mode = b.dataset.mode;
-    document.querySelectorAll('.seg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-    refreshLabels();
+  if (!viewer) return;
+  $('#resetView').addEventListener('click', () => viewer.home(true));
+  viewer.ready.then(() => {
+    paintPads();
+    const q = new URLSearchParams(location.search).get('pin');
+    const p = E.findPin(q);
+    if (p) selectPin(p); else showWelcome();
+  });
+
+  /* ---------- views, label modes, legend ---------- */
+  function setView(v) {
+    view = v; filter = null;
+    try { localStorage.setItem('iotkids.pinsView', v); } catch (e) {}
+    document.querySelectorAll('[data-view]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
+    document.querySelectorAll('[data-pro-only]').forEach((b) => { b.hidden = v !== 'pro'; });
+    if (v !== 'pro' && mode === 'pos') setMode('printed');
+    buildLegend(); paintPads(); viewer.refresh();
     if (selected) selectPin(selected); else showWelcome();
-  }));
-  function refreshPads() {
-    PINS.forEach((p) => {
-      const mat = padMats[p.node]; if (!mat) return;
-      const on = selected === p;
-      mat.emissive = new THREE.Color(on ? 0xF2B705 : 0x000000);
-      mat.emissiveIntensity = on ? 0.9 : 0;
-      mat.opacity = typeFilter && p.type !== typeFilter ? 0.25 : 1;
-      mat.transparent = !!typeFilter;
+  }
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll('[data-mode]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));
+    viewer.refresh();
+  }
+  document.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
+  document.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
+  function buildLegend() {
+    const legend = $('#legend'); legend.innerHTML = '';
+    Object.entries(groups()).forEach(([k, g]) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.title = g.blurb; b.setAttribute('aria-pressed', 'false');
+      b.innerHTML = `<i style="background:${g.css}"></i>${esc(g.name)}`;
+      b.addEventListener('click', () => {
+        filter = filter === k ? null : k;
+        legend.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', 'false'));
+        if (filter) b.setAttribute('aria-pressed', 'true');
+        paintPads(); viewer.refresh();
+      });
+      legend.appendChild(b);
+    });
+    legend.insertAdjacentHTML('beforeend', '<span class="hint">Tap a colour to highlight those pins</span>');
+  }
+  function paintPads() {
+    E.PINS.forEach((p) => {
+      const dim = filter && groupKey(p) !== filter;
+      viewer.setPadColor(p.node, dim ? 0x9aa6b0 : colour(p));
+      viewer.setPadGlow(p.node, selected === p);
     });
   }
 
   /* ---------- panel ---------- */
-  const panel = $('#panel');
   function showWelcome() {
-    selected = null; refreshLabels(); refreshPads();
-    panel.innerHTML = `<div class="welcome"><img src="assets/ohm/magnify.svg" alt="Officer Ohm with a magnifying glass">
-      <div><h2>Meet your ESP32’s pins</h2><p class="small">This board has 30 pins. Click any label to see what it does and get code you can copy.</p></div></div>
-      <div class="note info"><b>Pin(25) means GPIO 25, not the 25th pin.</b> The board prints it as <b>D25</b>, and it sits 8th on the left header.
-      Switch the labels at the top to see all three ways of naming a pin.</div>
-      <div>${Object.keys(TYPES).map((k) => `<p style="margin:4px 0"><span class="tag" style="background:${TYPES[k].css}">${TYPES[k].name}</span> ${TYPES[k].blurb}</p>`).join('')}</div>
-      <p class="small">You can also click parts of the board: the metal module, the antenna, the USB port, the EN and BOOT buttons, the LEDs and the chips.</p>
-      <div class="links"><a href="assets/models/esp32-devkit-v1.glb" download>Download 3D model (GLB)</a><a href="assets/models/esp32-devkit-v1.obj" download>OBJ</a><a href="assets/models/esp32-devkit-v1.mtl" download>MTL</a></div>`;
+    selected = null; paintPads(); viewer.refresh(); viewer.setBlue(false);
+    const g = groups();
+    panel.innerHTML = `
+      <div class="welcome"><img src="assets/ohm/magnify.svg" alt="Officer Ohm with a magnifying glass">
+        <div><h2>Every pin has a job</h2><p>Your ${chip('microcontroller', 'ESP32')} has 30 ${chip('pin', 'pins')}. Tap one to find out what it does.</p></div></div>
+      <a class="mission" href="lessons/00-meet-esp32/index.html"><span style="font-size:30px">🕵️</span><span><b>New here? Take the Pin Detective mission</b><span>15 minutes, earns your first badge</span></span><span class="go">→</span></a>
+      <div class="trick">🧠 <b>The name trick:</b> in code, <code>Pin(25)</code> means ${chip('gpionum', 'GPIO')} 25. The board prints it as <b>D25</b>. It is <b>not</b> the 25th pin! Flip the labels to <b>GPIO number</b> at the top to see.</div>
+      <div class="groups">${Object.values(g).map((x) => `<p><span class="tag" style="background:${x.css}">${esc(x.name)}</span> ${esc(x.blurb)}</p>`).join('')}</div>
+      <p class="small">Yellow words like ${chip('gnd', 'GND')} are <b>maker words</b>: the real names engineers use. Tap them to learn them and fill your word book.</p>
+      ${view === 'pro' ? `<div class="links"><a href="assets/models/esp32-devkit-v1.glb" download>Download 3D model (GLB)</a><a href="assets/models/esp32-devkit-v1.obj" download>OBJ</a><a href="assets/models/esp32-devkit-v1.mtl" download>MTL</a></div>` : ''}`;
+  }
+
+  function kidHeadline(p) {
+    if (p.type === 'gnd') return `🏠 This is a road home for electricity (${chip('gnd', 'GND')}).`;
+    if (p.type === 'power') return `⚡ This pin is about ${chip('voltage', 'power')}. Handle it with care!`;
+    if (p.type === 'ctrl') return `🔄 This pin restarts the board.`;
+    if (p.type === 'comm') return `💬 This pin talks to your computer. Leave it free.`;
+    if (p.type === 'inonly') return `👂 This pin can only listen. It can’t light an LED.`;
+    if (p.type === 'care') return `⚠️ This pin works, but it has a job when the board starts.`;
+    return `✅ This pin is free for your projects!`;
   }
   function selectPin(p) {
-    selected = p; refreshLabels(); refreshPads();
-    const t = TYPES[p.type], a = abilities(p);
-    const all = ['out', 'in', 'adc', 'touch', 'pwm', 'dac'];
-    const exs = examples(p);
-    panel.innerHTML = `<div class="detail">
-      <span class="tag" style="background:${t.css}">${t.name}</span>
-      <h2>${esc(p.printed)}${p.gpio != null ? ` <span style="color:var(--muted);font-size:18px">· GPIO ${p.gpio}</span>` : ''}</h2>
-      <div class="names"><span>Printed: ${esc(p.printed)}</span>${p.gpio != null ? `<span>Code: Pin(${p.gpio})</span>` : ''}<span>Header: ${p.side === 'L' ? 'left' : 'right'} #${p.pos}</span>${TOUCH[p.gpio] ? `<span>Touch ${TOUCH[p.gpio]}</span>` : ''}</div>
-      <p>${esc(p.text)}</p>
-      ${p.extra ? `<p class="note">⚠️ ${esc(p.extra)}</p>` : ''}
-      ${p.gpio != null ? `<p style="font-weight:800;margin:10px 0 6px">What this pin can do</p><div class="can">${all.map((k) => `<span class="${a.includes(k) ? '' : 'no'}">${ABILITY_NAMES[k]}</span>`).join('')}</div>` : ''}
-    </div>
-    ${exs.map(([title, code], i) => `<div class="ex"><div class="head">${esc(title)}<button type="button" data-copy="${i}">Copy</button></div><pre>${esc(code).replace(/(#.*)$/gm, '<span class="c">$1</span>')}</pre></div>`).join('')}
-    <button type="button" class="seg-back" id="backBtn" style="justify-self:start;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-weight:800;cursor:pointer">← All pins</button>`;
+    selected = p; paintPads(); viewer.refresh();
+    viewer.setBlue(false); if (p.gpio === 2) viewer.blink(3000);
+    const g = groups()[groupKey(p)], a = E.abilities(p), exs = E.examples(p), pro = view === 'pro';
+    const names = `<div class="names"><span>Printed: ${esc(p.printed)}</span>${p.gpio != null ? `<span>Code: Pin(${p.gpio})</span>` : ''}<span>Header: ${p.side === 'L' ? 'left' : 'right'} #${p.pos}</span>${pro && E.TOUCH[p.gpio] ? `<span>Touch ${E.TOUCH[p.gpio]}</span>` : ''}</div>`;
+    const can = p.gpio != null ? `<p style="font-weight:800;margin:10px 0 2px">Can it…?</p><div class="can">${Object.entries(E.ABILITIES).map(([k, x]) =>
+      `<div class="${a.includes(k) ? '' : 'no'}"><span>${x.kid} <small>· pros say ${chip(x.word, x.pro)}</small></span><span class="yn"></span></div>`).join('')}</div>` : '';
+    const lab = p.gpio === 2 ? `<div class="lab"><b>🔬 Try it: control the blue LED</b><span class="code-inline">led = Pin(2, Pin.OUT)</span>
+      <div class="row"><button type="button" data-led="1">led.value(1)</button><button type="button" data-led="0">led.value(0)</button></div>
+      <p class="small" id="labOut">Run a line and watch the blue LED on the board.</p></div>` : '';
+    const trick = p.gpio != null && p.printed !== 'GPIO' + p.gpio ? `<div class="trick">🧠 Printed <b>${esc(p.printed)}</b> on the board = <code>Pin(${p.gpio})</code> in code = ${chip('gpionum', 'GPIO')} ${p.gpio}.</div>` : '';
+    const code = exs.length ? `<details class="code" ${pro ? 'open' : ''}><summary>👩‍💻 ${pro ? 'MicroPython examples' : 'Show me the code'}</summary><div class="exs">${exs.map(([title, c], i) =>
+      `<div class="ex"><div class="head">${esc(title)}<button type="button" data-copy="${i}">Copy</button></div><pre>${esc(c).replace(/(#.*)$/gm, '<span class="c">$1</span>')}</pre></div>`).join('')}</div></details>` : '';
+    panel.innerHTML = `<div>
+        <span class="tag" style="background:${g.css}">${esc(g.name)}</span>
+        <h2>${esc(p.printed)}${p.gpio != null ? ` <span style="color:var(--muted);font-size:18px">· GPIO ${p.gpio}</span>` : ''}</h2>
+        ${pro ? '' : `<p class="big">${kidHeadline(p)}</p>`}
+        <p>${E.linkWords(p.text)}</p>
+        ${p.extra ? `<p class="note">⚠️ ${E.linkWords(p.extra)}</p>` : ''}
+        ${names}
+      </div>${trick}${lab}${can}${code}
+      <button type="button" class="back-btn" id="backBtn">← All pins</button>`;
     panel.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', () => {
-      const code = exs[+b.dataset.copy][1];
       const done = () => { b.textContent = 'Copied!'; setTimeout(() => { b.textContent = 'Copy'; }, 1400); };
-      if (navigator.clipboard) navigator.clipboard.writeText(code).then(done, () => {}); else done();
+      if (navigator.clipboard) navigator.clipboard.writeText(exs[+b.dataset.copy][1]).then(done, () => {}); else done();
+    }));
+    panel.querySelectorAll('[data-led]').forEach((b) => b.addEventListener('click', () => {
+      const on = b.dataset.led === '1';
+      viewer.setBlue(on);
+      $('#labOut').textContent = on ? 'GPIO 2 now gives out 3.3 volts, so the blue LED lights up.' : 'GPIO 2 is back to 0 volts, so the LED is off.';
     }));
     $('#backBtn').addEventListener('click', showWelcome);
     panel.scrollTop = 0;
   }
   function selectPart(key) {
-    selected = null; refreshLabels(); refreshPads();
-    const [title, text] = PARTS[key];
-    panel.innerHTML = `<div class="detail"><span class="tag" style="background:var(--accent)">Board part</span><h2>${esc(title)}</h2><p>${esc(text)}</p></div>
-      <button type="button" id="backBtn" style="justify-self:start;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-weight:800;cursor:pointer">← All pins</button>`;
+    selected = null; paintPads(); viewer.refresh();
+    const part = E.PARTS[key];
+    if (key === 'blue_led_gpio2') viewer.blink(4000);
+    panel.innerHTML = `<div><span class="tag" style="background:var(--accent)">Board part</span><h2>${esc(part.title)}</h2><p>${esc(part.text)}</p>
+      ${part.words.length ? `<p class="small">Maker words: ${part.words.map((w) => chip(w)).join(' ')}</p>` : ''}</div>
+      <button type="button" class="back-btn" id="backBtn">← All pins</button>`;
     $('#backBtn').addEventListener('click', showWelcome);
-    if (key === 'blue_led_gpio2') blinkUntil = performance.now() + 4000;
   }
 
-  /* ---------- picking ---------- */
-  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
-  let down = null;
-  renderer.domElement.addEventListener('pointerdown', (e) => { down = [e.clientX, e.clientY]; });
-  renderer.domElement.addEventListener('pointerup', (e) => {
-    if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 6) return;
-    const r = renderer.domElement.getBoundingClientRect();
-    ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
-    ray.setFromCamera(ndc, camera);
-    const hit = ray.intersectObjects(pickables, false)[0];
-    if (!hit) return;
-    for (let o = hit.object; o; o = o.parent) {
-      const n = o.name || '';
-      const m = n.match(/^(?:pad|pin)_(.+)$/);
-      if (m) { const p = PINS.find((x) => x.node === m[1]); if (p) return selectPin(p); }
-      if (PARTS[n]) return selectPart(n);
-    }
-  });
-
-  /* ---------- loop ---------- */
-  let blinkUntil = 0;
-  function resize() { const w = host.clientWidth, h = host.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
-  new ResizeObserver(resize).observe(host); resize();
-  (function frame(now) {
-    controls.update();
-    if (blueLed) {
-      const blink = (selected && selected.gpio === 2) || now < blinkUntil;
-      const on = blink && Math.floor(now / 400) % 2 === 0;
-      blueLed.emissive = new THREE.Color(on ? 0x3aa0ff : 0x000000);
-      blueLed.emissiveIntensity = on ? 2 : 0;
-    }
-    renderer.render(scene, camera);
-    placeLabels();
-    requestAnimationFrame(frame);
-  })(performance.now());
+  setView(view);
 })();
 </script>
 </body>

@@ -3,6 +3,10 @@
 (function () {
   'use strict';
   const lessons = [
+    { n: 0, slug: '00-meet-esp32', skills: ['Named the main parts of an ESP32 DevKit', 'Found the GND, power and GPIO pins', 'Learned that Pin(25) means GPIO 25, printed D25'], title: 'Pin Detective: Meet Your ESP32', unit: 0, status: 'ready', minutes: 15,
+      idea: 'Explore the board before you build: what each part and pin is for, and the real words engineers use.',
+      hardware: 'Nothing yet: it all happens on the 3D board',
+      code: 'Pin(2, Pin.OUT), led.value(1)' },
     { n: 1, slug: '01-traffic-light', skills: ['Wired three LEDs to an ESP32 on a breadboard', 'Used 330 Ω resistors to protect each LED', 'Wrote a MicroPython loop that runs a traffic light'], title: 'My First Traffic Light', unit: 1, status: 'ready', minutes: 45,
       idea: 'Outputs: the ESP32 switches pins on and off to light three LEDs.',
       hardware: 'ESP32 DevKit, breadboard, 3 LEDs, 3 × 330 Ω resistors, jumper wires',
@@ -45,6 +49,7 @@
       code: 'handling requests, keeping the crossing safe' },
   ];
   const units = {
+    0: { name: 'Start here', blurb: 'Meet your board first. Become a pin detective and collect your first maker words.' },
     1: { name: 'Build the thing', blurb: 'Lights, buttons, sound and sensors: a traffic light that works on its own.' },
     2: { name: 'Connect it', blurb: 'Put your traffic light on Wi-Fi and talk to it from a phone. This is the “Internet” in Internet of Things.' },
   };
