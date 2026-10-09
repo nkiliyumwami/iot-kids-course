@@ -21,9 +21,11 @@ Progress is stored only in the learner's browser.
 
 ## How new lessons arrive
 
-The **Daily lesson** GitHub Actions workflow (`.github/workflows/daily-lesson.yml`) runs Claude every morning at about 6:54 am New York time. You can also start it by hand from the Actions tab (**Daily lesson → Run workflow**). It builds the next lesson in `ROADMAP.md`, tests it and opens a
-pull request. Nothing reaches learners until the pull request is reviewed and merged into `main`; GitHub Pages
-then republishes the site.
+The **Daily lesson** GitHub Actions workflow (`.github/workflows/daily-lesson.yml`) runs Claude every morning at about 6:54 am New York time. You can also start it by hand from the Actions tab (**Daily lesson → Run workflow**). It builds the next lesson in `ROADMAP.md`, tests it, opens a
+pull request and merges it straight away, so the lesson goes live the same morning. Review it afterwards.
+
+**To change a published lesson,** open an issue whose title starts with `Change:`, for example
+"Change: make the Lesson 2 Why? answers shorter". The workflow makes the change, tests it and publishes it.
 
 ## Asking for changes
 

@@ -74,12 +74,16 @@ https://nkiliyumwami.github.io/iot-kids-course/. Read this whole file and `ROADM
 5. Tick the item in `ROADMAP.md` and add a dated line to its log: what you built, what you checked, anything left to do.
 6. Commit on a new branch named `lesson/<slug>` and open a pull request into `main` titled
    "Lesson N: <title>". In the description: the new idea, the new part and code, the wiring, a short list of the
-   "Why?" questions, and what you tested. The course owner reviews and merges; merging publishes it.
-7. Never push directly to `main`. Never merge your own pull request. Do one lesson per run.
+   "Why?" questions, and what you tested.
+7. **Publish straight away:** if your checks passed, the daily workflow merges that pull request and asks GitHub Pages
+   to rebuild, so learners get the lesson the same morning. The owner reviews afterwards and asks for changes by
+   opening a `Change:` issue (handled by the same workflow) or with `@claude`. If something is still broken, leave the pull request open and explain why instead of merging.
+8. Never push directly to `main`; always go through a pull request. Do one lesson per run.
 
 ## Two ways Claude works here
 
-- **The daily lesson workflow** (`.github/workflows/daily-lesson.yml`, every morning on GitHub Actions) builds the next lesson and opens a pull request.
+- **The daily lesson workflow** (`.github/workflows/daily-lesson.yml`, every morning on GitHub Actions) builds the next lesson,
+  opens a pull request and merges it once its checks pass, which publishes it.
 - **The `@claude` GitHub Action** (`.github/workflows/claude.yml`) runs when the owner writes `@claude` in an issue,
   a pull request comment or a review. It fixes what was asked on that pull request's branch.
   The daily run must not redo work the Action is already handling: if an owner's comment mentions `@claude`, leave it to the Action.
