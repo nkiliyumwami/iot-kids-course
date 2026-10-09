@@ -63,6 +63,16 @@ https://nkiliyumwami.github.io/iot-kids-course/. Read this whole file and `ROADM
 - Each lesson page includes `<script src="../../course.js"></script>`, sets `LESSON_SLUG`, saves progress with
   `saveProgress({ step, steps })` and `saveProgress({ done: true })`, and links "← All lessons" to `../../index.html`.
 
+## Officer Ohm and other artwork
+
+- Officer Ohm, the course guide, lives in `assets/ohm/` as eight SVG poses: wave, point, thumbs, think, traffic,
+  celebrate, encourage, magnify. Every lesson includes `<script src="../../assets/ohm/ohm.js"></script>` after
+  `course.js`; it puts Ohm in the guide panel and changes his pose automatically (wave on step 1, point while
+  building, think on "Why?" answers and quizzes, thumbs-up / encourage on quiz answers, celebrate when finished).
+  Use `window.OHM.set('<pose>')` only if a step needs a specific pose. Do not redraw or restyle him.
+- Artwork (characters, badges, covers, certificates) is for motivation only. The circuit, wiring and code are
+  always drawn by code so they stay correct. Never replace them with generated images or videos.
+
 ## Each daily run
 
 1. Read `ROADMAP.md`. Pick the **first unchecked item**. If the course owner left review comments on an open pull
