@@ -79,7 +79,7 @@ https://nkiliyumwami.github.io/iot-kids-course/. Read this whole file and `ROADM
 
 ## Two ways Claude works here
 
-- **The daily Routine** (a scheduled Claude session, every morning) builds the next lesson and opens a pull request.
+- **The daily lesson workflow** (`.github/workflows/daily-lesson.yml`, every morning on GitHub Actions) builds the next lesson and opens a pull request.
 - **The `@claude` GitHub Action** (`.github/workflows/claude.yml`) runs when the owner writes `@claude` in an issue,
   a pull request comment or a review. It fixes what was asked on that pull request's branch.
   The daily run must not redo work the Action is already handling: if an owner's comment mentions `@claude`, leave it to the Action.

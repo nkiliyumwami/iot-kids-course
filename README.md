@@ -21,7 +21,7 @@ Progress is stored only in the learner's browser.
 
 ## How new lessons arrive
 
-A scheduled Claude agent runs every morning. It builds the next lesson in `ROADMAP.md`, tests it and opens a
+The **Daily lesson** GitHub Actions workflow (`.github/workflows/daily-lesson.yml`) runs Claude every morning at about 6:54 am New York time. You can also start it by hand from the Actions tab (**Daily lesson → Run workflow**). It builds the next lesson in `ROADMAP.md`, tests it and opens a
 pull request. Nothing reaches learners until the pull request is reviewed and merged into `main`; GitHub Pages
 then republishes the site.
 
