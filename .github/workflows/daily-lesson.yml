@@ -87,5 +87,10 @@ jobs:
                pull request with `gh pr merge <number> --merge --delete-branch`, then ask GitHub Pages to rebuild with
                `gh api -X POST repos/${{ github.repository }}/pages/builds || true`. If something is still broken that
                you could not fix, do not merge: leave the pull request open and explain the problem in it.
-               Never push to main directly; always go through the pull request.
+               If `gh pr create` is refused ("GitHub Actions is not permitted to create or approve pull requests"),
+               publish without a pull request instead: only if your checks passed, run
+               `git checkout main && git pull && git merge --no-ff lesson/<slug> -m "Lesson N: <title>" && git push origin main`,
+               then request the Pages rebuild as above. Mention in your summary (and on the issue, if there is one)
+               that you published this way and that ticking Settings → Actions → General → "Allow GitHub Actions to
+               create and approve pull requests" restores pull requests. Otherwise never push to main directly.
             ${{ github.event_name == 'issues' && format('7. This run was started by issue #{0}. When you finish, comment on that issue with the pull request link (or what blocked you) and close it with `gh issue close {0}`.', github.event.issue.number) || '' }}
