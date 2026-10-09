@@ -60,7 +60,7 @@ https://nkiliyumwami.github.io/iot-kids-course/. Read this whole file and `ROADM
 - Show connected breadboard holes with the same gold/blue/dark strip highlight as lesson 1.
 - Must work at phone width (400 px) with no sideways scrolling.
 - Scripts only from cdnjs / jsDelivr (three.js r128 + OrbitControls 0.128.0). No other external code.
-- Each lesson page includes `<script src="../../course.js"></script>`, sets `LESSON_SLUG`, saves progress with
+- Each lesson page includes `<script src="../../course.js"></script>`, then `../../assets/ohm/ohm.js` and `../../assets/rewards.js`, sets `LESSON_SLUG`, saves progress with
   `saveProgress({ step, steps })` and `saveProgress({ done: true })`, and links "← All lessons" to `../../index.html`.
 
 ## Officer Ohm and other artwork
@@ -70,6 +70,10 @@ https://nkiliyumwami.github.io/iot-kids-course/. Read this whole file and `ROADM
   `course.js`; it puts Ohm in the guide panel and changes his pose automatically (wave on step 1, point while
   building, think on "Why?" answers and quizzes, thumbs-up / encourage on quiz answers, celebrate when finished).
   Use `window.OHM.set('<pose>')` only if a step needs a specific pose. Do not redraw or restyle him.
+- Badges live in `assets/badges/NN.svg` (one per lesson, already drawn for lessons 1–10) and each lesson in
+  `course.js` has 3 `skills` for its certificate. Every lesson also includes `<script src="../../assets/rewards.js"></script>`
+  after `ohm.js`: when the quiz is finished it shows the badge and a "Get your certificate" button
+  (`certificate.html?lesson=<slug>`). If a lesson's skills change, update its `skills` in `course.js`.
 - Artwork (characters, badges, covers, certificates) is for motivation only. The circuit, wiring and code are
   always drawn by code so they stay correct. Never replace them with generated images or videos.
 

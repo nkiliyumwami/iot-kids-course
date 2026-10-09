@@ -100,6 +100,15 @@ section.unit { margin-bottom: 34px; }
 .bar { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-top: 6px; }
 .bar i { display: block; height: 100%; background: var(--accent); }
 
+.badge-img { position: absolute; top: 12px; right: 12px; width: 52px; height: 52px; }
+.badge-img.locked, .shelf img.locked { filter: grayscale(1); opacity: .35; }
+.lesson { padding-right: 70px; }
+.cert-link { position: relative; z-index: 1; display: inline-block; margin-top: 8px; font-weight: 800; font-size: 14px; color: var(--accent-strong); }
+.shelf { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px 18px; margin-bottom: 30px; }
+.shelf h2 { font-size: 22px; margin: 0; }
+.shelf .row { display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 320px; }
+.shelf .row img { width: 46px; height: 46px; }
+.shelf .count { font-weight: 800; color: var(--muted); font-size: 14px; }
 .cols { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; margin-bottom: 40px; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
 .panel h2 { font-size: 24px; margin-bottom: 10px; }
@@ -139,6 +148,12 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
     <div><b>Always “why?”</b><span>Tap a question to learn why it’s built that way.</span></div>
     <div><b>Your own pace</b><span>About 45 minutes each. One or two a week is plenty.</span></div>
   </div>
+
+  <section class="shelf" aria-label="Your badges">
+    <div><h2>Your badges</h2><span class="count" id="badgeCount"></span></div>
+    <div class="row" id="badgeRow"></div>
+    <a class="btn" id="courseCert" href="certificate.html?lesson=all">🎓 Course certificate</a>
+  </section>
 
   <main id="units"></main>
 
@@ -188,18 +203,29 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
       let badge = '<span class="badge soon">Coming soon</span>';
       if (ready) badge = done ? '<span class="badge done">Finished ✓</span>' : p.steps ? `<span class="badge going">In progress · ${pct}%</span>` : '<span class="badge open">Ready</span>';
       const li = document.createElement('li');
-      li.innerHTML = `<article class="lesson ${ready ? 'ready' : ''} ${done ? 'done' : ''}">
+      const badgeImg = `<img class="badge-img ${done ? '' : 'locked'}" src="${C.badgeSrc(l)}" alt="${done ? 'Lesson ' + l.n + ' badge earned' : ''}" width="52" height="52">`;
+      li.innerHTML = `<article class="lesson ${ready ? 'ready' : ''} ${done ? 'done' : ''}">${badgeImg}
         <div class="num">${done ? '✓' : l.n}</div>
         <div>${badge}
           <h3>${ready ? `<a href="lessons/${l.slug}/index.html">${esc(l.title)}</a>` : esc(l.title)}</h3>
           <p>${esc(l.idea)}</p>
           <div class="meta"><span><b>New part:</b> ${esc(l.hardware)}</span><span><b>New code:</b> <code>${esc(l.code)}</code></span><span>About ${l.minutes} minutes</span></div>
           ${ready && p.steps && !done ? `<div class="bar" aria-hidden="true"><i style="width:${pct}%"></i></div>` : ''}
+          ${done ? `<a class="cert-link" href="certificate.html?lesson=${l.slug}">🎓 Your certificate</a>` : ''}
         </div></article>`;
       ol.appendChild(li);
     });
     main.appendChild(sec);
   });
+  // badge shelf
+  const earnedList = C.lessons.filter((l) => (prog[l.slug] || {}).done);
+  document.getElementById('badgeRow').innerHTML = C.lessons.map((l) => {
+    const got = (prog[l.slug] || {}).done;
+    return `<img class="${got ? '' : 'locked'}" src="${C.badgeSrc(l)}" alt="Lesson ${l.n}: ${esc(l.title)}${got ? ' (earned)' : ' (not yet)'}" title="Lesson ${l.n}: ${esc(l.title)}">`;
+  }).join('');
+  document.getElementById('badgeCount').textContent = `${earnedList.length} of ${C.lessons.length} earned`;
+  const cc = document.getElementById('courseCert');
+  if (earnedList.length < C.lessons.length) { cc.textContent = '🔒 Course certificate'; cc.style.background = 'var(--muted)'; }
   // "Continue" points at the first ready lesson that isn't finished
   const next = C.lessons.find((l) => l.status === 'ready' && !(prog[l.slug] || {}).done);
   const btn = document.getElementById('startBtn'), note = document.getElementById('startNote');
