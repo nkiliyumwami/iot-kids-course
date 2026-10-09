@@ -1,0 +1,74 @@
+name: Daily lesson
+
+# Builds the next lesson in ROADMAP.md every morning and opens a pull request for review.
+# GitHub cron is in UTC: 10:54 UTC is 6:54 am in New York in summer (5:54 am in winter).
+# Scheduled runs can start a few minutes late. "Run workflow" on the Actions tab starts one by hand.
+on:
+  schedule:
+    - cron: '54 10 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+  actions: read
+
+concurrency:
+  group: daily-lesson
+  cancel-in-progress: false
+
+jobs:
+  lesson:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install the headless browser used by tools/check.sh
+        run: |
+          npm install -g playwright@1.56.1
+          playwright install --with-deps chromium
+
+      - name: Set the git author
+        run: |
+          git config user.name "claude[bot]"
+          git config user.email "claude[bot]@users.noreply.github.com"
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          claude_args: >-
+            --max-turns 150
+            --allowedTools "Bash,Read,Write,Edit,MultiEdit,Glob,Grep,WebFetch"
+          prompt: |
+            You are the daily lesson agent for "IoT for Young Makers", a free interactive 3D course in this repository
+            (${{ github.repository }}) that teaches complete beginners aged 10–15 to build IoT projects with an
+            ESP32 DevKit V1 and MicroPython. It is published with GitHub Pages from the main branch.
+
+            Read AGENT.md and ROADMAP.md in full, then follow AGENT.md exactly. Use the `gh` CLI (already logged in)
+            for everything on GitHub.
+
+            1. Check open pull requests (`gh pr list`). If the owner (@${{ github.repository_owner }}) left review comments
+               on an open lesson pull request that don't mention @claude, address them on that pull request's branch,
+               push, reply briefly, and stop for today. Comments that mention @claude are handled by another workflow.
+            2. Otherwise build the first unchecked lesson in ROADMAP.md, keeping the one-new-idea rule, the
+               "Why is it built this way?" teaching style, the ESP32 model and the lesson-1 look.
+               If a lesson pull request from an earlier run is still open, branch from that lesson's branch so the
+               course stays in order, and say so in the new pull request.
+            3. Test it with tools/check.sh and look at every screenshot; fix anything broken before committing.
+            4. Mark the lesson ready in course.js, tick it in ROADMAP.md and add a dated log line.
+            5. Commit on a new branch lesson/<slug>, push it, and open a pull request into main titled
+               "Lesson N: <title>" with `gh pr create`. Describe the new idea, the new part and code, the wiring,
+               the "Why?" questions and what you tested.
+            6. Never push to main and never merge.
