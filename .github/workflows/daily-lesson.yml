@@ -2,11 +2,14 @@ name: Daily lesson
 
 # Builds the next lesson in ROADMAP.md every morning and opens a pull request for review.
 # GitHub cron is in UTC: 10:54 UTC is 6:54 am in New York in summer (5:54 am in winter).
-# Scheduled runs can start a few minutes late. "Run workflow" on the Actions tab starts one by hand.
+# Scheduled runs can start a few minutes late. To start one by hand, either click "Run workflow" on the
+# Actions tab, or open an issue whose title starts with "Build the next lesson" (Claude can do that for you).
 on:
   schedule:
     - cron: '54 10 * * *'
   workflow_dispatch:
+  issues:
+    types: [opened]
 
 permissions:
   contents: write
@@ -21,6 +24,12 @@ concurrency:
 
 jobs:
   lesson:
+    # From an issue: only "Build the next lesson…" issues opened by the owner, a collaborator or a GitHub App.
+    if: >-
+      github.event_name != 'issues' ||
+      (startsWith(github.event.issue.title, 'Build the next lesson') &&
+       (contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association) ||
+        github.event.issue.user.type == 'Bot'))
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -72,3 +81,4 @@ jobs:
                "Lesson N: <title>" with `gh pr create`. Describe the new idea, the new part and code, the wiring,
                the "Why?" questions and what you tested.
             6. Never push to main and never merge.
+            ${{ github.event_name == 'issues' && format('7. This run was started by issue #{0}. When you finish, comment on that issue with the pull request link (or what blocked you) and close it with `gh issue close {0}`.', github.event.issue.number) || '' }}
