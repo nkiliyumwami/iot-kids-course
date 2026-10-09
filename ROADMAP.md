@@ -2,6 +2,11 @@
 
 One new idea per lesson. Each daily run takes the first unchecked item. See `AGENT.md` for the rules.
 
+## Start here
+
+- [x] **0. Pin Detective: Meet Your ESP32** (`00-meet-esp32`): no hardware yet. Missions on the 3D board teach its
+  parts, the pin groups (power, ground, GPIO, special) and the Pin(25) = D25 trick, with tappable "maker words".
+
 ## Part 1: Build the thing
 
 - [x] **1. My First Traffic Light** (`01-traffic-light`): outputs. ESP32 switches D25/D26/D27 to light three LEDs
@@ -38,3 +43,4 @@ an extra interactive demo, or fixes from the course owner's comments. Add any ne
 
 - 2026-10-09: Course set up. Lesson 1 moved from the original prototype, with a course home page, progress saving and this roadmap.
 - 2026-10-09: Built lesson 2 (`02-patterns`). No new hardware: named variables (`RED_S`…), a `set_lights(r, y, g)` function and `print()` with a simulated Thonny Shell. Pattern presets (classic, warning flasher, light chase) with sliders are the "make it yours" challenge. Checked with `tools/check.sh` (desktop and 400 px, no script errors, no sideways scroll), clicked through presets and the quiz. Left to do: nothing known; the Shell is a simulation, not real Thonny output.
+- 2026-10-09: Added lesson 0 (`00-meet-esp32`, Pin Detective) as the first lesson: 12 hands-on missions on the 3D board, maker words with a word book, a pin hunt and a quiz with its own badge. Rebuilt the Pin Explorer with a simple Explorer view (4 groups, plain words first, code tucked away) and a Pro view (7 groups, code open). Pin facts and words now live in `assets/esp32/board.js`.
