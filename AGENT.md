@@ -48,6 +48,13 @@ https://nkiliyumwami.github.io/iot-kids-course/. Read this whole file and `ROADM
 - New parts go on free rows (e.g. rows 26–30 or the top half) and must not cross existing wires.
   Choose ESP32 pins that are safe for the job (inputs can use D32, D33, D14; analog input must be an ADC1 pin
   such as D32–D35 or VP/VN because ADC2 stops working when Wi-Fi is on). Explain the choice in a "Why?" card.
+- **Pins and the Pin Explorer.** `pins.html` is a 3D explorer of every ESP32 pin (colour-coded type, kid-friendly
+  explanation, MicroPython examples). Whenever a lesson uses a pin for the first time (a new LED, button, buzzer or
+  sensor pin), add a "Why this pin?" answer that says what kind of pin it is and ends with a link
+  `<a class="pin-link" href="../../pins.html?pin=D<number>" target="_blank" rel="noopener">🔍 …</a>`. Keep repeating
+  that `Pin(n)` means GPIO n (printed Dn on the board), not the n-th pin along the header. Never pick input-only pins
+  (D34, D35, VP, VN) for outputs, and avoid start-up pins (D2, D5, D12, D15) and TX0/RX0 for new parts. If you add or
+  change facts about a pin, update the `PINS` list in `pins.html` too. The board model is `assets/models/esp32-devkit-v1.glb`.
 - Only use code that really works on MicroPython for ESP32. Keep programs short and readable.
 
 ## Visual and interaction rules
