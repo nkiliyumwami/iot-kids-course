@@ -2198,7 +2198,14 @@ requestAnimationFrame(frame);
 
 // expose a tiny hook for automated checks
 window.__lesson = { camera, controls, goTo, get step() { return stepIndex; }, seq, setVar, loadPreset, selectPart };
+  // the program for "Try it on my real board": exactly the code shown in this lesson (with the chosen pattern)
+  window.__lessonProgram = () => buildCode().map((l) => l[0]).join('\n') + '\n';
 })();
 </script>
+<script src="../../assets/board-link.js"></script>
+<script src="../../assets/prepare-board.js"></script>
+<script src="../../assets/run-panel.js"></script>
+<script src="../../assets/board-drawer.js"></script>
+<script>KKBoard.attach({ id: '02-patterns', base: '../../', buttonHost: 'header.top .progress', program: () => window.__lessonProgram(), wiring: 'The same traffic-light circuit as Lesson 1 (D25 red, D26 yellow, D27 green, each through a 330 Ω resistor, short legs to GND).' });</script>
 </body>
 </html>

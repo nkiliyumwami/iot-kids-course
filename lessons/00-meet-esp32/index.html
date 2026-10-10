@@ -508,7 +508,14 @@ led = Pin(2, Pin.OUT)   # pin 2 sends electricity out</pre>
     go(0);
   });
   window.__lesson = { goTo: (i) => go(i), get step() { return step; }, viewer, STEPS, done: (i) => { st.done.add(i); updateNav(); } };
+  // the program for "Try it on my real board": blink the blue LED on GPIO 2 (no wiring needed)
+  window.__lessonProgram = () => 'from machine import Pin\nimport time\n\nled = Pin(2, Pin.OUT)   # the blue LED on the board is on GPIO 2\n\nwhile True:\n    led.value(1)   # on\n    print("on")\n    time.sleep(0.5)\n    led.value(0)   # off\n    print("off")\n    time.sleep(0.5)\n';
 })();
 </script>
+<script src="../../assets/board-link.js"></script>
+<script src="../../assets/prepare-board.js"></script>
+<script src="../../assets/run-panel.js"></script>
+<script src="../../assets/board-drawer.js"></script>
+<script>KKBoard.attach({ id: '00-meet-esp32', base: '../../', program: () => window.__lessonProgram(), wiring: null });</script>
 </body>
 </html>

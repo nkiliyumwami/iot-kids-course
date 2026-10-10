@@ -2389,7 +2389,14 @@ requestAnimationFrame(frame);
 
 // expose a tiny hook for automated checks
 window.__lesson = { camera, controls, goTo, get step() { return stepIndex; }, seq, setGreen, selectPart };
+  // the program for "Try it on my real board": exactly the code shown in this lesson (with the green time chosen)
+  window.__lessonProgram = () => CODE.map((l) => l[0]).join('\n').replace('GREEN_S', String(greenDur)) + '\n';
 })();
 </script>
+<script src="../../assets/board-link.js"></script>
+<script src="../../assets/prepare-board.js"></script>
+<script src="../../assets/run-panel.js"></script>
+<script src="../../assets/board-drawer.js"></script>
+<script>KKBoard.attach({ id: '01-traffic-light', base: '../../', buttonHost: 'header.top .progress', program: () => window.__lessonProgram(), wiring: 'Build the traffic light from this lesson: D25 → 330 Ω → red LED, D26 → 330 Ω → yellow LED, D27 → 330 Ω → green LED, and each short leg to GND.' });</script>
 </body>
 </html>
