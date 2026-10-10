@@ -19,7 +19,7 @@
       idea: 'Inputs: the ESP32 listens to a button.',
       hardware: 'Push button',
       code: 'Pin.IN with a pull-up, if / else' },
-    { n: 4, slug: '04-fair-crossing', skills: ['Remembered a button press in a variable', 'Learned why buttons bounce', 'Made a crossing that waits for a safe moment'], title: 'A Fair Crossing', unit: 1, status: 'planned', minutes: 40,
+    { n: 4, slug: '04-fair-crossing', skills: ['Remembered a button press in a variable', 'Learned why buttons bounce', 'Made a crossing that waits for a safe moment'], title: 'A Fair Crossing', unit: 1, status: 'ready', minutes: 40,
       idea: 'Remember a button press and wait for a safe moment.',
       hardware: 'Nothing new',
       code: 'a "button was pressed" variable, why buttons bounce' },
