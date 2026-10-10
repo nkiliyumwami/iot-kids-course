@@ -75,7 +75,7 @@ h1 { font-family: var(--font-display); font-size: 54px; line-height: 1; margin: 
 <body>
 <div class="wrap">
   <div class="controls" id="controls">
-    <a class="back" href="index.html">← All lessons</a>
+    <a class="back" href="lessons.html">← All lessons</a>
     <label class="field" for="nameInput">Your name for the certificate
       <input id="nameInput" type="text" maxlength="40" autocomplete="name" placeholder="Type your name">
     </label>
@@ -149,7 +149,7 @@ h1 { font-family: var(--font-display); font-size: 54px; line-height: 1; margin: 
     } else {
       const left = allLessons.filter((l) => !earned(l)).length;
       box.innerHTML = `<img src="assets/ohm/celebrate.svg" alt="" style="filter:none;opacity:1"><h2>The course certificate unlocks after all ${allLessons.length} lessons</h2>
-        <p>You have ${left} lesson${left === 1 ? '' : 's'} to go. Keep going!</p><a class="btn" href="index.html">Back to the lessons</a>`;
+        <p>You have ${left} lesson${left === 1 ? '' : 's'} to go. Keep going!</p><a class="btn" href="lessons.html">Back to the lessons</a>`;
     }
     return;
   }

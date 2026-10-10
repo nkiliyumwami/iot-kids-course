@@ -95,7 +95,7 @@ https://nkiliyumwami.github.io/iot-kids-course/. Read this whole file and `ROADM
 - Brand: the course is **IoT for Young Makers by KundaKode**. Every page includes `assets/brand.js` right after its
   `<title>` (lessons: `<script src="../../assets/brand.js"></script>`), which adds the KundaKode logo, favicon and title.
 - Each lesson page includes `<script src="../../course.js"></script>`, then `../../assets/ohm/ohm.js` and `../../assets/rewards.js`, sets `LESSON_SLUG`, saves progress with
-  `saveProgress({ step, steps })` and `saveProgress({ done: true })`, and links "← All lessons" to `../../index.html`.
+  `saveProgress({ step, steps })` and `saveProgress({ done: true })`, and links "← All lessons" to `../../lessons.html` (the course hub; `index.html` is the landing page).
 
 ## Officer Ohm and other artwork
 

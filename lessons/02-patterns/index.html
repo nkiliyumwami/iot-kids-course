@@ -511,7 +511,7 @@ pre.snippet { margin: 0; padding: 8px 12px; border-radius: 10px; background: var
         <circle cx="17" cy="41" r="6" fill="#22D36B"/>
       </svg>
       <div>
-        <a class="home-link" href="../../index.html">← All lessons</a>
+        <a class="home-link" href="../../lessons.html">← All lessons</a>
         <h1>Make It Yours: Light Patterns</h1>
         <p>Lesson 2 · Same circuit, smarter code</p>
       </div>
@@ -1915,7 +1915,7 @@ function finishCard() {
   const next = window.COURSE ? window.COURSE.nextLesson(LESSON_SLUG) : null;
   const link = next && next.status === 'ready'
     ? `<p style="margin:8px 0 0"><a class="btn primary" href="../${next.slug}/index.html">Next lesson: ${next.title} →</a></p>`
-    : `<p style="margin:8px 0 0"><a class="btn" href="../../index.html">Back to all lessons</a></p>`;
+    : `<p style="margin:8px 0 0"><a class="btn" href="../../lessons.html">Back to all lessons</a></p>`;
   return el(`<div class="feedback good" id="quizDone"><b>You finished the lesson!</b><p style="margin:4px 0 0">You can name your numbers, reuse lines with a function, and use print() to see what your program is doing. Great work, engineer!</p>${link}</div>`);
 }
 
