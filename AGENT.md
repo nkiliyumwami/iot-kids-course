@@ -83,6 +83,8 @@ https://nkiliyumwami.github.io/iot-kids-course/. Read this whole file and `ROADM
 - Highlight both ends of a connection before drawing a wire, move the camera close, and pause after each connection until Next.
 - Show connected breadboard holes with the same gold/blue/dark strip highlight as lesson 1.
 - Must work at phone width (400 px) with no sideways scrolling.
+- The home page story (`assets/story/story-scene.js`) plays lessons 0–4 in one 3D scene. Its workbench is a copy of lesson 4's
+  scene code. When a new lesson adds a part learners should see in the story, add a chapter there too (and a caption in `index.html`).
 - Scripts only from cdnjs / jsDelivr (three.js r128 + OrbitControls 0.128.0). No other external code.
 - **Try it on my real board.** Every lesson with a MicroPython program gets the "🔌 Try it on my real board" panel:
   load `../../assets/board-link.js`, `prepare-board.js`, `run-panel.js` and `board-drawer.js` before `</body>`,

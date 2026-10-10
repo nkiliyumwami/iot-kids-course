@@ -64,6 +64,34 @@ header.hero { padding-block: 40px 28px; display: grid; grid-template-columns: au
 .btn.primary:hover { background: var(--accent-strong); }
 .cta-note { font-size: 14px; color: var(--muted); }
 
+/* The story: the whole course in one 3D scene (assets/story/story-scene.js). The 3D loads only when it scrolls into view. */
+.story { margin: 0 0 36px; }
+.story-stage { position: relative; aspect-ratio: 16 / 9; border-radius: 22px; overflow: hidden; background: #f3f7fa; border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(21,32,42,.10); }
+.story-stage canvas, .story-poster { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; }
+.story-poster { transition: opacity .6s; }
+.story-stage.live .story-poster { opacity: 0; pointer-events: none; }
+.story-cap { position: absolute; left: 16px; bottom: 16px; max-width: min(460px, calc(100% - 32px)); background: rgba(255,255,255,.94); border: 1px solid var(--line); border-radius: 16px; padding: 10px 14px 12px; box-shadow: 0 6px 18px rgba(21,32,42,.12); }
+.story-cap .chip { display: inline-block; background: var(--accent); color: #fff; border-radius: 999px; padding: 1px 10px; font-size: 12px; font-weight: 800; letter-spacing: .04em; }
+.story-cap b { display: block; font-family: var(--font-display); font-size: 22px; line-height: 1.15; margin-top: 4px; }
+.story-cap span.sub { display: block; color: var(--muted); font-size: 14px; margin-top: 2px; }
+.story-cap .bar { height: 4px; border-radius: 99px; background: var(--line); margin-top: 8px; overflow: hidden; }
+.story-cap .bar i { display: block; height: 100%; width: 0; background: var(--accent); }
+.story-pause { position: absolute; top: 12px; right: 12px; border: 1px solid var(--line); background: rgba(255,255,255,.94); border-radius: 999px; padding: 6px 14px; font: inherit; font-weight: 800; font-size: 14px; cursor: pointer; color: var(--ink); }
+.story-end { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; gap: 10px; padding: 16px; background: rgba(243,247,250,.72); backdrop-filter: blur(2px); }
+.story-end h3 { font-size: clamp(28px, 5vw, 44px); }
+.story-end p { margin: 0; color: var(--muted); font-size: 17px; }
+.story-end .btn { justify-self: center; }
+.story-stage.ended .story-cap { display: none; }
+.story-steps { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.story-steps button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; font: inherit; font-weight: 800; font-size: 14px; cursor: pointer; color: var(--ink); }
+.story-steps button[aria-current="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+@media (max-width: 700px) {
+  .story-stage { aspect-ratio: 1 / 1; border-radius: 16px; }
+  .story-cap { left: 8px; right: 8px; bottom: 8px; max-width: none; padding: 6px 10px 8px; }
+  .story-cap b { font-size: 17px; display: inline; margin-left: 6px; }
+  .story-cap span.sub { display: none; }
+  .story-cap .bar { margin-top: 6px; }
+}
 .how { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 36px; }
 .how div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
 .how b { display: block; font-family: var(--font-display); font-size: 18px; margin-bottom: 2px; }
@@ -154,6 +182,20 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
     </div>
     <div class="hero-ohm-bubble"><span>Hi, I’m Officer Ohm!</span><img class="hero-ohm" src="assets/ohm/wave.svg" alt="Officer Ohm, your guide, waving hello" width="170" height="198"></div>
   </header>
+
+  <section class="story" aria-label="Watch what you will build">
+    <div class="story-stage" id="storyStage">
+      <img class="story-poster" src="assets/story/poster.jpg" alt="What you will build: an ESP32 traffic light on a breadboard, next to a model road where cars stop at red and people cross the zebra" width="1280" height="720">
+      <div class="story-cap" aria-live="polite"><span class="chip" id="storyChip">Lessons 0–4</span><b id="storyTitle">Watch what you will build</b><span class="sub" id="storySub">A tiny computer, a traffic light, a button and a fair crossing.</span><div class="bar" aria-hidden="true"><i id="storyBar"></i></div></div>
+      <button class="story-pause" id="storyPause" type="button" hidden>❚❚ Pause</button>
+      <div class="story-end" id="storyEnd" hidden>
+        <h3>Your turn!</h3>
+        <p>Build it, wire it and code it, one lesson at a time.</p>
+        <a class="btn primary" id="storyGo" href="lessons/00-meet-esp32/index.html">Start with lesson 0 →</a>
+      </div>
+    </div>
+    <ol class="story-steps" id="storySteps" aria-label="Jump to a lesson in the story"></ol>
+  </section>
 
   <div class="how">
     <div><b>One new idea</b><span>Each lesson adds just one new part or one new piece of code.</span></div>
@@ -262,6 +304,64 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
     btn.textContent = 'Review lesson 1 →';
     note.textContent = 'You’ve finished every lesson so far. New ones are on the way!';
   }
+})();
+</script>
+<script>
+/* The story: load the 3D only when it is about to scroll into view, pause it when it is off screen. */
+(function () {
+  const stage = document.getElementById('storyStage');
+  if (!stage) return;
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const CAPS = {
+    l0: ['Lesson 0', 'Meet the ESP32', 'A tiny computer you program. Its first job: blink a blue light.'],
+    l1: ['Lesson 1', 'Build a traffic light', 'Three LEDs, three resistors and a few wires. Your code runs red, green and yellow, and the cars obey.'],
+    l2: ['Lesson 2', 'Make your own patterns', 'Change the code, change the lights.'],
+    l3: ['Lesson 3', 'Teach it to listen', 'Add a button. Press it and the cars get red, so the walker can cross.'],
+    l4: ['Lesson 4', 'A fair crossing', 'A tap is remembered: WAIT lights up, the green finishes, then people cross safely.'],
+    end: ['Your turn', 'Build it yourself', 'Every wire, hole and line of code comes with a “why”.'],
+  };
+  const steps = document.getElementById('storySteps'), endCard = document.getElementById('storyEnd'), pauseBtn = document.getElementById('storyPause');
+  const ids = ['l0', 'l1', 'l2', 'l3', 'l4'];
+  steps.innerHTML = ids.map((id, k) => `<li><button type="button" data-k="${k}">${CAPS[id][0].replace('Lesson ', '')} · ${CAPS[id][1]}</button></li>`).join('');
+  // the "start" button in the story follows the main one (start or continue)
+  const main = document.getElementById('startBtn'), go = document.getElementById('storyGo');
+  if (main && go) { go.href = main.href; go.textContent = main.textContent; }
+  let story = null, visible = false, loading = false;
+  function setChapter(id, k) {
+    const c = CAPS[id];
+    document.getElementById('storyChip').textContent = c[0];
+    document.getElementById('storyTitle').textContent = c[1];
+    document.getElementById('storySub').textContent = c[2];
+    endCard.hidden = id !== 'end';
+    stage.classList.toggle('ended', id === 'end');
+    steps.querySelectorAll('button').forEach((b) => b.setAttribute('aria-current', String(+b.dataset.k === k)));
+  }
+  const bar = document.getElementById('storyBar');
+  function load(src) { return new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = src; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); }
+  async function boot() {
+    if (loading) return; loading = true;
+    try {
+      if (!window.THREE) await load('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js');
+      await load('assets/road/model-road.js'); await load('assets/road/pedestrians.js'); await load('assets/story/story-scene.js');
+      const holder = document.createElement('div'); holder.style.cssText = 'position:absolute;inset:0';
+      stage.insertBefore(holder, stage.querySelector('.story-cap'));
+      story = window.KKStory.mount({ host: holder, base: '', reduceMotion: reduce, onChapter: setChapter, onTime: (k, f) => { bar.style.width = (f * 100).toFixed(1) + '%'; } });
+      if (!story) { holder.remove(); return; } // no 3D on this device: the picture stays
+      stage.classList.add('live');
+      pauseBtn.hidden = reduce;
+      if (visible) story.start(); else story.render();
+    } catch (e) { /* offline or blocked: keep the picture */ }
+  }
+  steps.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; if (!story) { boot(); return; } story.jump(+b.dataset.k); });
+  pauseBtn.addEventListener('click', () => { if (!story) return; story.pause(!story.paused); pauseBtn.textContent = story.paused ? '▶ Play' : '❚❚ Pause'; });
+  if (reduce) steps.querySelector('button').setAttribute('aria-current', 'false');
+  const io = new IntersectionObserver((es) => {
+    visible = es[0].isIntersecting;
+    if (visible && !story) boot();
+    if (story) { if (visible && !document.hidden) story.start(); else story.stop(); }
+  }, { rootMargin: '200px 0px' });
+  io.observe(stage);
+  document.addEventListener('visibilitychange', () => { if (story) { if (!document.hidden && visible) story.start(); else story.stop(); } });
 })();
 </script>
 </body>
