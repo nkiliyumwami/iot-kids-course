@@ -38,7 +38,8 @@ https://nkiliyumwami.github.io/iot-kids-course/. Read this whole file and `ROADM
 - Board: **ESP32 DevKit V1, 30 pins**, pins pointing up, female-to-male jumper wires. Its 3D model in lesson 1
   (`makeESP32`) matches the real board: dark grey PCB, white mounting holes, ESP-WROOM-32 module with antenna,
   EN…VIN row facing the breadboard, D23…3V3 row at the back, red power LED, blue GPIO2 LED, AMS1117, CP2102,
-  EN and BOOT buttons either side of the micro-USB socket. Reuse it; do not redesign it.
+  EN and BOOT buttons either side of the micro-USB socket. Reuse it; do not redesign it. In text, say "USB port" (learners
+  may have a micro-USB or a USB-C board).
 - Language: **MicroPython** (`main.py`), using `machine.Pin` and `time`. Pins are 3.3 V.
 - Lesson 1 wiring (keep it in every later lesson):
   - D25 → 330 Ω → red LED anode (row 7, cathode row 8)
@@ -78,6 +79,8 @@ https://nkiliyumwami.github.io/iot-kids-course/. Read this whole file and `ROADM
 - Show connected breadboard holes with the same gold/blue/dark strip highlight as lesson 1.
 - Must work at phone width (400 px) with no sideways scrolling.
 - Scripts only from cdnjs / jsDelivr (three.js r128 + OrbitControls 0.128.0). No other external code.
+- Brand: the course is **IoT for Young Makers by KundaKode**. Every page includes `assets/brand.js` right after its
+  `<title>` (lessons: `<script src="../../assets/brand.js"></script>`), which adds the KundaKode logo, favicon and title.
 - Each lesson page includes `<script src="../../course.js"></script>`, then `../../assets/ohm/ohm.js` and `../../assets/rewards.js`, sets `LESSON_SLUG`, saves progress with
   `saveProgress({ step, steps })` and `saveProgress({ done: true })`, and links "← All lessons" to `../../index.html`.
 

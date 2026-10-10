@@ -145,7 +145,7 @@
   const PARTS = {
     esp_wroom_32_module: { title: 'The brain: ESP-WROOM-32 module', text: 'Under the metal lid live the ESP32 chip, its memory and its radio. Your program runs in here.', words: ['module', 'microcontroller'] },
     pcb_antenna: { title: 'The Wi-Fi antenna', text: 'The zig-zag copper line sends and catches Wi-Fi and Bluetooth signals. Keep wires away from it.', words: ['antenna', 'iot'] },
-    micro_usb: { title: 'The micro-USB port', text: 'Power and your code come in here. Use a data cable, not a charge-only one.', words: ['usb'] },
+    micro_usb: { title: 'The USB port', text: 'Power and your code come in here. Boards have a micro-USB or a USB-C socket. Use a data cable, not a charge-only one.', words: ['usb'] },
     button_en: { title: 'EN button (restart)', text: 'Press it to restart your program from the top. Same as connecting the EN pin to GND.', words: ['reset'] },
     button_boot: { title: 'BOOT button', text: 'Hold it while installing new firmware if your computer can’t connect. Most tools press it for you.', words: ['micropython'] },
     power_led: { title: 'Red power LED', text: 'Lights up whenever the board has power. A quick check that the cable works!', words: ['led'] },
