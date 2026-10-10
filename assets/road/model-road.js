@@ -258,6 +258,7 @@
       const tail = std(0x7a1212, { emissive: 0xff2020, emissiveIntensity: 0.25, roughness: 0.2 });
       const plate = std(0xf4f5f0, { roughness: 0.5 });
       const shade = new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false });
+      shade.userData.alwaysTransparent = true;
       g.add(mesh(G.body, paint));
       g.add(mesh(G.glass, glass));
       g.add(mesh(G.roof, paint));
@@ -287,7 +288,7 @@
       }
       const sh = new THREE.Mesh(G.shadow, shade); sh.position.y = 0.004; sh.renderOrder = 1; g.add(sh);
       const mats = [paint, glass, trim, chrome, rubber, head, tail, plate, shade];
-      g.userData = { wheels, tail, mats };
+      g.userData = { wheels, tail, mats, shadow: sh };
       return g;
     }
 
@@ -308,7 +309,7 @@
       c.g.visible = a > 0.01;
       if (a !== c.a) {
         c.a = a;
-        c.g.userData.mats.forEach((m) => { m.transparent = a < 1 || m === c.g.userData.mats[8]; m.opacity = a; });
+        c.g.userData.mats.forEach((m) => { m.transparent = a < 1 || !!m.userData.alwaysTransparent; m.opacity = a; });
       }
     }
     function update(dt) {
@@ -361,6 +362,62 @@
       }
     }
     cars.forEach(placeCar);
+
+    /* ---------- optional car models (.glb) ----------
+       Set CAR_MODELS (below) to use model files from assets/models/cars/ instead of the code-drawn car bodies.
+       If it is null, or anything fails to load, the code-drawn cars stay. Example:
+         { credit: 'Car Kit by Kenney (kenney.nl), CC0', forward: '+z', wheelAxis: 'x',
+           models: [ { file: 'sedan.glb' }, { file: 'suv.glb', length: 1.75 } ] }
+       forward: the direction the model's nose points in its file (+z, -z, +x or -x); length: how long the car should be
+       on our road (default 1.6); wheels are the nodes whose name contains "wheel" and spin around wheelAxis. */
+    const CAR_MODELS = null;
+    const base = o.base == null ? '../../' : o.base;
+    function loadScript(src) {
+      return new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = src; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+    }
+    async function useModels() {
+      const man = o.carModels !== undefined ? o.carModels : CAR_MODELS;
+      if (!man || !man.models || !man.models.length) return;
+      if (!THREE.GLTFLoader) await loadScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js');
+      const loader = new THREE.GLTFLoader();
+      const files = {};
+      const get = (f) => files[f] || (files[f] = new Promise((ok, no) => loader.load(base + 'assets/models/cars/' + f, (g) => ok(g.scene), undefined, no)));
+      const turn = { '+x': 0, '-x': Math.PI, '+z': Math.PI / 2, '-z': -Math.PI / 2 }[man.forward || '+z'];
+      const axis = (man.wheelAxis || 'x').toLowerCase();
+      await Promise.all(cars.map(async (c, k) => {
+        const spec = man.models[k % man.models.length];
+        const src = await get(spec.file);
+        const model = src.clone(true);
+        const holder = new THREE.Group();
+        holder.add(model);
+        model.rotation.y = turn; // nose along +x, like the code-drawn cars
+        holder.updateMatrixWorld(true);
+        const box = new THREE.Box3().setFromObject(model), size = new THREE.Vector3(), mid = new THREE.Vector3();
+        box.getSize(size); box.getCenter(mid);
+        const L = spec.length || man.length || 1.6, k2 = L / size.x;
+        holder.scale.setScalar(k2);
+        model.position.set(-mid.x, -box.min.y, -mid.z);
+        const mats = [], wheels = [];
+        model.traverse((n) => {
+          if (n.isMesh) {
+            n.castShadow = true; n.receiveShadow = true;
+            n.material = Array.isArray(n.material) ? n.material.map((m) => m.clone()) : n.material.clone();
+            (Array.isArray(n.material) ? n.material : [n.material]).forEach((m) => { if (envMap && !m.envMap) { m.envMap = envMap; m.envMapIntensity = 0.7; } mats.push(m); });
+          }
+          if (/wheel/i.test(n.name) && !wheels.some((w) => { let p = n.parent; while (p) { if (p === w) return true; p = p.parent; } return false; })) wheels.push(n);
+        });
+        const g = c.g, shadow = g.userData.shadow;
+        g.clear();
+        g.add(holder);
+        if (shadow) { const pp = shadow.geometry.parameters; shadow.scale.set((L + 0.35) / pp.width, 1, (size.z * k2 + 0.35) / pp.height); g.add(shadow); mats.push(shadow.material); }
+        c.L = L; c.wr = Math.max(0.08, (spec.wheelRadius || size.y * 0.22) * (spec.wheelRadius ? 1 : k2));
+        const spin = wheels.map((w) => ({ w, axis }));
+        g.userData = { wheels: spin.map((x) => ({ rotation: { set z(v) { x.w.rotation[x.axis] = -v; }, get z() { return -x.w.rotation[x.axis]; } } })), tail: { emissiveIntensity: 0 }, mats, shadow };
+        c.a = -1; placeCar(c);
+      }));
+      road.userData.carCredit = man.credit || '';
+    }
+    useModels().catch(() => { /* keep the code-drawn cars */ });
     if (o.tagPart) o.tagPart(road, 'road');
     return { group: road, cars, update, setLamps, placeCar, placeAll: () => cars.forEach(placeCar), ROAD_Z, ROAD_W, LANE, STOP_S };
   }
