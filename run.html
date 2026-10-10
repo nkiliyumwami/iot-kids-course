@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Run on my ESP32 · KundaKode</title>
+<script src="assets/brand.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Layout: the three steps on the left, the Run panel (code + board messages) on the right. */
+:root { --bg: #E3EBF0; --surface: #FFFFFF; --ink: #15202A; --muted: #526170; --line: #D2DCE3; --accent: #0A7480; --accent-strong: #075A63; --accent-soft: #DAEEF0; --hl: #F2B705;
+  --font-display: 'Baloo 2', 'Trebuchet MS', system-ui, sans-serif; --font-body: 'Nunito', 'Segoe UI', system-ui, sans-serif; color-scheme: light; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 14px 16px 40px; }
+.top { display: flex; flex-wrap: wrap; align-items: end; gap: 6px 16px; margin-bottom: 14px; }
+.top a.back { font-weight: 800; color: var(--accent-strong); text-decoration: none; font-size: 13px; }
+h1 { font-family: var(--font-display); font-size: 32px; line-height: 1.05; margin: 2px 0 0; }
+.beta { display: inline-block; background: var(--hl); color: var(--ink); font-size: 12px; font-weight: 800; border-radius: 999px; padding: 2px 10px; vertical-align: middle; margin-left: 6px; letter-spacing: .04em; }
+.top p { margin: 0; color: var(--muted); }
+.grid { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; }
+.steps { display: grid; gap: 12px; }
+.step { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 10px; }
+.step .n { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; font-family: var(--font-display); font-weight: 800; font-size: 18px; }
+.step > div > b { display: block; }
+.step p { margin: 2px 0 0; font-size: 14px; color: var(--muted); }
+.guide { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; align-items: center; background: var(--accent-soft); border-radius: 14px; padding: 10px; margin-top: 14px; font-size: 14px; }
+.guide img { width: 64px; }
+.note { font-size: 13px; color: var(--muted); margin-top: 12px; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <a class="back" href="index.html">← All lessons</a>
+      <h1>Run on my ESP32 <span class="beta">BETA</span></h1>
+      <p>Send your MicroPython code to your real board and watch it work.</p>
+    </div>
+  </header>
+  <div class="grid">
+    <aside class="card">
+      <div class="steps">
+        <div class="step"><span class="n">1</span><div><b>Plug in your ESP32</b><p>Use a USB <b>data</b> cable. The board’s little red light should turn on.</p></div></div>
+        <div class="step"><span class="n">2</span><div><b>Press “Connect my board”</b><p>Your browser asks which device to use. Pick the one that says CP2102, CH340 or USB serial, then press <b>Connect</b>.</p></div></div>
+        <div class="step"><span class="n">3</span><div><b>Press “Run on my ESP32”</b><p>Start with <b>Blink the blue LED</b>: it needs no wiring. Then change <code>0.5</code> to <code>2</code> and run it again!</p></div></div>
+      </div>
+      <div class="guide"><img src="assets/ohm/point.svg" alt="Officer Ohm pointing"><div><b>Safety first:</b> only change wiring while the board is unplugged, and ask an adult to check your circuit.</div></div>
+      <p class="note">Works in <b>Chrome</b> or <b>Edge</b> on a computer or Chromebook. Your board needs MicroPython installed (once). Nothing you type leaves this device.</p>
+    </aside>
+    <section class="card" id="panel" aria-label="Run your code on the board"></section>
+  </div>
+</div>
+<script src="assets/board-link.js"></script>
+<script src="assets/run-panel.js"></script>
+<script>
+RunPanel.mount(document.getElementById('panel'), {
+  id: 'run-page',
+  code: `from machine import Pin
+import time
+
+led = Pin(2, Pin.OUT)   # the blue LED on the board is on GPIO 2
+
+while True:
+    led.value(1)        # on
+    print("on")
+    time.sleep(0.5)
+    led.value(0)        # off
+    print("off")
+    time.sleep(0.5)
+`,
+  examples: [
+    { name: 'Blink the blue LED (no wiring)', code: `from machine import Pin
+import time
+
+led = Pin(2, Pin.OUT)   # the blue LED on the board is on GPIO 2
+
+while True:
+    led.value(1)        # on
+    print("on")
+    time.sleep(0.5)
+    led.value(0)        # off
+    print("off")
+    time.sleep(0.5)
+` },
+    { name: 'Traffic light (Lesson 1 wiring)', code: `from machine import Pin
+import time
+
+red = Pin(25, Pin.OUT)
+yellow = Pin(26, Pin.OUT)
+green = Pin(27, Pin.OUT)
+
+while True:
+    red.value(1)
+    print("RED: stop")
+    time.sleep(5)
+    red.value(0)
+
+    green.value(1)
+    print("GREEN: go")
+    time.sleep(5)
+    green.value(0)
+
+    yellow.value(1)
+    print("YELLOW: get ready to stop")
+    time.sleep(2)
+    yellow.value(0)
+` },
+    { name: 'Say hello', code: `print("Hello from my ESP32!")
+for i in range(5):
+    print("Counting:", i)
+` },
+  ],
+});
+</script>
+</body>
+</html>
