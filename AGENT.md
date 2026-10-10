@@ -74,6 +74,7 @@ https://nkiliyumwami.github.io/iot-kids-course/. Read this whole file and `ROADM
 - Copy lesson 1 (`lessons/01-traffic-light/index.html`) as the starting point for each new lesson and keep its
   look: light lab-bench layout, the same colour tokens and fonts (Baloo 2, Nunito, JetBrains Mono), Officer Ohm the guide,
   status chip, Reset view, Previous/Next, Replay this step, Pause, Show labels, Reset lesson, stage pills and progress.
+- The model road's traffic lights (`makeSignal`) face the learner so the lit lamp is always easy to see; keep them that way.
 - Nothing may hide the LEDs (no covers or housings). Do not add decorative wires that imply connections that don't exist.
 - Highlight both ends of a connection before drawing a wire, move the camera close, and pause after each connection until Next.
 - Show connected breadboard holes with the same gold/blue/dark strip highlight as lesson 1.

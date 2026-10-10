@@ -1130,28 +1130,34 @@ tagPart(road, 'road');
 
 // a small traffic light on each corner, facing its lane; the lamps copy the LEDs on the breadboard
 const roadLamps = [];
-function makeSignal(x, z, face) {
+function makeSignal(x, z, side) {
+  // The head faces the learner (towards the camera) so the lit lamp is easy to see, and has a second set of
+  // lamps on the side facing its cars (side -1: cars come from the left, +1: from the right). Both copy the LEDs.
   const g = new THREE.Group();
-  g.position.set(x, 0, z); g.rotation.y = face;
+  g.position.set(x, 0, z);
   const pole = mat(0x5b6670, { metalness: 0.4, roughness: 0.4 }), box = mat(0x1f262d, { roughness: 0.5 });
-  g.add(mesh(new THREE.CylinderGeometry(0.05, 0.06, 1.9, 14), pole, 0, 1.05, 0));
-  g.add(mesh(new THREE.BoxGeometry(0.34, 0.9, 0.3), box, 0, 2.2, 0));
-  g.add(mesh(new THREE.BoxGeometry(0.36, 0.04, 0.34), box, 0, 2.67, 0));
+  const Y = 2.3, GAP = 0.36, R = 0.14;
+  g.add(mesh(new THREE.CylinderGeometry(0.06, 0.07, Y - 0.55, 14), pole, 0, (Y - 0.55) / 2, 0));
+  g.add(mesh(new THREE.BoxGeometry(0.44, 1.18, 0.4), box, 0, Y, 0));
+  // backplate with a white edge, so the head stands out against the light background
+  g.add(mesh(new THREE.BoxGeometry(0.74, 1.46, 0.02), mat(0xf4f6f8, { roughness: 0.6 }), 0, Y, -0.23, false));
+  g.add(mesh(new THREE.BoxGeometry(0.68, 1.4, 0.03), box, 0, Y, -0.215, false));
   const lamps = [0xff3030, 0xffb400, 0x1fd067].map((hex, k) => {
+    const y = Y + GAP - k * GAP;
     const m = new THREE.MeshStandardMaterial({ color: new THREE.Color(hex).lerp(new THREE.Color(0x3a4048), 0.75), roughness: 0.3, emissive: hex, emissiveIntensity: 0 });
-    const lamp = mesh(new THREE.SphereGeometry(0.1, 18, 12), m, 0, 2.47 - k * 0.27, 0.13, false);
-    g.add(lamp);
-    g.add(mesh(new THREE.BoxGeometry(0.26, 0.03, 0.12), box, 0, 2.47 - k * 0.27 + 0.12, 0.2, false)); // little visor
+    g.add(mesh(new THREE.SphereGeometry(R, 22, 14), m, 0, y, 0.17, false));            // facing the learner
+    g.add(mesh(new THREE.BoxGeometry(0.34, 0.03, 0.14), box, 0, y + 0.16, 0.26, false)); // visor
+    g.add(mesh(new THREE.SphereGeometry(R * 0.85, 18, 12), m, side * 0.19, y, 0, false)); // facing the cars
     const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: getGlowTexture(), color: hex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
-    glow.scale.set(0.75, 0.75, 1); glow.position.set(0, 2.47 - k * 0.27, 0.2);
+    glow.scale.set(1.0, 1.0, 1); glow.position.set(0, y, 0.26);
     g.add(glow);
     return { m, glow, hex };
   });
   roadLamps.push(lamps);
   road.add(g);
 }
-makeSignal(-2.35, ROAD_Z + ROAD_W / 2 + 0.4, -Math.PI / 2); // for cars driving to the right (near lane)
-makeSignal(2.35, ROAD_Z - ROAD_W / 2 - 0.4, Math.PI / 2);   // for cars driving to the left (far lane)
+makeSignal(-2.35, ROAD_Z + ROAD_W / 2 + 0.4, -1); // for cars driving to the right (near lane)
+makeSignal(2.35, ROAD_Z - ROAD_W / 2 - 0.4, 1);   // for cars driving to the left (far lane)
 const ROAD_LAMP = { 0: 0, 1: 1, 2: 2 }; // CH index → lamp (red, yellow, green from the top)
 function setRoadLamps(idx) {
   for (const lamps of roadLamps) lamps.forEach((l, k) => {
@@ -1392,7 +1398,7 @@ addLabel('Breadboard', V(-3.9, 0.02, 2.55), { obj: breadboard, lift: 6 });
 addLabel('Ground rail (−)', V(colX(3), 0.02, NEG_RAIL_Z), { obj: breadboard, lift: 34 });
 addLabel('Jumper wire', () => gndWire.curve.getPoint(0.45), { obj: gndWire.group, lift: 12 });
 addLabel('Officer Ohm', V(-5.9, 2.7, 1.6), { obj: cop, lift: 8 });
-addLabel('', V(-2.35, 2.35, ROAD_Z + ROAD_W / 2 + 0.4), {
+addLabel('', V(-2.35, 2.75, ROAD_Z + ROAD_W / 2 + 0.4), {
   obj: road, cls: 'lamp road', lift: 8,
   update: (L) => {
     const k = litIndex === 0 ? 'red' : litIndex === 1 ? 'yellow' : litIndex === 2 ? 'green' : 'off';
