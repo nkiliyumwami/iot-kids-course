@@ -52,26 +52,32 @@
       this._readLoop();
       navigator.serial.addEventListener('disconnect', this._onDisconnect);
       this._set('connected');
-      // Restart the board cleanly (the EN line), exactly like esptool's "hard reset": this also gets it out of
-      // download mode if another tool left it there. Native-USB chips drop the connection on reset, so skip it there.
-      if (info.usbVendorId !== 0x303a && opts.reset !== false) {
+      // 1) Like mpremote and Thonny: keep the board running (DTR and RTS released = no reset, normal boot) and
+      //    talk to MicroPython straight away. Ctrl-C stops a running main.py.
+      try { await port.setSignals({ dataTerminalReady: false, requestToSend: false }); } catch (e) { this._note('Control lines not available: ' + e.message); }
+      await sleep(250);
+      this.micropython = await this._enterRaw(2, 1000);
+      // 2) No answer? Restart the board through EN (like esptool's hard reset), give it time to boot, and try again.
+      //    This also gets it out of download mode if another tool left it there. Native USB chips drop the
+      //    connection on reset, so skip it there.
+      if (!this.micropython && info.usbVendorId !== 0x303a && opts.reset !== false) {
         try {
           await port.setSignals({ dataTerminalReady: false, requestToSend: true });
-          await sleep(120);
+          await sleep(150);
           await port.setSignals({ dataTerminalReady: false, requestToSend: false });
-          this._note('Board restarted (EN)');
+          this._note('No answer yet: restarted the board (EN) and waiting for it to boot');
         } catch (e) { this._note('Reset lines not available: ' + e.message); }
-        await sleep(1600); // let it boot; MicroPython's own start-up takes about a second
+        await this._waitFor('>>>', 3000); // MicroPython prints ">>> " when it is ready
+        this.micropython = await this._enterRaw(2, 1200);
       }
-      // Is MicroPython there? Stop any running program (e.g. main.py), then try the raw REPL a few times.
-      this.micropython = await this._enterRaw(3);
       if (this.micropython) {
         const r = await this.exec("import sys\nprint(sys.implementation.name, '.'.join(str(x) for x in sys.implementation.version[:3]), sys.platform)", { timeout: 4000 });
         this.version = (r.out || '').trim();
         this._note('MicroPython answered: ' + this.version);
       } else {
         const heard = this.log.replace(/\[[^\]]*\][^\n]*\n/g, '');
-        this.reason = /waiting for download/i.test(this.log) ? 'download-mode' : heard.trim() ? 'other-program' : 'silent';
+        this.reason = /MicroPython|>>>|raw REPL/.test(heard) ? 'micropython-busy'
+          : /waiting for download/i.test(heard) ? 'download-mode' : heard.trim() ? 'other-program' : 'silent';
         this._note('MicroPython did not answer (' + this.reason + ')');
       }
       this._set(this.micropython ? 'ready' : 'no-micropython');
@@ -109,8 +115,9 @@
     }
 
     async _readLoop() {
-      const port = this.port;
-      while (port && port.readable && this.port === port) {
+      const port = this.port, id = (this.loopId = (this.loopId || 0) + 1);
+      // stop when this loop is replaced (e.g. "Try again" reconnects the same port and starts a new loop)
+      while (port && port.readable && this.port === port && this.loopId === id) {
         this.reader = port.readable.getReader();
         try {
           for (;;) {
@@ -127,8 +134,7 @@
         } finally {
           try { this.reader.releaseLock(); } catch (e) { /* ignore */ }
         }
-        if (this.port === port && !port.readable) break;
-        if (this.port !== port) break;
+        if (this.port !== port || this.loopId !== id || !port.readable) break;
         await sleep(50);
       }
     }
@@ -151,13 +157,17 @@
       }
       return false;
     }
-    async _enterRaw(tries) {
+    async _enterRaw(tries, wait) {
       for (let t = 0; t < (tries || 1); t++) {
-        await this._write('\r\x03\x03');
+        // Ctrl-B leaves a half-finished raw session, Ctrl-C (twice) stops any running program
+        await this._write(t ? '\r\x02\x03\x03' : '\r\x03\x03');
         await sleep(t ? 400 : 150);
         this.buf = '';
         await this._write('\x01');
-        if (await this._waitFor(RAW_BANNER, 1000)) return true;
+        if (await this._waitFor(RAW_BANNER, wait || 1000)) return true;
+        // some USB adapters swallow the first bytes after opening: also accept a banner that ends with "\n>"
+        const i = this.buf.search(/raw REPL; CTRL-B to exit\r?\n>/);
+        if (i >= 0) { this.buf = this.buf.slice(this.buf.indexOf('>', i) + 1); return true; }
       }
       return false;
     }
