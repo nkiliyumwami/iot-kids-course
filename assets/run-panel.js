@@ -125,10 +125,19 @@
 
     /* ---------- connect ---------- */
     const logBox = () => `<details><summary>Connection details (for grown-ups)</summary><pre>${esc(link.log.trim() || 'Nothing received from the board.')}</pre></details>`;
-    function prepareCard(lead) {
-      const c = card('warn', `${lead}<p>MicroPython is the software that lets the ESP32 understand Python. Installing it takes about a minute and only happens once.</p>
-        <p><button type="button" class="rp-btn primary" data-prep>🧰 Prepare my board</button></p>${logBox()}`);
-      c.querySelector('[data-prep]').addEventListener('click', prepare);
+    function prepareCard(lead, offerPrepare) {
+      const c = card('warn', `${lead}
+        ${offerPrepare === false ? '' : '<p>If the board has no MicroPython, <b>Prepare my board</b> installs it (about a minute, once).</p>'}
+        <p style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="rp-btn primary" data-again>↻ Try again</button>
+        ${offerPrepare === false ? '' : '<button type="button" class="rp-btn" data-prep>🧰 Prepare my board</button>'}
+        <button type="button" class="rp-btn" data-copy>📋 Copy details</button></p>${logBox()}`);
+      c.querySelector('[data-again]').addEventListener('click', async () => { await link.release(); connect({ port: link.lastPort }); });
+      const pr = c.querySelector('[data-prep]'); if (pr) pr.addEventListener('click', prepare);
+      c.querySelector('[data-copy]').addEventListener('click', (e) => {
+        const t = `KundaKode board check\n${navigator.userAgent}\n${link.log}`;
+        const done = () => { e.target.textContent = '✓ Copied'; };
+        if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, () => {}); else done();
+      });
     }
     async function connect(opts) {
       clearMsgs(); status('', 'Choose your board in the window that opens…');
@@ -139,7 +148,8 @@
           card('good', `<b>Your board is connected! 🎉</b><p>Press <b>Run on my ESP32</b> to send your program to it.</p>`);
         } else {
           status('warn', `Connected · ${r.chip} board · MicroPython not found`);
-          if (r.reason === 'other-program') prepareCard(`<b>Your board is running a different program</b><p>It’s talking, but not in Python: it probably has a program from Arduino, Schematik or another app on it.</p>`);
+          if (r.reason === 'micropython-busy') prepareCard(`<b>MicroPython is on your board, but it didn’t answer in time</b><p>Press the <b>EN</b> button on the board, wait two seconds, then press <b>Try again</b>. If a program is running in a fast loop, this stops it.</p>`, false);
+          else if (r.reason === 'other-program') prepareCard(`<b>Your board is running a different program</b><p>It’s talking, but not in Python: it probably has a program from Arduino, Schematik or another app on it.</p>`);
           else if (r.reason === 'download-mode') prepareCard(`<b>Your board is waiting to be programmed</b><p>Another tool left it in “download mode”. Press the <b>EN</b> button on the board and connect again, or prepare it with MicroPython now.</p>`);
           else prepareCard(`<b>The board isn’t answering yet</b><p>Check you picked the right device (it often says <b>CH340</b>, <b>CP210x</b> or <b>USB Serial</b>, with a COM number on Windows). If it’s the right one, the board probably doesn’t have MicroPython yet.</p>`);
         }
