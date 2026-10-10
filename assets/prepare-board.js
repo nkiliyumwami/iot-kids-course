@@ -95,12 +95,11 @@
         if (opts.link && (opts.link.port || opts.link.lastPort)) port = await opts.link.release();
         if (!port) {
           msg('Choose your board in the window that opens (for example “USB-SERIAL CH340 (COM5)” or “USB Serial (ttyUSB0)”).');
-          port = await navigator.serial.requestPort({ filters: (window.BoardLink && window.BoardLink.FILTERS) || [] });
+          port = await navigator.serial.requestPort({});
         }
         if (port.readable || port.writable) { try { await port.close(); } catch (e) { /* still open somewhere */ } }
         const info = port.getInfo ? port.getInfo() : {};
-        if (info.usbVendorId == null) throw Object.assign(new Error('Not a USB port'), { code: 'not-usb' });
-        addLog(`Port: USB vendor 0x${info.usbVendorId.toString(16)} product 0x${(info.usbProductId || 0).toString(16)}\n`);
+        addLog(info.usbVendorId == null ? 'Port: no USB details from the driver\n' : `Port: USB vendor 0x${info.usbVendorId.toString(16)} product 0x${(info.usbProductId || 0).toString(16)}\n`);
         msg('Downloading MicroPython…');
         const [{ ESPLoader, Transport }, bin] = await Promise.all([
           import(new URL(base + 'assets/vendor/esptool-js-0.5.4.js', location.href).href),

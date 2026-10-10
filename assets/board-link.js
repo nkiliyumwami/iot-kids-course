@@ -37,18 +37,15 @@
       this.log = ''; this.reason = '';
       let port = opts.port || this.lastPort;
       if (!port || opts.choose !== false && !opts.port) {
-        // Only list USB boards: without a filter Chrome also lists built-in ports (ttyS0… on Linux, COM1 and
-        // Bluetooth on Windows) that open fine but never answer. "Show all ports" (opts.all) is the escape hatch.
-        try { port = await navigator.serial.requestPort(opts.all ? {} : { filters: FILTERS }); }
+        // List every serial port, like Schematik and esptool. A USB filter hides boards whose Windows driver
+        // doesn't report USB details to Chrome (the board then appears only as e.g. "COM5").
+        try { port = await navigator.serial.requestPort(opts.filtered ? { filters: FILTERS } : {}); }
         catch (e) { throw Object.assign(new Error('No board chosen'), { code: 'cancelled', cause: e }); }
       }
       const info = port.getInfo ? port.getInfo() : {};
-      if (info.usbVendorId == null) {
-        this.lastPort = null;
-        throw Object.assign(new Error('Not a USB port'), { code: 'not-usb' });
-      }
-      this.chip = CHIPS[info.usbVendorId] || 'USB serial';
-      this._note(`Port chosen: USB vendor ${hex(info.usbVendorId)} product ${hex(info.usbProductId)} (${this.chip})`);
+      this.chip = info.usbVendorId == null ? 'serial port' : CHIPS[info.usbVendorId] || 'USB serial';
+      this._note(info.usbVendorId == null ? 'Port chosen: no USB details from the driver (normal for some Windows COM ports)'
+        : `Port chosen: USB vendor ${hex(info.usbVendorId)} product ${hex(info.usbProductId)} (${this.chip})`);
       try { await port.open({ baudRate: 115200, bufferSize: 4096 }); }
       catch (e) {
         this._note('Could not open the port: ' + e.message);
@@ -77,6 +74,16 @@
         await this._waitFor('>>>', 3000); // MicroPython prints ">>> " when it is ready
         this.micropython = await this._enterRaw(2, 1200);
       }
+      // 3) Still nothing? Some Windows drivers treat the control lines the other way round, which can hold the
+      //    board in reset. Try the lines "on" (what pyserial uses by default), then once more after a restart.
+      if (!this.micropython && opts.reset !== false) {
+        try { await port.setSignals({ dataTerminalReady: true, requestToSend: true }); this._note('Trying with DTR/RTS on'); } catch (e) { /* ignore */ }
+        await sleep(1500);
+        this.micropython = await this._enterRaw(2, 1000);
+        if (!this.micropython) {
+          try { await port.setSignals({ dataTerminalReady: false, requestToSend: false }); } catch (e) { /* ignore */ }
+        }
+      }
       if (this.micropython) {
         const r = await this.exec("import sys\nprint(sys.implementation.name, '.'.join(str(x) for x in sys.implementation.version[:3]), sys.platform)", { timeout: 4000 });
         this.version = (r.out || '').trim();
@@ -89,6 +96,31 @@
       }
       this._set(this.micropython ? 'ready' : 'no-micropython');
       return { chip: this.chip, micropython: this.micropython, version: this.version, reason: this.reason };
+    }
+
+    /* Tools for the board monitor (for grown-ups): send raw bytes, set the control lines, restart through EN. */
+    async sendRaw(text) { this._note('Sent ' + JSON.stringify(text)); await this._write(text); }
+    async setLines(dtr, rts) {
+      if (!this.port) return;
+      await this.port.setSignals({ dataTerminalReady: dtr, requestToSend: rts });
+      this._note(`Control lines: DTR ${dtr ? 'on' : 'off'}, RTS ${rts ? 'on' : 'off'}`);
+    }
+    async resetEN() {
+      if (!this.port) return;
+      await this.port.setSignals({ dataTerminalReady: false, requestToSend: true }); await sleep(150);
+      await this.port.setSignals({ dataTerminalReady: false, requestToSend: false });
+      this._note('Restarted the board (EN)');
+    }
+    async retry() {
+      // after the learner pressed EN or changed something: look for MicroPython again on the open port
+      this.micropython = await this._enterRaw(3, 1200);
+      if (this.micropython) {
+        const r = await this.exec("import sys\nprint(sys.implementation.name, '.'.join(str(x) for x in sys.implementation.version[:3]), sys.platform)", { timeout: 4000 });
+        this.version = (r.out || '').trim();
+        this._note('MicroPython answered: ' + this.version);
+        this._set('ready');
+      }
+      return this.micropython;
     }
 
     /* Give the port to another tool (the MicroPython installer) without asking the learner to choose it again. */
