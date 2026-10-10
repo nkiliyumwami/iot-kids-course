@@ -47,7 +47,8 @@ h1 { font-family: var(--font-display); font-size: 32px; line-height: 1.05; margi
     <aside class="card">
       <div class="steps">
         <div class="step"><span class="n">1</span><div><b>Plug in your ESP32</b><p>Use a USB <b>data</b> cable. The board’s little red light should turn on.</p></div></div>
-        <div class="step"><span class="n">2</span><div><b>Press “Connect my board”</b><p>Your browser asks which device to use. Pick the one that says CP2102, CH340 or USB serial, then press <b>Connect</b>.</p></div></div>
+        <div class="step"><span class="n">2</span><div><b>Press “Connect my board”</b><p>Your browser asks which device to use. Pick your board, for example <b>USB-SERIAL CH340 (COM5)</b> on Windows, then press <b>Connect</b>.</p></div></div>
+        <div class="step"><span class="n">★</span><div><b>First time? “Prepare my board”</b><p>If the board has no MicroPython yet (or has a program from another app), this installs it once. It takes about a minute.</p></div></div>
         <div class="step"><span class="n">3</span><div><b>Press “Run on my ESP32”</b><p>Start with <b>Blink the blue LED</b>: it needs no wiring. Then change <code>0.5</code> to <code>2</code> and run it again!</p></div></div>
       </div>
       <div class="guide"><img src="assets/ohm/point.svg" alt="Officer Ohm pointing"><div><b>Safety first:</b> only change wiring while the board is unplugged, and ask an adult to check your circuit.</div></div>
@@ -57,6 +58,7 @@ h1 { font-family: var(--font-display); font-size: 32px; line-height: 1.05; margi
   </div>
 </div>
 <script src="assets/board-link.js"></script>
+<script src="assets/prepare-board.js"></script>
 <script src="assets/run-panel.js"></script>
 <script>
 RunPanel.mount(document.getElementById('panel'), {

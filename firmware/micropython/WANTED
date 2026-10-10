@@ -1,0 +1,5 @@
+# Which MicroPython firmware the "Prepare my board" wizard installs on an ESP32 DevKit V1.
+# "latest" = the newest stable ESP32_GENERIC release on micropython.org. Or put an exact file name, e.g.
+# ESP32_GENERIC-20241129-v1.24.1.bin
+# Changing this file runs .github/workflows/micropython-firmware.yml, which downloads the file and commits it here.
+latest
