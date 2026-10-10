@@ -176,7 +176,10 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
 .cta-row .btn.ghost { background: var(--surface); }
 .projects { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .project { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: grid; gap: 6px; align-content: start; }
-.project .ico { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 24px; background: var(--accent-soft); }
+.project .proj-media { position: relative; aspect-ratio: 16 / 10; border-radius: 12px; overflow: hidden; background: var(--accent-soft); display: grid; place-items: center; margin-bottom: 4px; }
+.project .ico { font-size: 44px; }
+.project .proj-3d { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity .5s; }
+.projects.live .proj-3d { opacity: 1; }
 .project h3 { font-size: 20px; }
 .project p { margin: 0; font-size: 14.5px; }
 .project .uses { font-size: 12.5px; color: var(--muted); }
@@ -241,12 +244,12 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
       <p>The course teaches the building blocks: outputs, inputs, sensors, decisions and Wi-Fi. With the same board and one extra sensor, kids can go on to build projects like these for their own home and school.</p>
     </div>
     <div class="projects">
-      <article class="project"><span class="ico" aria-hidden="true">🌱</span><h3>Self-watering plant</h3><p>A soil sensor notices when the plant is thirsty and switches on a small pump. No more dried-out plants during the holidays.</p><p class="uses"><b>Uses:</b> sensors, analog readings, if/else</p></article>
-      <article class="project"><span class="ico" aria-hidden="true">💡</span><h3>Lights that save energy</h3><p>A motion sensor switches the lights off when a room is empty. Home automation that lowers the electricity bill.</p><p class="uses"><b>Uses:</b> inputs, timers, outputs</p></article>
-      <article class="project"><span class="ico" aria-hidden="true">🚪</span><h3>Door and window alarm</h3><p>A magnet switch beeps and sends an alert to a phone when a door opens while nobody is home.</p><p class="uses"><b>Uses:</b> button-style inputs, a buzzer, Wi-Fi</p></article>
-      <article class="project"><span class="ico" aria-hidden="true">💧</span><h3>Water-leak warning</h3><p>Two wires under the sink or the washing machine detect water and warn the family before the floor floods.</p><p class="uses"><b>Uses:</b> sensors, alarms, phone alerts</p></article>
-      <article class="project"><span class="ico" aria-hidden="true">🌡️</span><h3>Classroom air checker</h3><p>Measures temperature and fresh air, and shows a traffic light: green is fine, red means open a window.</p><p class="uses"><b>Uses:</b> the traffic light from lesson 1, sensors</p></article>
-      <article class="project"><span class="ico" aria-hidden="true">🚗</span><h3>Parking helper</h3><p>A distance sensor lights green, yellow and red as the car gets close to the garage wall.</p><p class="uses"><b>Uses:</b> distance sensing, LEDs, decisions</p></article>
+      <article class="project"><div class="proj-media"><span class="ico" aria-hidden="true">🌱</span><canvas class="proj-3d" data-proj="plant" aria-hidden="true"></canvas></div><h3>Self-watering plant</h3><p>A soil sensor notices when the plant is thirsty and switches on a small pump. No more dried-out plants during the holidays.</p><p class="uses"><b>Uses:</b> sensors, analog readings, if/else</p></article>
+      <article class="project"><div class="proj-media"><span class="ico" aria-hidden="true">💡</span><canvas class="proj-3d" data-proj="lights" aria-hidden="true"></canvas></div><h3>Lights that save energy</h3><p>A motion sensor switches the lights off when a room is empty. Home automation that lowers the electricity bill.</p><p class="uses"><b>Uses:</b> inputs, timers, outputs</p></article>
+      <article class="project"><div class="proj-media"><span class="ico" aria-hidden="true">🚪</span><canvas class="proj-3d" data-proj="door" aria-hidden="true"></canvas></div><h3>Door and window alarm</h3><p>A magnet switch beeps and sends an alert to a phone when a door opens while nobody is home.</p><p class="uses"><b>Uses:</b> button-style inputs, a buzzer, Wi-Fi</p></article>
+      <article class="project"><div class="proj-media"><span class="ico" aria-hidden="true">💧</span><canvas class="proj-3d" data-proj="leak" aria-hidden="true"></canvas></div><h3>Water-leak warning</h3><p>Two wires under the sink or the washing machine detect water and warn the family before the floor floods.</p><p class="uses"><b>Uses:</b> sensors, alarms, phone alerts</p></article>
+      <article class="project"><div class="proj-media"><span class="ico" aria-hidden="true">🌡️</span><canvas class="proj-3d" data-proj="air" aria-hidden="true"></canvas></div><h3>Classroom air checker</h3><p>Measures temperature and fresh air, and shows a traffic light: green is fine, red means open a window.</p><p class="uses"><b>Uses:</b> the traffic light from lesson 1, sensors</p></article>
+      <article class="project"><div class="proj-media"><span class="ico" aria-hidden="true">🚗</span><canvas class="proj-3d" data-proj="parking" aria-hidden="true"></canvas></div><h3>Parking helper</h3><p>A distance sensor lights green, yellow and red as the car gets close to the garage wall.</p><p class="uses"><b>Uses:</b> distance sensing, LEDs, decisions</p></article>
     </div>
   </section>
 
@@ -333,6 +336,28 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
 })();
 </script>
 <script>
+// three.js is loaded once, only when a 3D part of the page is about to be seen
+window.kkThree = () => window.__kkThree || (window.__kkThree = window.THREE ? Promise.resolve() : new Promise((ok, no) => {
+  const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc);
+}));
+/* The real-world project cards: a small 3D loop in each (assets/projects/projects-3d.js) */
+(function () {
+  const grid = document.querySelector('.projects');
+  if (!grid || !window.IntersectionObserver) return;
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const io = new IntersectionObserver(async (es) => {
+    if (!es[0].isIntersecting) return;
+    io.disconnect();
+    try {
+      await window.kkThree();
+      await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = 'assets/projects/projects-3d.js'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+      if (window.KKProjects.mount(grid.querySelectorAll('canvas[data-proj]'), { reduceMotion: reduce })) grid.classList.add('live');
+    } catch (e) { /* offline or no 3D: the icons stay */ }
+  }, { rootMargin: '300px 0px' });
+  io.observe(grid);
+})();
+</script>
+<script>
 /* The story: load the 3D only when it is about to scroll into view, pause it when it is off screen. */
 (function () {
   const stage = document.getElementById('storyStage');
@@ -367,7 +392,7 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
   async function boot() {
     if (loading) return; loading = true;
     try {
-      if (!window.THREE) await load('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js');
+      await window.kkThree();
       await load('assets/road/model-road.js'); await load('assets/road/pedestrians.js'); await load('assets/story/story-scene.js');
       const holder = document.createElement('div'); holder.style.cssText = 'position:absolute;inset:0';
       stage.insertBefore(holder, stage.querySelector('.story-cap'));
