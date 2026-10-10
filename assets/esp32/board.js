@@ -233,7 +233,7 @@
   function createViewer(opts) {
     const host = opts.host;
     if (!window.THREE || !THREE.GLTFLoader || !THREE.OrbitControls) {
-      host.innerHTML = '<div class="fail">The 3D board could not load. Check your internet connection and reload the page.</div>';
+      host.innerHTML = '<div class="esp-fail">The 3D board could not load. Check your internet connection and reload the page.</div>';
       return null;
     }
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -316,7 +316,7 @@
         setPower(powerOn);
         resolve(api);
       }, undefined, (err) => {
-        host.innerHTML = '<div class="fail">The board model could not load. Please reload the page.</div>';
+        host.innerHTML = '<div class="esp-fail">The board model could not load. Please reload the page.</div>';
         reject(err);
       });
     });
@@ -426,7 +426,7 @@
 @keyframes plGood{0%{box-shadow:0 0 0 0 rgba(46,158,87,.9)}100%{box-shadow:0 0 0 14px rgba(46,158,87,0)}}
 @keyframes plBad{0%,100%{margin-left:0}25%{margin-left:-5px}75%{margin-left:5px}}
 @media (prefers-reduced-motion: reduce){.pl.good,.pl.bad{animation:none}}
-.fail{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;font-weight:700}`;
+.esp-fail{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;font-weight:700}`;
   document.head.appendChild(baseCss);
 
   window.ESP32 = { WORDS, GROUPS, TYPES, PINS, PARTS, ABILITIES, TOUCH, groupOf, findPin, abilities, examples,

@@ -26,7 +26,7 @@
 .pb .steps li{display:flex;gap:10px;align-items:center;font-weight:700;color:#8A96A0}
 .pb .steps li i{width:22px;height:22px;border-radius:50%;border:2px solid #D2DCE3;flex:none;display:grid;place-items:center;font-style:normal;font-size:13px}
 .pb .steps li.now{color:#15202A}.pb .steps li.now i{border-color:#F2B705;animation:pbSpin 1s linear infinite;border-top-color:transparent}
-.pb .steps li.fail{color:#C93131}.pb .steps li.fail i{border-color:#C93131;color:#C93131}.pb .steps li.fail i::before{content:'✕'}
+.pb .steps li.pb-fail{color:#C93131}.pb .steps li.pb-fail i{border-color:#C93131;color:#C93131}.pb .steps li.pb-fail i::before{content:'✕'}
 .pb .steps li.done{color:#15202A}.pb .steps li.done i{background:#2E9E57;border-color:#2E9E57;color:#fff}.pb .steps li.done i::before{content:'✓'}
 @keyframes pbSpin{to{transform:rotate(360deg)}}
 .pb .bar{height:12px;border-radius:99px;background:#E3EBF0;overflow:hidden;margin:8px 0}.pb .bar b{display:block;height:100%;width:0;background:#0A7480;transition:width .2s}
@@ -51,8 +51,19 @@
     back.innerHTML = `<div class="pb" role="dialog" aria-modal="true" aria-labelledby="pbTitle"><div data-v></div></div>`;
     document.body.appendChild(back);
     const view = back.querySelector('[data-v]');
-    let busy = false, log = '';
-    const close = () => { if (!busy) back.remove(); };
+    let busy = false, log = '', cancelled = false, transport = null, stopNow = null;
+    // A Transport can hang while closing if the board never answered, so never wait for it longer than 1.5 s.
+    const drop = (t) => (t ? Promise.race([t.disconnect().catch(() => {}), sleep(1500)]) : Promise.resolve());
+    // Close always works, even in the middle of an install: stop waiting, let go of the port, remove the window.
+    const close = () => {
+      if (busy) { cancelled = true; if (stopNow) stopNow(); drop(transport); transport = null; busy = false; }
+      back.remove();
+      document.removeEventListener('keydown', onKey);
+    };
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    document.addEventListener('keydown', onKey);
+    // Wait for p, but give up at once if the learner closes the window.
+    const guard = (p) => Promise.race([p, new Promise((_, no) => { stopNow = () => no(Object.assign(new Error('Closed by the learner'), { code: 'cancelled' })); })]);
     back.addEventListener('click', (e) => { if (e.target === back) close(); });
     const head = (title) => `<div class="top"><h2 id="pbTitle">${title}</h2><button type="button" class="x" data-close aria-label="Close">✕</button></div>`;
     const wire = () => view.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', close));
@@ -90,8 +101,8 @@
     const terminal = { clean() {}, writeLine: (d) => addLog(d + '\n'), write: (d) => addLog(d) };
 
     async function run() {
-      busy = true; progressView(); step(0);
-      let port = null, transport = null;
+      busy = true; cancelled = false; progressView(); step(0);
+      let port = null; transport = null;
       try {
         // 1. get the port: reuse the connected one so the learner doesn't have to pick it again
         if (opts.link && (opts.link.port || opts.link.lastPort)) port = await opts.link.release();
@@ -117,29 +128,31 @@
         let loader = null;
         for (let attempt = 1; attempt <= 3; attempt++) {
           await releasePort(port);
+          if (cancelled) return;
           step(1); msg(attempt === 1 ? 'Talking to the board… (hold BOOT if this hangs)' : `Talking to the board… (try ${attempt} of 3)`);
           transport = new Transport(port, false);
           loader = new ESPLoader({ transport, baudrate: 115200, romBaudrate: 115200, terminal, debugLogging: false });
           try {
-            const chip = await Promise.race([loader.main(), sleep(30000).then(() => { throw new Error('Failed to connect: no answer from the bootloader after 30 s'); })]);
+            const chip = await guard(Promise.race([loader.main(), sleep(30000).then(() => { throw new Error('Failed to connect: no answer from the bootloader after 30 s'); })]));
             addLog(`Chip: ${chip}\n`);
             if (!/^ESP32(?![-‑]?[SCHP]\d)/i.test(String(chip).trim()) || (loader.chip && loader.chip.CHIP_NAME && loader.chip.CHIP_NAME !== 'ESP32')) {
               throw Object.assign(new Error('This board is a ' + chip), { code: 'chip', chip });
             }
             // 3. erase, 4. write MicroPython at 0x1000, where the ESP32 looks for its bootloader
             step(2); msg('Erasing the old program… (about 10 seconds)'); bar(0.05);
-            await loader.eraseFlash();
+            await guard(loader.eraseFlash());
             step(3); msg('Installing MicroPython…');
-            await loader.writeFlash({
+            await guard(loader.writeFlash({
               fileArray: [{ data, address: fw.address || 0x1000 }],
               flashSize: 'keep', flashMode: 'keep', flashFreq: 'keep', eraseAll: false, compress: true,
               reportProgress: (_i, written, total) => { bar(0.1 + 0.85 * (written / total)); msg(`Installing MicroPython… ${Math.round(written / total * 100)}%`); },
-            });
+            }));
             break;
           } catch (e) {
             const m = (e && e.message) || String(e);
             addLog(`Attempt ${attempt} failed: ${m}\n`);
-            try { await transport.disconnect(); } catch (x) { /* ignore */ }
+            if (cancelled || (e && e.code === 'cancelled')) throw e;
+            await drop(transport);
             transport = null;
             if (e && e.code === 'chip') throw e;
             if (/already open|InvalidState|Failed to open/i.test(m)) throw Object.assign(e, { code: 'busy' });
@@ -156,8 +169,8 @@
         }
         // 5. restart into MicroPython and check it answers
         step(4); bar(1); msg('Restarting your board…');
-        await loader.after('hard_reset');
-        try { await transport.disconnect(); } catch (e) { /* ignore */ }
+        await guard(loader.after('hard_reset'));
+        await drop(transport);
         transport = null;
         await sleep(1500);
         let version = '';
@@ -173,9 +186,10 @@
         if (opts.onDone) opts.onDone(port);
       } catch (e) {
         busy = false;
-        view.querySelectorAll('.steps li.now').forEach((li) => { li.className = 'fail'; });
+        if (cancelled || (e && e.code === 'cancelled')) return; // the window is already gone
+        view.querySelectorAll('.steps li.now').forEach((li) => { li.className = 'pb-fail'; });
         addLog('\nERROR: ' + (e && e.message) + '\n');
-        try { if (transport) await transport.disconnect(); } catch (x) { /* ignore */ }
+        await drop(transport); transport = null;
         const end = view.querySelector('[data-end]');
         const tryAgain = '<div class="row"><button type="button" class="btn primary" data-again>Try again</button><button type="button" class="btn" data-close>Close</button></div>';
         if (e && e.name === 'NotFoundError') { close(); return; }
