@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Certificate · IoT for Young Makers</title>
+<title>Certificate · KundaKode</title>
+<script src="assets/brand.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Caveat:wght@700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -36,7 +37,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
   box-shadow: 0 10px 30px rgba(21,32,42,.15);
 }
 .cert svg.frame { position: absolute; inset: 0; width: 100%; height: 100%; }
-.cert .inner { position: absolute; inset: 64px 90px 56px; display: grid; grid-template-rows: auto 1fr auto; text-align: center; }
+.cert .inner { position: absolute; inset: 64px 90px 56px; display: grid; grid-template-rows: auto auto auto 1fr auto; text-align: center; }
 .middle { align-self: center; display: grid; gap: 4px; }
 .eyebrow { font-family: var(--font-display); font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); font-size: 16px; }
 h1 { font-family: var(--font-display); font-size: 54px; line-height: 1; margin: 4px 0 6px; }
@@ -54,6 +55,7 @@ h1 { font-family: var(--font-display); font-size: 54px; line-height: 1; margin: 
 .sig .script { font-family: var(--font-sign); font-size: 40px; line-height: 1; color: var(--accent-strong); }
 .seal { width: 140px; height: 140px; }
 .ohm { position: absolute; right: 40px; bottom: 40px; width: 110px; }
+.cert-logo { justify-self: center; font-size: 22px; margin: -18px 0 6px; }
 .badges-row { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
 .badges-row img { width: 54px; height: 54px; }
 
@@ -99,6 +101,7 @@ h1 { font-family: var(--font-display); font-size: 54px; line-height: 1; margin: 
         <g transform="translate(60,46)"><rect width="26" height="60" rx="8" fill="#2B3038"/><circle cx="13" cy="12" r="7" fill="#FF4141"/><circle cx="13" cy="30" r="7" fill="#FFB400"/><circle cx="13" cy="48" r="7" fill="#22D36B"/></g>
       </svg>
       <div class="inner">
+        <span class="cert-logo" data-kk-logo></span>
         <div class="eyebrow">IoT for Young Makers</div>
         <h1 id="certTitle">Certificate of Achievement</h1>
         <div class="middle">
@@ -156,7 +159,7 @@ h1 { font-family: var(--font-display); font-size: 54px; line-height: 1; margin: 
     $('certSkills').innerHTML = lesson.skills.map((s) => `<li>${esc(s)}</li>`).join('');
     $('certSeal').src = C.badgeSrc(lesson);
     $('certSeal').alt = `Lesson ${lesson.n} badge`;
-    document.title = `Lesson ${lesson.n} certificate · IoT for Young Makers`;
+    document.title = `Lesson ${lesson.n} certificate · KundaKode`;
   } else {
     $('certTitle').textContent = 'Course Completion Certificate';
     $('certWhat').innerHTML = `has completed <b>all ${allLessons.length} lessons of IoT for Young Makers</b>`;

@@ -1,4 +1,4 @@
-# IoT for Young Makers
+# IoT for Young Makers, by KundaKode
 
 A free, interactive 3D course that teaches complete beginners aged 10–15 to build and code IoT projects
 with an **ESP32 DevKit** and **MicroPython**, one new idea per lesson.

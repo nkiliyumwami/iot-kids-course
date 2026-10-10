@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>IoT for Young Makers</title>
+<title>IoT for Young Makers · KundaKode</title>
+<script src="assets/brand.js"></script>
 <meta name="description" content="A free, interactive 3D course that teaches complete beginners aged 10–15 to build and code IoT projects with an ESP32 and MicroPython.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -126,18 +127,23 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
 @media (max-width: 760px) {
   header.hero { grid-template-columns: minmax(0, 1fr); }
   .hero-ohm-bubble { display: none; }
+  .brandbar > span { display: none; }
   .signal { width: 150px; height: 60px; grid-auto-flow: column; }
   .how { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cols { grid-template-columns: minmax(0, 1fr); }
 }
+.brandbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0 18px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
+.brandbar .kk-logo { font-size: 28px; }
+.brandbar > span { color: var(--muted); font-weight: 800; font-size: 14px; }
 </style>
 </head>
 <body>
 <div class="wrap">
+  <nav class="brandbar" aria-label="KundaKode"><a data-kk-logo href="index.html"></a><span>IoT for Young Makers · a free course</span></nav>
   <header class="hero">
     <div class="signal" aria-hidden="true"><i class="r"></i><i class="y"></i><i class="g"></i></div>
     <div>
-      <p class="eyebrow">Free course · ages 10–15 · no experience needed</p>
+      <p class="eyebrow">A free KundaKode course · ages 10–15 · no experience needed</p>
       <h1>IoT for Young Makers</h1>
       <p class="lead">Build a traffic light, teach it to listen, sense the dark, and finally control it from your phone. Every wire, hole and line of code comes with a “why”.</p>
       <div class="cta-row">
@@ -174,7 +180,7 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
       <h2>What you need</h2>
       <p class="small">You can do every lesson on screen first. To build it for real, you need:</p>
       <ul>
-        <li>ESP32 DevKit V1 board (30 pins) and a micro-USB data cable</li>
+        <li>ESP32 DevKit V1 board (30 pins) and a USB data cable that fits it (micro-USB or USB-C)</li>
         <li>A breadboard and a few male-to-male and female-to-male jumper wires</li>
         <li>3 LEDs (red, yellow, green) and 3 × 330 Ω resistors</li>
         <li>Later: a push button, a small buzzer, a light sensor (LDR) and a 10 kΩ resistor</li>
@@ -189,7 +195,7 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
     </div>
   </div>
 
-  <footer>IoT for Young Makers · ESP32 + MicroPython · <a href="https://github.com/nkiliyumwami/iot-kids-course">Source on GitHub</a></footer>
+  <footer>IoT for Young Makers by <b>KundaKode</b> · ESP32 + MicroPython · <a href="https://github.com/nkiliyumwami/iot-kids-course">Source on GitHub</a></footer>
 </div>
 
 <script src="course.js"></script>
