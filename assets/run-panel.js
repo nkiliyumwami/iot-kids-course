@@ -72,7 +72,7 @@
 
     /* ---------- editor: line numbers, Tab = 4 spaces, keep the lesson's code saved on this device ---------- */
     const KEY = 'iotkids.code.' + (opts.id || location.pathname);
-    try { const saved = localStorage.getItem(KEY); if (saved) ta.value = saved; } catch (e) { /* not remembered */ }
+    if (!opts.fresh) { try { const saved = localStorage.getItem(KEY); if (saved) ta.value = saved; } catch (e) { /* not remembered */ } }
     function lines() {
       const n = ta.value.split('\n').length;
       gutter.innerHTML = Array.from({ length: n }, (_, i) => (i + 1 === badLine ? `<span class="bad">${i + 1}</span>` : String(i + 1))).join('\n');
@@ -241,6 +241,8 @@
         if (outEl.textContent.length > 20000) outEl.textContent = outEl.textContent.slice(-15000);
         outEl.scrollTop = outEl.scrollHeight;
       };
+      // a program that never prints (like the traffic light) would leave the messages empty: point at the LEDs instead
+      const quiet = setTimeout(() => { if (running && !outEl) card('', '<b>👀 Your program is running!</b><p>It doesn’t print any messages, so watch the lights on your board. Press <strong>Stop</strong> to end it.</p>'); }, 2500);
       try {
         const r = await link.exec(code, { onOut });
         const x = BL.explain(r.err, code);
@@ -255,6 +257,7 @@
       } catch (e) {
         if (e.code !== 'unplugged') card('error', `<b>The board stopped answering</b><p>Press the <b>EN</b> button on the board, then disconnect and connect again.</p><details><summary>Original message</summary><pre>${esc(e.message)}</pre></details>`);
       }
+      clearTimeout(quiet);
       running = false;
       if (link.state === 'ready') status('ok', `Connected · ${boardName()}${link.version ? ' · ' + nice(link.version) : ''}`);
       buttons();
@@ -268,7 +271,7 @@
     $('run').addEventListener('click', run);
     $('stop').addEventListener('click', () => link.stop());
     buttons();
-    return { link, run, stop: () => link.stop(), get code() { return ta.value; } };
+    return { link, run, stop: () => link.stop(), get code() { return ta.value; }, setCode(c) { if (running) return; ta.value = c; badLine = null; lines(); } };
   }
 
   window.RunPanel = { mount };

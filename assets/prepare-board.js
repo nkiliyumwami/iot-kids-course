@@ -34,10 +34,12 @@
 .pb pre{background:#13202A;color:#E3ECF1;border-radius:10px;padding:8px 10px;font-size:11.5px;white-space:pre-wrap;max-height:180px;overflow:auto}
 @media (prefers-reduced-motion: reduce){.pb .steps li.now i{animation:none}}`;
 
-  function binaryString(buf) {
-    const bytes = new Uint8Array(buf); let out = '';
-    for (let i = 0; i < bytes.length; i += 0x8000) out += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
-    return out;
+  /* The port must be fully released before esptool opens it, and after it closes it (spec: releasePort). */
+  async function releasePort(port) {
+    try { if (port.readable && !port.readable.locked) await port.readable.getReader().cancel(); } catch (e) { /* ignore */ }
+    try { if (port.writable && !port.writable.locked) await port.writable.getWriter().close(); } catch (e) { /* ignore */ }
+    try { await port.close(); } catch (e) { /* already closed */ }
+    await sleep(350);
   }
 
   function open(opts) {
@@ -97,40 +99,61 @@
           msg('Choose your board in the window that opens (for example “USB-SERIAL CH340 (COM5)” or “USB Serial (ttyUSB0)”).');
           port = await navigator.serial.requestPort({});
         }
-        if (port.readable || port.writable) { try { await port.close(); } catch (e) { /* still open somewhere */ } }
         const info = port.getInfo ? port.getInfo() : {};
         addLog(info.usbVendorId == null ? 'Port: no USB details from the driver\n' : `Port: USB vendor 0x${info.usbVendorId.toString(16)} product 0x${(info.usbProductId || 0).toString(16)}\n`);
         msg('Downloading MicroPython…');
         const [{ ESPLoader, Transport }, bin] = await Promise.all([
-          import(new URL(base + 'assets/vendor/esptool-js-0.5.4.js', location.href).href),
+          import(new URL(base + 'assets/vendor/esptool-js-0.7.0.js', location.href).href),
           fetch(base + 'firmware/micropython/esp32-generic.bin').then((r) => { if (!r.ok) throw new Error('Firmware download failed (' + r.status + ')'); return r.arrayBuffer(); }),
         ]);
+        const data = new Uint8Array(bin);
+        if (data[0] !== 0xe9) throw new Error('The MicroPython file is damaged (missing the 0xE9 header). Please try again later.');
         addLog(`Firmware: ${fw.file} (${bin.byteLength} bytes)\n`);
-        // 2. talk to the ESP32's bootloader (esptool-js pulses EN and BOOT through the USB chip's DTR/RTS lines)
-        step(1); msg('Talking to the board…');
-        transport = new Transport(port, false);
-        const loader = new ESPLoader({ transport, baudrate: 460800, romBaudrate: 115200, terminal, debugLogging: false });
-        let chip;
-        // never wait forever: esptool tries several resets; give up after 45 s and show the BOOT-button help
-        try { chip = await Promise.race([loader.main(), sleep(45000).then(() => { throw new Error('No answer from the bootloader after 45 s'); })]); }
-        catch (e) {
-          if (/open|InvalidState/i.test(e && e.message || '')) throw Object.assign(e, { code: 'busy' });
-          throw Object.assign(e, { code: 'sync' });
+
+        // Up to 3 attempts, like the KundaKode flasher spec: connect at 115200 (faster first contact is the #1
+        // cause of "Failed to connect"), the port fully released before esptool opens it, and the BOOT-button
+        // help if the board never answers.
+        const LOST = /failed to set control signals|device has been lost|device not configured|disconnected/i;
+        let loader = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          await releasePort(port);
+          step(1); msg(attempt === 1 ? 'Talking to the board… (hold BOOT if this hangs)' : `Talking to the board… (try ${attempt} of 3)`);
+          transport = new Transport(port, false);
+          loader = new ESPLoader({ transport, baudrate: 115200, romBaudrate: 115200, terminal, debugLogging: false });
+          try {
+            const chip = await Promise.race([loader.main(), sleep(30000).then(() => { throw new Error('Failed to connect: no answer from the bootloader after 30 s'); })]);
+            addLog(`Chip: ${chip}\n`);
+            if (!/^ESP32(?![-‑]?[SCHP]\d)/i.test(String(chip).trim()) || (loader.chip && loader.chip.CHIP_NAME && loader.chip.CHIP_NAME !== 'ESP32')) {
+              throw Object.assign(new Error('This board is a ' + chip), { code: 'chip', chip });
+            }
+            // 3. erase, 4. write MicroPython at 0x1000, where the ESP32 looks for its bootloader
+            step(2); msg('Erasing the old program… (about 10 seconds)'); bar(0.05);
+            await loader.eraseFlash();
+            step(3); msg('Installing MicroPython…');
+            await loader.writeFlash({
+              fileArray: [{ data, address: fw.address || 0x1000 }],
+              flashSize: 'keep', flashMode: 'keep', flashFreq: 'keep', eraseAll: false, compress: true,
+              reportProgress: (_i, written, total) => { bar(0.1 + 0.85 * (written / total)); msg(`Installing MicroPython… ${Math.round(written / total * 100)}%`); },
+            });
+            break;
+          } catch (e) {
+            const m = (e && e.message) || String(e);
+            addLog(`Attempt ${attempt} failed: ${m}\n`);
+            try { await transport.disconnect(); } catch (x) { /* ignore */ }
+            transport = null;
+            if (e && e.code === 'chip') throw e;
+            if (/already open|InvalidState|Failed to open/i.test(m)) throw Object.assign(e, { code: 'busy' });
+            if (attempt === 3) throw Object.assign(e, { code: 'sync' });
+            await sleep(500);
+            if (LOST.test(m)) {
+              const ports = await navigator.serial.getPorts();
+              if (!ports.includes(port)) {
+                if (ports.length === 1) port = ports[0];
+                else throw Object.assign(new Error('The board disconnected. Unplug it, plug it back in and try again.'), { code: 'lost' });
+              }
+            }
+          }
         }
-        addLog(`Chip: ${chip}\n`);
-        if (!/^ESP32(?![-‑]?[SCHP]\d)/i.test(String(chip).trim()) || (loader.chip && loader.chip.CHIP_NAME && loader.chip.CHIP_NAME !== 'ESP32')) {
-          throw Object.assign(new Error('This board is a ' + chip), { code: 'chip', chip });
-        }
-        // 3. erase
-        step(2); msg('Erasing the old program… (about 10 seconds)'); bar(0.05);
-        await loader.eraseFlash();
-        // 4. write MicroPython at 0x1000, where the ESP32 looks for its bootloader
-        step(3); msg('Installing MicroPython…');
-        await loader.writeFlash({
-          fileArray: [{ data: binaryString(bin), address: fw.address || 0x1000 }],
-          flashSize: 'keep', flashMode: 'keep', flashFreq: 'keep', eraseAll: false, compress: true,
-          reportProgress: (_i, written, total) => { bar(0.1 + 0.85 * (written / total)); msg(`Installing MicroPython… ${Math.round(written / total * 100)}%`); },
-        });
         // 5. restart into MicroPython and check it answers
         step(4); bar(1); msg('Restarting your board…');
         await loader.after('hard_reset');
@@ -161,6 +184,7 @@
           <p>Still stuck? Try another USB cable or socket, and close other programs that use the board.</p></div>${tryAgain}`;
         else if (e && e.code === 'not-usb') end.innerHTML = `<div class="bad"><b>That port isn’t your board</b><p>Pick the one that says <b>USB</b>, <b>CH340</b> or <b>CP210x</b> (for example “USB Serial (ttyUSB0)” on Linux or “USB-SERIAL CH340 (COM5)” on Windows). Nothing was erased.</p></div>${tryAgain}`;
         else if (e && e.code === 'busy') end.innerHTML = `<div class="bad"><b>Another program is using the board</b><p>Close Thonny, Arduino IDE, a terminal (screen/minicom) or other tabs using the board, then try again. Nothing was erased.</p></div>${tryAgain}`;
+        else if (e && e.code === 'lost') end.innerHTML = `<div class="bad"><b>The board disconnected</b><p>Unplug it, plug it back in, then press <b>Try again</b>. Nothing is broken.</p></div>${tryAgain}`;
         else if (e && e.code === 'chip') end.innerHTML = `<div class="bad"><b>This is a different kind of ESP32 (${esc(e.chip)})</b><p>This course and its MicroPython file are made for the ESP32 DevKit V1 (classic ESP32). Nothing was erased.</p></div><div class="row"><button type="button" class="btn" data-close>Close</button></div>`;
         else if (e && e.code === 'check') end.innerHTML = `<div class="warn"><b>MicroPython is installed, but the board didn’t answer yet</b><p>Press the <b>EN</b> button on the board, then press <b>Connect my board</b> again.</p></div><div class="row"><button type="button" class="btn primary" data-close>OK</button></div>`;
         else end.innerHTML = `<div class="bad"><b>Something went wrong</b><p>${esc(e && e.message || e)}</p><p>Unplug the board, plug it back in and try again. Nothing is broken: you can always run the installer again.</p></div>${tryAgain}`;

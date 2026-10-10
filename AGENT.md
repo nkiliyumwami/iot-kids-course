@@ -79,6 +79,12 @@ https://nkiliyumwami.github.io/iot-kids-course/. Read this whole file and `ROADM
 - Show connected breadboard holes with the same gold/blue/dark strip highlight as lesson 1.
 - Must work at phone width (400 px) with no sideways scrolling.
 - Scripts only from cdnjs / jsDelivr (three.js r128 + OrbitControls 0.128.0). No other external code.
+- **Try it on my real board.** Every lesson with a MicroPython program gets the "🔌 Try it on my real board" panel:
+  load `../../assets/board-link.js`, `prepare-board.js`, `run-panel.js` and `board-drawer.js` before `</body>`,
+  expose the program the learner sees with `window.__lessonProgram = () => '…'` inside the lesson script, and call
+  `KKBoard.attach({ id: '<slug>', base: '../../', program: () => window.__lessonProgram(), wiring: '<one sentence>' })`
+  (in lessons with the lesson-1 header, add `buttonHost: 'header.top .progress'`). The program must be exactly the
+  code shown in the lesson, complete and runnable. Never write automated tests that need a real serial port.
 - Brand: the course is **IoT for Young Makers by KundaKode**. Every page includes `assets/brand.js` right after its
   `<title>` (lessons: `<script src="../../assets/brand.js"></script>`), which adds the KundaKode logo, favicon and title.
 - Each lesson page includes `<script src="../../course.js"></script>`, then `../../assets/ohm/ohm.js` and `../../assets/rewards.js`, sets `LESSON_SLUG`, saves progress with
