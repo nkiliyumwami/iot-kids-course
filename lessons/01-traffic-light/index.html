@@ -578,6 +578,7 @@ pre.code .tick {
         <div class="row">
           <button class="btn" id="pause" type="button" aria-pressed="false">❚❚ Pause</button>
           <label class="toggle" for="labelsToggle"><input type="checkbox" id="labelsToggle" checked> Show labels</label>
+          <label class="toggle" for="roadToggle"><input type="checkbox" id="roadToggle" checked> Show the road</label>
           <button class="btn warn" id="resetLesson" type="button">Reset lesson</button>
         </div>
       </div>
@@ -1098,6 +1099,170 @@ bigLed.position.set(7.4, -0.4, 0.2);
 bigLed.rotation.y = -0.35;
 scene.add(bigLed);
 
+/* ---------- model road: cars obey the same traffic light ----------
+   A pretend street behind the board, so learners see what each light means for real traffic.
+   Red: cars wait at the stop line. Yellow: a car that can stop safely stops; a car too close to stop
+   carries on (it is safer than braking hard). Green: cars cross. It follows litIndex, so the slider,
+   Pause, step-through and the broken-loop demo all change the traffic too. */
+const ROAD_Z = -9.6, LANE = 0.7, ROAD_W = 2.8, ROAD_X = 13, STOP_S = -1.85, CAR_L = 1.6;
+const road = new THREE.Group();
+road.position.y = -0.38;
+scene.add(road);
+(function buildRoad() {
+  const flat = (w, d, m, x, z, y = 0.01, h = 0.02) => { const o = mesh(new THREE.BoxGeometry(w, h, d), m, x, y + h / 2, z, false); road.add(o); return o; };
+  const asphalt = mat(0x3d454e, { roughness: 0.92 }), paint = mat(0xf4f6f8, { roughness: 0.6 }), amberPaint = mat(0xf2b705, { roughness: 0.6 });
+  const walk = mat(0xd8dee3, { roughness: 0.9 }), curb = mat(0xb9c2c9, { roughness: 0.85 });
+  flat(ROAD_X * 2 + 1, ROAD_W, asphalt, 0, ROAD_Z);
+  for (const side of [-1, 1]) {
+    const z = ROAD_Z + side * (ROAD_W / 2 + 0.36);
+    flat(ROAD_X * 2 + 1, 0.72, walk, 0, z, 0, 0.1);
+    flat(ROAD_X * 2 + 1, 0.06, curb, 0, ROAD_Z + side * (ROAD_W / 2 + 0.03), 0, 0.11);
+    flat(ROAD_X * 2 + 1, 0.05, paint, 0, ROAD_Z + side * (ROAD_W / 2 - 0.12), 0.02, 0.005);
+  }
+  // dashed centre line, with a gap at the crossing
+  for (let x = -ROAD_X + 0.4; x < ROAD_X; x += 1.1) if (Math.abs(x) > 2.4) flat(0.6, 0.05, amberPaint, x, ROAD_Z, 0.02, 0.005);
+  // zebra crossing and the two stop lines (one per direction)
+  for (let z = ROAD_Z - ROAD_W / 2 + 0.25; z < ROAD_Z + ROAD_W / 2 - 0.1; z += 0.34) flat(2.2, 0.18, paint, 0, z, 0.02, 0.005);
+  flat(0.1, LANE * 2 - 0.1, paint, STOP_S, ROAD_Z + LANE, 0.02, 0.005);
+  flat(0.1, LANE * 2 - 0.1, paint, -STOP_S, ROAD_Z - LANE, 0.02, 0.005);
+})();
+tagPart(road, 'road');
+
+// a small traffic light on each corner, facing its lane; the lamps copy the LEDs on the breadboard
+const roadLamps = [];
+function makeSignal(x, z, face) {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z); g.rotation.y = face;
+  const pole = mat(0x5b6670, { metalness: 0.4, roughness: 0.4 }), box = mat(0x1f262d, { roughness: 0.5 });
+  g.add(mesh(new THREE.CylinderGeometry(0.05, 0.06, 1.9, 14), pole, 0, 1.05, 0));
+  g.add(mesh(new THREE.BoxGeometry(0.34, 0.9, 0.3), box, 0, 2.2, 0));
+  g.add(mesh(new THREE.BoxGeometry(0.36, 0.04, 0.34), box, 0, 2.67, 0));
+  const lamps = [0xff3030, 0xffb400, 0x1fd067].map((hex, k) => {
+    const m = new THREE.MeshStandardMaterial({ color: new THREE.Color(hex).lerp(new THREE.Color(0x3a4048), 0.75), roughness: 0.3, emissive: hex, emissiveIntensity: 0 });
+    const lamp = mesh(new THREE.SphereGeometry(0.1, 18, 12), m, 0, 2.47 - k * 0.27, 0.13, false);
+    g.add(lamp);
+    g.add(mesh(new THREE.BoxGeometry(0.26, 0.03, 0.12), box, 0, 2.47 - k * 0.27 + 0.12, 0.2, false)); // little visor
+    const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: getGlowTexture(), color: hex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+    glow.scale.set(0.75, 0.75, 1); glow.position.set(0, 2.47 - k * 0.27, 0.2);
+    g.add(glow);
+    return { m, glow, hex };
+  });
+  roadLamps.push(lamps);
+  road.add(g);
+}
+makeSignal(-2.35, ROAD_Z + ROAD_W / 2 + 0.4, -Math.PI / 2); // for cars driving to the right (near lane)
+makeSignal(2.35, ROAD_Z - ROAD_W / 2 - 0.4, Math.PI / 2);   // for cars driving to the left (far lane)
+const ROAD_LAMP = { 0: 0, 1: 1, 2: 2 }; // CH index → lamp (red, yellow, green from the top)
+function setRoadLamps(idx) {
+  for (const lamps of roadLamps) lamps.forEach((l, k) => {
+    const on = idx != null && idx >= 0 && ROAD_LAMP[idx] === k;
+    l.m.emissiveIntensity = on ? 1.6 : 0;
+    l.m.color.set(on ? l.hex : new THREE.Color(l.hex).lerp(new THREE.Color(0x3a4048), 0.75));
+    l.glow.material.opacity = on ? 0.9 : 0;
+  });
+}
+
+// clean, simple cars: an extruded side profile, tinted glass, wheels, head and brake lights
+function makeCar(hex) {
+  const g = new THREE.Group();
+  const paint = mat(hex, { metalness: 0.35, roughness: 0.32 });
+  const glass = mat(0x24313c, { metalness: 0.2, roughness: 0.15 });
+  const tyre = mat(0x1b1d20, { roughness: 0.8 }), hub = mat(0xc9ced4, { metalness: 0.5, roughness: 0.3 });
+  const shape = (pts) => { const s = new THREE.Shape(); s.moveTo(...pts[0]); pts.slice(1).forEach((p) => s.lineTo(...p)); return s; };
+  const extrude = (pts, depth, m) => {
+    const geo = new THREE.ExtrudeGeometry(shape(pts), { depth, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 3 });
+    geo.translate(0, 0, -depth / 2);
+    return mesh(geo, m);
+  };
+  g.add(extrude([[-0.78, 0.12], [0.78, 0.12], [0.8, 0.3], [0.74, 0.36], [0.3, 0.4], [-0.6, 0.4], [-0.8, 0.34]], 0.64, paint));
+  g.add(extrude([[0.28, 0.39], [0.04, 0.6], [-0.42, 0.6], [-0.6, 0.39]], 0.56, glass));
+  g.add(mesh(new THREE.BoxGeometry(0.5, 0.03, 0.56), paint, -0.19, 0.625, 0)); // roof panel
+  const wheels = [];
+  for (const x of [-0.5, 0.5]) for (const z of [-0.33, 0.33]) {
+    const w = new THREE.Group(); w.position.set(x, 0.15, z);
+    const t = mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.1, 20), tyre); t.rotation.x = Math.PI / 2; w.add(t);
+    const h = mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.105, 12), hub); h.rotation.x = Math.PI / 2; w.add(h);
+    g.add(w); wheels.push(w);
+  }
+  const head = new THREE.MeshStandardMaterial({ color: 0xfff6d8, emissive: 0xfff2c0, emissiveIntensity: 0.5 });
+  const brake = new THREE.MeshStandardMaterial({ color: 0x8a1c1c, emissive: 0xff2020, emissiveIntensity: 0.15 });
+  for (const z of [-0.22, 0.22]) {
+    g.add(mesh(new THREE.BoxGeometry(0.04, 0.06, 0.14), head, 0.82, 0.3, z, false));
+    g.add(mesh(new THREE.BoxGeometry(0.04, 0.06, 0.14), brake, -0.82, 0.3, z, false));
+  }
+  g.traverse((o) => { if (o.material && !o.material.userData.shared) { o.material = o.material.clone(); o.material.userData.base = o.material.opacity; } });
+  g.userData = { wheels, brake: [] };
+  g.traverse((o) => { if (o.material && o.material.emissive && o.material.emissive.r > 0.9 && o.material.emissive.g < 0.2) g.userData.brake.push(o.material); });
+  return g;
+}
+
+// two lanes: dir +1 drives to the right (near lane), dir -1 to the left (far lane); s runs along the driving direction
+const CAR_COLOURS = [0xf4f6f8, 0x2c4e9e, 0x0a7480, 0xd9821a, 0x5b6670, 0xc93131, 0x1f262d, 0x7fa8c9];
+const cars = [];
+[[1, -9.6], [1, -5.6], [1, 1.5], [1, 7.5], [-1, -8.2], [-1, -4.2], [-1, 3.4], [-1, 9.4]].forEach(([dir, s], k) => {
+  const g = makeCar(CAR_COLOURS[k]);
+  g.rotation.y = dir > 0 ? 0 : Math.PI;
+  road.add(g);
+  cars.push({ g, dir, s, v: reduceMotion ? 0 : 1.2, vmax: [2.5, 2.1, 2.7, 2.3][k % 4], go: false, warned: false, a: 1 });
+});
+const CAR_A = 1.8, CAR_B = 3.2, CAR_COMFY = 1.8, GAP = 0.55, FADE = 1.4;
+function placeCar(c) {
+  c.g.position.set(c.dir * c.s, 0, ROAD_Z + c.dir * LANE);
+  const a = Math.max(0, Math.min(1, (ROAD_X - Math.abs(c.s)) / FADE));
+  c.g.visible = a > 0.01;
+  if (a !== c.a) { c.a = a; c.g.traverse((o) => { if (o.material) { o.material.transparent = a < 1; o.material.opacity = a; } }); }
+}
+function updateRoad(dt) {
+  if (!road.visible) return;
+  // the road follows the lights on the breadboard: no light (circuit off, or loop broken) means nobody may go
+  const state = litIndex === 2 ? 'go' : litIndex === 1 ? 'warn' : 'stop';
+  for (const dir of [1, -1]) {
+    const lane = cars.filter((c) => c.dir === dir).sort((a, b) => b.s - a.s);
+    let entered = false; // one car per lane may come back in each frame
+    lane.forEach((c, i) => {
+      const front = c.s + CAR_L / 2;
+      const before = front <= STOP_S + 0.02;
+      if (!before) { c.go = false; c.warned = false; }
+      // yellow: decide once. Too close to stop gently → carry on; otherwise stop at the line.
+      if (before && state === 'warn' && !c.warned) {
+        c.warned = true;
+        const d = STOP_S - front;
+        c.go = d < (c.v * c.v) / (2 * CAR_COMFY) && c.v > 0.5; // stopping here would need hard braking
+      }
+      if (state === 'go') { c.go = false; c.warned = false; }
+      let limit = Infinity;
+      if (before && state !== 'go' && !c.go) limit = STOP_S - CAR_L / 2 - 0.06;
+      // keep a safe gap to the car in front (the lane wraps round, so the first car follows the last one)
+      const lead = i > 0 ? lane[i - 1] : null;
+      if (lead && lead.g.visible) limit = Math.min(limit, lead.s - CAR_L - GAP);
+      const room = Math.max(0, limit - c.s);
+      const target = reduceMotion ? 0 : Math.min(c.vmax, Math.sqrt(2 * CAR_B * room));
+      const before_v = c.v;
+      c.v += Math.max(-CAR_B * 2 * dt, Math.min(CAR_A * dt, target - c.v));
+      c.v = Math.max(0, c.v);
+      c.s = Math.min(c.s + c.v * dt, limit === Infinity ? Infinity : Math.max(c.s, limit));
+      // drove off the far end: come back in at the start, if there is space
+      // (after a short random wait, at a slightly different speed, so the traffic doesn't fall into step with the lights)
+      if (c.s > ROAD_X + 0.2) {
+        if (c.wait == null) c.wait = Math.random() * 3;
+        c.wait -= dt;
+        const last = lane[lane.length - 1];
+        if (c.wait <= 0 && !entered && (last === c || last.s > -ROAD_X + CAR_L + GAP)) {
+          entered = true;
+          c.s = -ROAD_X - 0.2; c.vmax = 2 + Math.random() * 0.8; c.v = c.vmax * 0.8; c.wait = null;
+        }
+      }
+      c.g.userData.wheels.forEach((w) => { w.rotation.z -= (c.v * dt) / 0.15; });
+      if (dt > 0) {
+        const braking = c.v < 0.05 || c.v < before_v - 0.0005;
+        c.g.userData.brake.forEach((m) => { m.emissiveIntensity = braking ? 1.6 : 0.15; });
+      }
+      placeCar(c);
+    });
+  }
+}
+cars.forEach(placeCar);
+
 const PARTS = {};
 CH.forEach((_, i) => {
   PARTS['res' + i] = { obj: resistors[i] };
@@ -1127,7 +1292,7 @@ function setLights(idx) {
     L.body.opacity = on ? 0.98 : 0.7;
     L.light.intensity = on ? 2.4 : 0;
     L.glow.material.opacity = on ? 0.95 : 0;
-  });
+  });  setRoadLamps(idx);
 }
 
 /* ---------- current flow dots ---------- */
@@ -1227,6 +1392,16 @@ addLabel('Breadboard', V(-3.9, 0.02, 2.55), { obj: breadboard, lift: 6 });
 addLabel('Ground rail (−)', V(colX(3), 0.02, NEG_RAIL_Z), { obj: breadboard, lift: 34 });
 addLabel('Jumper wire', () => gndWire.curve.getPoint(0.45), { obj: gndWire.group, lift: 12 });
 addLabel('Officer Ohm', V(-5.9, 2.7, 1.6), { obj: cop, lift: 8 });
+addLabel('', V(-2.35, 2.35, ROAD_Z + ROAD_W / 2 + 0.4), {
+  obj: road, cls: 'lamp road', lift: 8,
+  update: (L) => {
+    const k = litIndex === 0 ? 'red' : litIndex === 1 ? 'yellow' : litIndex === 2 ? 'green' : 'off';
+    if (L._k === k) return;
+    L._k = k;
+    L.el.firstChild.textContent = { red: 'Red: cars wait at the stop line', yellow: 'Yellow: stop if you safely can', green: 'Green: cars go', off: 'Lights off: cars wait' }[k];
+    L.el.className = 'lbl lamp road' + (k === 'off' ? '' : ' on ' + k);
+  },
+});
 const pinLabels = ['D25', 'D26', 'D27', 'GND'].map((n, i) => addLabel(n, pinAt(n, HEADER_TOP + 0.05), {
   obj: esp32, cls: 'pin', lift: [14, 40, 66, 14][i],
   update: (L) => {
@@ -1545,7 +1720,7 @@ const PLAN = [
 
 const STEPS = [
   { stage: 0, title: 'See what we are building', cam: 'hero', seq: true, extra: 'A',
-    text: 'We will teach a small computer to turn three lights on and off in a repeating pattern. Red stays on for 5 seconds, green for 5 seconds, then yellow for 2 seconds, and it repeats.' },
+    text: 'We will teach a small computer to turn three lights on and off in a repeating pattern. Red stays on for 5 seconds, green for 5 seconds, then yellow for 2 seconds, and it repeats. Watch the model road behind the board: the cars obey the same lights.' },
   { stage: 1, title: 'Meet the parts', cam: 'overview', extra: 'B1',
     text: 'Click each part on the table to highlight it and learn its job. Can you find all five?' },
   { stage: 1, title: 'Look closely at an LED', cam: 'led', bigLed: true, extra: 'B2', play: playB2,
@@ -1573,7 +1748,7 @@ const STEPS = [
   { stage: 3, title: 'while True: the code runs the lights', cam: 'code', seq: true, code: true, stepper: true, pinStates: true, why: () => WHY.loop,
     text: 'while True: repeats its lines forever. value(1) means HIGH and turns this output on; value(0) means LOW and turns it off. time.sleep() tells the program how many seconds to wait.' },
   { stage: 4, title: 'Experiment: a longer green light', cam: 'hero', seq: true, code: true, stepper: true, extra: 'E1', pinStates: true,
-    text: 'Drag the slider to change how long the green light stays on, from 2 to 10 seconds. The light, the countdown and the code all change together.' },
+    text: 'Drag the slider to change how long the green light stays on, from 2 to 10 seconds. The light, the countdown and the code all change together. Watch the road: a longer green lets more cars cross.' },
   { stage: 4, title: 'Quick quiz', cam: 'hero', seq: true, extra: 'E2',
     text: 'Three quick questions to check what you learned. Wrong answers are fine: you get a hint and can try again.' },
 ];
@@ -1589,6 +1764,7 @@ const PART_INFO = {
   resistor: { name: '330 Ω resistor', purpose: 'Limits the current to help protect the LED.', more: 'Current means how much electricity is flowing. Ω (ohm) is the unit for resistance; the bands orange, orange, brown mean 330.' },
   breadboard: { name: 'Breadboard', purpose: 'Holds connections so we can build without soldering.', more: 'Soldering means joining metal with melted metal. On a breadboard you just push parts into the holes.' },
   wire: { name: 'Jumper wire', purpose: 'Connects one part of the circuit to another.', more: 'One end slides onto an ESP32 pin. The other end has a metal pin that pushes into a breadboard hole.' },
+  road: { name: 'Model road (pretend)', purpose: 'Shows what each light means for real cars.', more: 'The little traffic lights copy your LEDs. Red: cars wait at the stop line. Yellow: a car that can stop safely stops; a car already too close carries on, because braking hard is dangerous. Green: cars go.' },
   cop: { name: 'Officer Ohm', purpose: 'Your guide for this lesson.', more: 'Officer Ohm is named after the ohm (Ω), the unit we use to measure resistors.' },
 };
 const CORE_PARTS = ['controller', 'led', 'resistor', 'breadboard', 'wire'];
@@ -1911,6 +2087,13 @@ function phaseList() {
     <li data-phase="2"><i class="chip-lamp yellow"></i><b>YELLOW</b> Get ready to stop <span class="secs">2 s</span></li>
   </ul><p class="note" style="margin-top:8px">Only one light is on at a time. Then the pattern repeats.</p></div>`);
 }
+function roadCard() {
+  return el(`<div class="card"><h4>🚗 On the model road</h4><ul class="list">
+    <li><i class="chip-lamp red"></i><span><b>RED</b> Cars wait behind the white stop line.</span></li>
+    <li><i class="chip-lamp yellow"></i><span><b>YELLOW</b> A warning. A car that can stop safely, stops. A car already too close to stop carries on, because braking hard is dangerous.</span></li>
+    <li><i class="chip-lamp green"></i><span><b>GREEN</b> Cars cross.</span></li>
+  </ul><p class="note" style="margin-top:8px">That is why yellow lasts 2 seconds: it gives drivers time to stop safely. The road is pretend, to show what your lights mean.</p></div>`);
+}
 function planList(cur) {
   const items = PLAN.map((txt, k) => {
     const cls = k < cur ? 'done' : k === cur ? 'now' : '';
@@ -1955,7 +2138,7 @@ function setNoResistor(on) {
 }
 function renderExtra(s) {
   extra.innerHTML = '';
-  if (s.extra === 'A') extra.appendChild(phaseList());
+  if (s.extra === 'A') { extra.appendChild(phaseList()); extra.appendChild(roadCard()); }
   if (s.extra === 'B1') {
     const items = CORE_PARTS.map((p) => `<li class="part-item ${partsFound.has(p) ? 'done' : ''}" data-part="${p}" tabindex="0" role="button"><span class="check">✓</span><span><b>${PART_INFO[p].name}</b></span></li>`).join('');
     const card = el(`<div class="card"><h4>Parts found: <span id="foundCount">${partsFound.size}</span> of 5</h4><ul class="list" id="partList">${items}</ul>
@@ -2248,6 +2431,7 @@ $('#next').addEventListener('click', () => goTo(stepIndex + 1));
 $('#replay').addEventListener('click', () => goTo(stepIndex, { replay: true }));
 $('#resetView').addEventListener('click', () => flyTo(STEPS[stepIndex].cam));
 $('#labelsToggle').addEventListener('change', (e) => { showLabels = e.target.checked; });
+$('#roadToggle').addEventListener('change', (e) => { road.visible = e.target.checked; if (road.visible) cars.forEach(placeCar); });
 const pauseBtn = $('#pause');
 function setPaused(p) {
   paused = p;
@@ -2276,6 +2460,7 @@ function resetLesson() {
   revealOpen = false;
   setPaused(false);
   showLabels = true; $('#labelsToggle').checked = true;
+  road.visible = true; $('#roadToggle').checked = true;
   seq.running = false;
   stepIndex = 0;
   goTo(0, { replay: true });
@@ -2356,6 +2541,7 @@ function frame(now) {
   updateTweens(dt);
   updateCam(rdt);
   updateSeq(dt);
+  updateRoad(dt);
   updateFlow(dt);
   // enlarged LED grows in for stage B
   const s = bigLed.scale.x + (Math.max(0.001, bigLedTarget) - bigLed.scale.x) * Math.min(1, rdt * 4);
@@ -2388,7 +2574,7 @@ goTo(0, { instant: true });
 requestAnimationFrame(frame);
 
 // expose a tiny hook for automated checks
-window.__lesson = { camera, controls, goTo, get step() { return stepIndex; }, seq, setGreen, selectPart };
+window.__lesson = { camera, controls, goTo, get step() { return stepIndex; }, seq, setGreen, selectPart, cars, tick(dt) { updateSeq(dt); updateRoad(dt); } };
   // the program for "Try it on my real board": exactly the code shown in this lesson (with the green time chosen)
   window.__lessonProgram = () => CODE.map((l) => l[0]).join('\n').replace('GREEN_S', String(greenDur)) + '\n';
 })();
