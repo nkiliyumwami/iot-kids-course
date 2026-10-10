@@ -589,6 +589,7 @@ pre.code .tick {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="../../assets/road/model-road.js"></script>
+<script src="../../assets/road/pedestrians.js"></script>
 <script src="../../course.js"></script>
 <script src="../../assets/ohm/ohm.js"></script>
 <script src="../../assets/rewards.js"></script>
@@ -1103,7 +1104,10 @@ scene.add(bigLed);
 /* ---------- model road (assets/road/model-road.js): cars obey the same traffic light ---------- */
 const roadApi = ModelRoad.create({ THREE, scene, renderer, getLit: () => litIndex, reduceMotion, glow: getGlowTexture, tagPart, suddenRed: false });
 const road = roadApi.group, cars = roadApi.cars, ROAD_Z = roadApi.ROAD_Z, ROAD_W = roadApi.ROAD_W;
-const setRoadLamps = (idx) => roadApi.setLamps(idx), updateRoad = (dt) => roadApi.update(dt), placeCar = (c) => roadApi.placeCar(c);
+const walkers = Pedestrians.create({ THREE, road: roadApi, reduceMotion, minWindow: 2,
+  // people cross while cars wait at red (this circuit has no pedestrian light)
+  walkWindow: () => (seq.running && !loopBroken && PHASES[seq.phase].ch === 0 ? (seq.manual ? Infinity : seq.remaining) : 0) });
+const setRoadLamps = (idx) => roadApi.setLamps(idx), updateRoad = (dt) => { roadApi.update(dt); walkers.update(dt); }, placeCar = (c) => roadApi.placeCar(c);
 
 const PARTS = {};
 CH.forEach((_, i) => {
@@ -1934,6 +1938,7 @@ function roadCard() {
     <li><i class="chip-lamp red"></i><span><b>RED</b> Cars wait behind the white stop line.</span></li>
     <li><i class="chip-lamp yellow"></i><span><b>YELLOW</b> A warning. A car that can stop safely, stops. A car already too close to stop carries on, because braking hard is dangerous.</span></li>
     <li><i class="chip-lamp green"></i><span><b>GREEN</b> Cars cross.</span></li>
+    <li><i class="chip-lamp" style="background:#5b6670"></i><span><b>PEOPLE</b> cross the zebra only while the cars wait at red, after looking both ways. Cars always wait for anyone still on the crossing.</span></li>
   </ul><p class="note" style="margin-top:8px">That is why yellow lasts 2 seconds: it gives drivers time to stop safely. The road is pretend, to show what your lights mean.</p></div>`);
 }
 function planList(cur) {
@@ -2416,7 +2421,7 @@ goTo(0, { instant: true });
 requestAnimationFrame(frame);
 
 // expose a tiny hook for automated checks
-window.__lesson = { camera, controls, goTo, get step() { return stepIndex; }, seq, setGreen, selectPart, cars, tick(dt) { updateSeq(dt); updateRoad(dt); } };
+window.__lesson = { camera, controls, goTo, get step() { return stepIndex; }, seq, setGreen, selectPart, cars, walkers, tick(dt) { updateSeq(dt); updateRoad(dt); } };
   // the program for "Try it on my real board": exactly the code shown in this lesson (with the green time chosen)
   window.__lessonProgram = () => CODE.map((l) => l[0]).join('\n').replace('GREEN_S', String(greenDur)) + '\n';
 })();

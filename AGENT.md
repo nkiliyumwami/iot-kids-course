@@ -76,7 +76,8 @@ https://nkiliyumwami.github.io/iot-kids-course/. Read this whole file and `ROADM
   status chip, Reset view, Previous/Next, Replay this step, Pause, Show labels, Reset lesson, stage pills and progress.
 - The model road (street, cars, traffic lights, trees) lives in `assets/road/model-road.js` and is shared by every traffic-light
   lesson: load it after OrbitControls and call `ModelRoad.create({ THREE, scene, renderer, getLit: () => litIndex, reduceMotion,
-  glow: getGlowTexture, tagPart, suddenRed })` (see lesson 1). Improve it there, not in a lesson. Its traffic lights face the
+  glow: getGlowTexture, tagPart, suddenRed })` (see lesson 1). Improve it there, not in a lesson. People on the road come from `assets/road/pedestrians.js` (`Pedestrians.create`, see lessons 1, 3
+  and 4): they may only cross when the lesson's program allows it, look both ways, and cars always give way to them. Its traffic lights face the
   learner so the lit lamp is always easy to see; keep them that way.
 - Nothing may hide the LEDs (no covers or housings). Do not add decorative wires that imply connections that don't exist.
 - Highlight both ends of a connection before drawing a wire, move the camera close, and pause after each connection until Next.
