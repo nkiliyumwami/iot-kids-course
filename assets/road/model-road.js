@@ -370,7 +370,18 @@
            models: [ { file: 'sedan.glb' }, { file: 'suv.glb', length: 1.75 } ] }
        forward: the direction the model's nose points in its file (+z, -z, +x or -x); length: how long the car should be
        on our road (default 1.6); wheels are the nodes whose name contains "wheel" and spin around wheelAxis. */
-    const CAR_MODELS = null;
+    // Our own Blender models at real size (scale 1 : 3 on the road), credits in assets/models/CREDITS.md.
+    // Their noses point along -x, the wheels (wheel-fl, -fr, -rl, -rr) turn around z, wheelRadius = tyre radius / 3.
+    const CAR_MODELS = {
+      credit: 'Car models made in Blender for IoT for Young Makers; tyre and rim textures from Poly Haven (CC0)', forward: '-x', wheelAxis: 'z',
+      models: [
+        { file: 'sedan.glb', length: 1.6, wheelRadius: 0.11 },
+        { file: 'suv.glb', length: 1.57, wheelRadius: 0.123 },
+        { file: 'hatchback.glb', length: 1.4, wheelRadius: 0.105 },
+        { file: 'taxi.glb', length: 1.62, wheelRadius: 0.11 },
+        { file: 'van.glb', length: 1.77, wheelRadius: 0.117 },
+      ],
+    };
     const base = o.base == null ? '../../' : o.base;
     function loadScript(src) {
       return new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = src; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
@@ -402,7 +413,11 @@
           if (n.isMesh) {
             n.castShadow = true; n.receiveShadow = true;
             n.material = Array.isArray(n.material) ? n.material.map((m) => m.clone()) : n.material.clone();
-            (Array.isArray(n.material) ? n.material : [n.material]).forEach((m) => { if (envMap && !m.envMap) { m.envMap = envMap; m.envMapIntensity = 0.7; } mats.push(m); });
+            (Array.isArray(n.material) ? n.material : [n.material]).forEach((m) => {
+              if (envMap && !m.envMap) { m.envMap = envMap; m.envMapIntensity = 0.7; }
+              if (m.transparent) m.userData.alwaysTransparent = true; // glass stays see-through after fading in
+              mats.push(m);
+            });
           }
           if (/wheel/i.test(n.name) && !wheels.some((w) => { let p = n.parent; while (p) { if (p === w) return true; p = p.parent; } return false; })) wheels.push(n);
         });
@@ -412,7 +427,10 @@
         if (shadow) { const pp = shadow.geometry.parameters; shadow.scale.set((L + 0.35) / pp.width, 1, (size.z * k2 + 0.35) / pp.height); g.add(shadow); mats.push(shadow.material); }
         c.L = L; c.wr = Math.max(0.08, (spec.wheelRadius || size.y * 0.22) * (spec.wheelRadius ? 1 : k2));
         const spin = wheels.map((w) => ({ w, axis }));
-        g.userData = { wheels: spin.map((x) => ({ rotation: { set z(v) { x.w.rotation[x.axis] = -v; }, get z() { return -x.w.rotation[x.axis]; } } })), tail: { emissiveIntensity: 0 }, mats, shadow };
+        // brake lights: materials whose name contains "tail" glow brighter when the car slows down
+        const tails = mats.filter((m) => /tail/i.test(m.name) && m.emissive);
+        const tail = { set emissiveIntensity(v) { tails.forEach((m) => { m.emissiveIntensity = v; }); }, get emissiveIntensity() { return tails.length ? tails[0].emissiveIntensity : 0; } };
+        g.userData = { wheels: spin.map((x) => ({ rotation: { set z(v) { x.w.rotation[x.axis] = -v; }, get z() { return -x.w.rotation[x.axis]; } } })), tail, mats, shadow };
         c.a = -1; placeCar(c);
       }));
       road.userData.carCredit = man.credit || '';
