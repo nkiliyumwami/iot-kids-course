@@ -499,7 +499,7 @@ pre.code .tick {
         <circle cx="17" cy="41" r="6" fill="#22D36B"/>
       </svg>
       <div>
-        <a class="home-link" href="../../index.html">← All lessons</a>
+        <a class="home-link" href="../../lessons.html">← All lessons</a>
         <h1>The Pedestrian Button</h1>
         <p>Lesson 3 · Teach the ESP32 to listen to a button</p>
       </div>
@@ -1997,7 +1997,7 @@ function finishCard() {
   const next = window.COURSE ? window.COURSE.nextLesson(LESSON_SLUG) : null;
   const link = next && next.status === 'ready'
     ? `<p style="margin:8px 0 0"><a class="btn primary" href="../${next.slug}/index.html">Next lesson: ${next.title} →</a></p>`
-    : `<p style="margin:8px 0 0"><a class="btn" href="../../index.html">Back to all lessons</a></p>`;
+    : `<p style="margin:8px 0 0"><a class="btn" href="../../lessons.html">Back to all lessons</a></p>`;
   return el(`<div class="feedback good" id="quizDone"><b>You finished the lesson!</b><p style="margin:4px 0 0">Your ESP32 can now listen as well as talk: you wired a button, switched on a pull-up and used if and else to decide. Great work, engineer!</p>${link}</div>`);
 }
 

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>IoT for Young Makers · KundaKode</title>
 <script src="assets/brand.js"></script>
-<meta name="description" content="A free, interactive 3D course that teaches complete beginners aged 10–15 to build and code IoT projects with an ESP32 and MicroPython.">
+<meta name="description" content="A free, interactive 3D course where kids aged 10–15 build real electronics with an ESP32 and code it in Python: a smart traffic light, a crossing button, sensors and phone control. Real skills for IoT, robotics and engineering.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -164,20 +164,52 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
 .brandbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0 18px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
 .brandbar .kk-logo { font-size: 28px; }
 .brandbar > span { color: var(--muted); font-weight: 800; font-size: 14px; }
+.brandbar .navlink { font-weight: 800; font-size: 15px; text-decoration: none; color: var(--accent-strong); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; }
+.brandbar .navlink:hover { border-color: var(--accent); }
+
+/* Landing page sections */
+.sec { margin: 0 0 44px; }
+.sec-head { margin-bottom: 14px; }
+.sec-head h2 { font-size: clamp(26px, 4vw, 34px); }
+.sec-head p { margin: 6px 0 0; color: var(--muted); max-width: 70ch; }
+.cta-row .btn.ghost { background: var(--surface); }
+.projects { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.project { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: grid; gap: 6px; align-content: start; }
+.project .ico { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 24px; background: var(--accent-soft); }
+.project h3 { font-size: 20px; }
+.project p { margin: 0; font-size: 14.5px; }
+.project .uses { font-size: 12.5px; color: var(--muted); }
+.project .uses b { color: var(--ink); }
+.skills { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.skill { background: var(--surface); border: 1px solid var(--line); border-top: 5px solid var(--accent); border-radius: 14px; padding: 14px; }
+.skill:nth-child(2) { border-top-color: var(--hl); } .skill:nth-child(3) { border-top-color: var(--green); } .skill:nth-child(4) { border-top-color: var(--red); }
+.skill b { display: block; font-family: var(--font-display); font-size: 19px; margin-bottom: 4px; }
+.skill span { font-size: 14.5px; color: var(--muted); }
+.note-strip { margin-top: 12px; background: var(--accent-soft); border-radius: 14px; padding: 12px 16px; font-size: 15px; }
+.kit { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; }
+.kit .panel ul { gap: 6px; }
+.kit li b { font-weight: 800; }
+.kit .tip { background: #FFF6D6; border-radius: 12px; padding: 10px 12px; font-size: 14.5px; margin-top: 10px; }
+.closing { text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 30px 16px; }
+.closing h2 { font-size: clamp(26px, 4vw, 36px); margin-bottom: 8px; }
+.closing p { color: var(--muted); margin: 0 0 16px; }
+.closing .cta-row { justify-content: center; }
+@media (max-width: 900px) { .projects { grid-template-columns: repeat(2, minmax(0, 1fr)); } .skills { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .projects, .skills, .kit { grid-template-columns: minmax(0, 1fr); } }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <nav class="brandbar" aria-label="KundaKode"><a data-kk-logo href="index.html"></a><span>IoT for Young Makers · a free course</span></nav>
+  <nav class="brandbar" aria-label="KundaKode"><a data-kk-logo href="index.html"></a><a class="navlink" href="lessons.html">All lessons →</a></nav>
   <header class="hero">
     <div class="signal" aria-hidden="true"><i class="r"></i><i class="y"></i><i class="g"></i></div>
     <div>
       <p class="eyebrow">A free KundaKode course · ages 10–15 · no experience needed</p>
-      <h1>IoT for Young Makers</h1>
-      <p class="lead">Build a traffic light, teach it to listen, sense the dark, and finally control it from your phone. Every wire, hole and line of code comes with a “why”.</p>
+      <h1>Kids build real tech that solves real problems</h1>
+      <p class="lead">With a tiny computer called an ESP32, a few wires and real Python code, your child builds a smart traffic light, teaches it to listen to a button, to sense the dark, and to talk to a phone. These are the same skills engineers use for smart homes, robots and the Internet of Things.</p>
       <div class="cta-row">
-        <a class="btn primary" id="startBtn" href="lessons/01-traffic-light/index.html">Start lesson 1 →</a>
-        <span class="cta-note" id="startNote">Works in any browser, on a computer, tablet or phone.</span>
+        <a class="btn primary" id="startBtn" href="lessons/00-meet-esp32/index.html">Start the free course →</a>
+        <a class="btn ghost" href="lessons.html">See all lessons</a>
       </div>
     </div>
     <div class="hero-ohm-bubble"><span>Hi, I’m Officer Ohm!</span><img class="hero-ohm" src="assets/ohm/wave.svg" alt="Officer Ohm, your guide, waving hello" width="170" height="198"></div>
@@ -197,113 +229,102 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
     <ol class="story-steps" id="storySteps" aria-label="Jump to a lesson in the story"></ol>
   </section>
 
-  <div class="how">
-    <div><b>One new idea</b><span>Each lesson adds just one new part or one new piece of code.</span></div>
-    <div><b>See it in 3D</b><span>Turn and zoom the circuit, then watch each wire go in.</span></div>
-    <div><b>Always “why?”</b><span>Tap a question to learn why it’s built that way.</span></div>
-    <div><b>Your own pace</b><span>About 45 minutes each. One or two a week is plenty.</span></div>
-  </div>
-
-  <section class="shelf" aria-label="Your badges">
-    <div><h2>Your badges</h2><span class="count" id="badgeCount"></span></div>
-    <div class="row" id="badgeRow"></div>
-    <a class="btn" id="courseCert" href="certificate.html?lesson=all">🎓 Course certificate</a>
+  <section class="sec" aria-labelledby="realTitle">
+    <div class="sec-head">
+      <p class="eyebrow">Not just toys</p>
+      <h2 id="realTitle">Real problems your child can solve</h2>
+      <p>The course teaches the building blocks: outputs, inputs, sensors, decisions and Wi-Fi. With the same board and one extra sensor, kids can go on to build projects like these for their own home and school.</p>
+    </div>
+    <div class="projects">
+      <article class="project"><span class="ico" aria-hidden="true">🌱</span><h3>Self-watering plant</h3><p>A soil sensor notices when the plant is thirsty and switches on a small pump. No more dried-out plants during the holidays.</p><p class="uses"><b>Uses:</b> sensors, analog readings, if/else</p></article>
+      <article class="project"><span class="ico" aria-hidden="true">💡</span><h3>Lights that save energy</h3><p>A motion sensor switches the lights off when a room is empty. Home automation that lowers the electricity bill.</p><p class="uses"><b>Uses:</b> inputs, timers, outputs</p></article>
+      <article class="project"><span class="ico" aria-hidden="true">🚪</span><h3>Door and window alarm</h3><p>A magnet switch beeps and sends an alert to a phone when a door opens while nobody is home.</p><p class="uses"><b>Uses:</b> button-style inputs, a buzzer, Wi-Fi</p></article>
+      <article class="project"><span class="ico" aria-hidden="true">💧</span><h3>Water-leak warning</h3><p>Two wires under the sink or the washing machine detect water and warn the family before the floor floods.</p><p class="uses"><b>Uses:</b> sensors, alarms, phone alerts</p></article>
+      <article class="project"><span class="ico" aria-hidden="true">🌡️</span><h3>Classroom air checker</h3><p>Measures temperature and fresh air, and shows a traffic light: green is fine, red means open a window.</p><p class="uses"><b>Uses:</b> the traffic light from lesson 1, sensors</p></article>
+      <article class="project"><span class="ico" aria-hidden="true">🚗</span><h3>Parking helper</h3><p>A distance sensor lights green, yellow and red as the car gets close to the garage wall.</p><p class="uses"><b>Uses:</b> distance sensing, LEDs, decisions</p></article>
+    </div>
   </section>
 
-  <a class="tool" href="pins.html">
-    <img src="assets/ohm/magnify.svg" alt="" width="64" height="74">
-    <span><b>ESP32 Pin Explorer</b><span>Your map of the board: tap any of the 30 pins to see its job, what it can do and the code for it. Handy in every lesson.</span></span>
-    <span class="go" aria-hidden="true">→</span>
-  </a>
-
-  <a class="tool" href="run.html">
-    <img src="assets/ohm/point.svg" alt="" width="64" height="74">
-    <span><b>Run on my ESP32 <small style="background:var(--hl);border-radius:999px;padding:1px 8px;font-size:12px;vertical-align:middle">BETA</small></b><span>Plug in your real board, press Run, and watch your own code blink its light. Chrome or Edge on a computer.</span></span>
-    <span class="go" aria-hidden="true">→</span>
-  </a>
-
-  <main id="units"></main>
-
-  <div class="cols">
-    <div class="panel">
-      <h2>What you need</h2>
-      <p class="small">You can do every lesson on screen first. To build it for real, you need:</p>
-      <ul>
-        <li>ESP32 DevKit V1 board (30 pins) and a USB data cable that fits it (micro-USB or USB-C)</li>
-        <li>A breadboard and a few male-to-male and female-to-male jumper wires</li>
-        <li>3 LEDs (red, yellow, green) and 3 × 330 Ω resistors</li>
-        <li>Later: a push button, a small buzzer, a light sensor (LDR) and a 10 kΩ resistor</li>
-        <li>A computer with Thonny (free) to send MicroPython code to the ESP32</li>
-      </ul>
+  <section class="sec" aria-labelledby="skillsTitle">
+    <div class="sec-head">
+      <p class="eyebrow">For parents</p>
+      <h2 id="skillsTitle">Real skills for the future</h2>
+      <p>Every lesson builds something that really works, and explains why each wire, hole and line of code is there. Kids learn the way engineers work: plan it, build it, test it, fix it.</p>
     </div>
-    <div class="panel">
-      <h2>For parents and teachers</h2>
-      <p>Lessons run in the browser and save progress only on this device. No accounts, and no personal data is collected.</p>
-      <p>The animations show how circuits work. They are not safety tests, so please check real circuits before they are plugged in.</p>
-      <p class="small">New lessons are added regularly. Lessons marked “coming soon” are on the way.</p>
+    <div class="skills">
+      <div class="skill"><b>Electronics</b><span>Circuits, voltage, current and resistors: how every gadget in the house works inside.</span></div>
+      <div class="skill"><b>Real coding</b><span>Python (MicroPython), the language professionals use for data, AI and devices. Not drag-and-drop blocks.</span></div>
+      <div class="skill"><b>Engineering thinking</b><span>Break a problem into steps, test each one, find bugs and fix them. A skill for every subject.</span></div>
+      <div class="skill"><b>IoT and robotics</b><span>Sensors, inputs, outputs and Wi-Fi: the foundations of smart homes, robots and self-driving cars.</span></div>
     </div>
-  </div>
+    <p class="note-strip">🛡️ <b>Safe by design:</b> the board runs on 3.3 volts from a USB cable, never from the wall socket. Lessons use proper engineering words, explained in plain language first.</p>
+  </section>
+
+  <section class="sec" id="kit" aria-labelledby="kitTitle">
+    <div class="sec-head">
+      <p class="eyebrow">What you need</p>
+      <h2 id="kitTitle">One ESP32 starter kit is all it takes</h2>
+      <p>Every lesson works on screen first, so you can start today. To build it for real, buy one ESP32 starter kit instead of collecting parts one by one: it is simpler, usually cheaper, and the parts are made to work together.</p>
+    </div>
+    <div class="kit">
+      <div class="panel">
+        <h2>Check that the kit includes</h2>
+        <ul>
+          <li><b>ESP32 DevKit V1, 30 pins</b> (the board used in every lesson; a CP2102 or CH340 USB chip both work)</li>
+          <li><b>A USB data cable</b> that fits the board (micro-USB or USB-C). Some cables only charge.</li>
+          <li><b>A breadboard</b> (830 holes) and <b>jumper wires</b>: male-to-male and female-to-male</li>
+          <li><b>LEDs</b> (red, yellow, green) and <b>330 Ω resistors</b></li>
+          <li><b>Push buttons</b>, a <b>buzzer</b>, a <b>light sensor</b> (LDR) and <b>10 kΩ resistors</b></li>
+          <li>Nice extras for the real projects: a <b>motion sensor</b> (PIR), a <b>distance sensor</b> (ultrasonic) and a <b>soil moisture sensor</b></li>
+        </ul>
+        <p class="tip">💡 <b>Shopping tip:</b> search for “ESP32 starter kit DevKit V1 30-pin”. Kits like this usually cost around $20–40, depending on the shop and how many sensors are included.</p>
+      </div>
+      <div class="panel">
+        <h2>And a computer</h2>
+        <p>Any computer works for the lessons. To send code to the board with one click, use <b>Chrome or Edge</b> and our <a href="run.html">Run on my ESP32</a> page: nothing to install.</p>
+        <p>The first time, the same page installs MicroPython on the board for you (it takes about a minute).</p>
+        <p class="small">Prefer a classic editor? Thonny (free) works too.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="parentsTitle">
+    <div class="cols">
+      <div class="panel">
+        <h2 id="parentsTitle">For parents and teachers</h2>
+        <p>Free, with no accounts and no ads. Lessons run in the browser and save progress only on this device; no personal data is collected.</p>
+        <p>The animations show how circuits work. They are not safety tests, so please check real circuits before they are plugged in.</p>
+      </div>
+      <div class="panel">
+        <h2>How the course works</h2>
+        <p><b>One new idea per lesson</b>, about 45 minutes each. Kids see every wire go in on a 3D workbench, answer short quizzes, earn badges and a certificate, then build it for real.</p>
+        <p><a href="lessons.html">See all lessons →</a></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec closing">
+    <h2>Ready to build something real?</h2>
+    <p>Start with lesson 0 on screen today. Add the kit when you are ready.</p>
+    <div class="cta-row"><a class="btn primary" id="startBtn2" href="lessons/00-meet-esp32/index.html">Start the free course →</a><a class="btn ghost" href="lessons.html">See all lessons</a></div>
+  </section>
 
   <footer>IoT for Young Makers by <b>KundaKode</b> · ESP32 + MicroPython · <a href="https://github.com/nkiliyumwami/iot-kids-course">Source on GitHub</a></footer>
 </div>
 
 <script src="course.js"></script>
 <script>
+// The start buttons point at the next lesson to do (or say "Continue" if the learner has started)
 (function () {
-  'use strict';
-  const C = window.COURSE;
-  const prog = C.readProgress();
-  const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
-  const main = document.getElementById('units');
-  Object.keys(C.units).forEach((u) => {
-    const unit = C.units[u];
-    const list = C.lessons.filter((l) => String(l.unit) === u);
-    const sec = document.createElement('section');
-    sec.className = 'unit';
-    sec.innerHTML = `<div class="unit-head"><h2>${u === '0' ? '' : `Part ${u}: `}${esc(unit.name)}</h2><p>${esc(unit.blurb)}</p></div><ol class="trail"></ol>`;
-    const ol = sec.querySelector('ol');
-    list.forEach((l) => {
-      const p = prog[l.slug] || {};
-      const ready = l.status === 'ready';
-      const done = ready && p.done;
-      const pct = ready && p.steps ? Math.round(((p.step + 1) / p.steps) * 100) : 0;
-      let badge = '<span class="badge soon">Coming soon</span>';
-      if (ready) badge = done ? '<span class="badge done">Finished ✓</span>' : p.steps ? `<span class="badge going">In progress · ${pct}%</span>` : '<span class="badge open">Ready</span>';
-      const li = document.createElement('li');
-      const badgeImg = `<img class="badge-img ${done ? '' : 'locked'}" src="${C.badgeSrc(l)}" alt="${done ? 'Lesson ' + l.n + ' badge earned' : ''}" width="52" height="52">`;
-      li.innerHTML = `<article class="lesson ${ready ? 'ready' : ''} ${done ? 'done' : ''}">${badgeImg}
-        <div class="num">${done ? '✓' : l.n}</div>
-        <div>${badge}
-          <h3>${ready ? `<a href="lessons/${l.slug}/index.html">${esc(l.title)}</a>` : esc(l.title)}</h3>
-          <p>${esc(l.idea)}</p>
-          <div class="meta"><span><b>New part:</b> ${esc(l.hardware)}</span><span><b>New code:</b> <code>${esc(l.code)}</code></span><span>About ${l.minutes} minutes</span></div>
-          ${ready && p.steps && !done ? `<div class="bar" aria-hidden="true"><i style="width:${pct}%"></i></div>` : ''}
-          ${done ? `<a class="cert-link" href="certificate.html?lesson=${l.slug}">🎓 Your certificate</a>` : ''}
-        </div></article>`;
-      ol.appendChild(li);
-    });
-    main.appendChild(sec);
-  });
-  // badge shelf
-  const earnedList = C.lessons.filter((l) => (prog[l.slug] || {}).done);
-  document.getElementById('badgeRow').innerHTML = C.lessons.map((l) => {
-    const got = (prog[l.slug] || {}).done;
-    return `<img class="${got ? '' : 'locked'}" src="${C.badgeSrc(l)}" alt="Lesson ${l.n}: ${esc(l.title)}${got ? ' (earned)' : ' (not yet)'}" title="Lesson ${l.n}: ${esc(l.title)}">`;
-  }).join('');
-  document.getElementById('badgeCount').textContent = `${earnedList.length} of ${C.lessons.length} earned`;
-  const cc = document.getElementById('courseCert');
-  if (earnedList.length < C.lessons.length) { cc.textContent = '🔒 Course certificate'; cc.style.background = 'var(--muted)'; }
-  // "Continue" points at the first ready lesson that isn't finished
+  const C = window.COURSE; if (!C) return;
+  let prog = {}; try { prog = C.readProgress() || {}; } catch (e) { prog = {}; }
   const next = C.lessons.find((l) => l.status === 'ready' && !(prog[l.slug] || {}).done);
-  const btn = document.getElementById('startBtn'), note = document.getElementById('startNote');
-  if (next) {
-    btn.href = `lessons/${next.slug}/index.html`;
-    const started = Object.keys(prog).length > 0;
-    btn.textContent = `${started ? 'Continue' : 'Start'}: lesson ${next.n} →`;
-  } else {
-    btn.textContent = 'Review lesson 1 →';
-    note.textContent = 'You’ve finished every lesson so far. New ones are on the way!';
-  }
+  const started = Object.keys(prog).length > 0;
+  ['startBtn', 'startBtn2'].forEach((id) => {
+    const b = document.getElementById(id); if (!b) return;
+    if (next) { b.href = `lessons/${next.slug}/index.html`; if (started) b.textContent = `Continue: lesson ${next.n} →`; }
+    else { b.href = 'lessons.html'; b.textContent = 'See all lessons →'; }
+  });
 })();
 </script>
 <script>

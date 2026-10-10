@@ -510,7 +510,7 @@ pre.code .tick {
         <circle cx="17" cy="41" r="6" fill="#22D36B"/>
       </svg>
       <div>
-        <a class="home-link" href="../../index.html">← All lessons</a>
+        <a class="home-link" href="../../lessons.html">← All lessons</a>
         <h1>A Fair Crossing</h1>
         <p>Lesson 4 · Remember a button press and wait for a safe moment</p>
       </div>
@@ -1971,7 +1971,7 @@ function finishCard() {
   const next = window.COURSE ? window.COURSE.nextLesson(LESSON_SLUG) : null;
   const link = next && next.status === 'ready'
     ? `<p style="margin:8px 0 0"><a class="btn primary" href="../${next.slug}/index.html">Next lesson: ${next.title} →</a></p>`
-    : `<p style="margin:8px 0 0"><a class="btn" href="../../index.html">Back to all lessons</a></p>`;
+    : `<p style="margin:8px 0 0"><a class="btn" href="../../lessons.html">Back to all lessons</a></p>`;
   return el(`<div class="feedback good" id="quizDone"><b>You finished the lesson!</b><p style="margin:4px 0 0">Your crossing is fair now: it remembers a press in a variable, finishes the green and then gives walkers their turn. Great work, engineer!</p>${link}</div>`);
 }
 
