@@ -85,7 +85,7 @@
         }
       }
       if (this.micropython) {
-        const r = await this.exec("import sys\nprint(sys.implementation.name, '.'.join(str(x) for x in sys.implementation.version[:3]), sys.platform)", { timeout: 4000 });
+        const r = await this.exec("import sys\nprint(sys.implementation.name, '.'.join(str(x) for x in sys.implementation.version[:3]), sys.platform)", { timeout: 4000, fresh: false });
         this.version = (r.out || '').trim();
         this._note('MicroPython answered: ' + this.version);
       } else {
@@ -115,7 +115,7 @@
       // after the learner pressed EN or changed something: look for MicroPython again on the open port
       this.micropython = await this._enterRaw(3, 1200);
       if (this.micropython) {
-        const r = await this.exec("import sys\nprint(sys.implementation.name, '.'.join(str(x) for x in sys.implementation.version[:3]), sys.platform)", { timeout: 4000 });
+        const r = await this.exec("import sys\nprint(sys.implementation.name, '.'.join(str(x) for x in sys.implementation.version[:3]), sys.platform)", { timeout: 4000, fresh: false });
         this.version = (r.out || '').trim();
         this._note('MicroPython answered: ' + this.version);
         this._set('ready');
@@ -225,6 +225,10 @@
       opts = opts || {};
       if (this.job) throw Object.assign(new Error('A program is already running'), { code: 'busy-run' });
       if (!(await this._enterRaw(2))) throw Object.assign(new Error('MicroPython did not answer'), { code: 'no-reply' });
+      if (opts.fresh !== false) await this.softReset();
+      // A soft reset forgets the old program but the ESP32 keeps its pins as they were, so an LED from the last
+      // program could stay on. Switch off the pins we know about before the new program starts.
+      if (opts.offPins && opts.offPins.length) await this._quiet(`from machine import Pin\nfor n in (${opts.offPins.join(', ')},):\n    Pin(n, Pin.OUT).value(0)`);
       this.buf = '';
       const job = { out: '', err: '', phase: 'ok', onOut: opts.onOut };
       const done = new Promise((resolve, reject) => { job.resolve = resolve; job.reject = reject; });
@@ -259,6 +263,29 @@
         this.job = null;
         job.resolve({ out: job.out, err: job.err });
       }
+    }
+
+    /* Soft reset, like pressing EN but without losing the USB connection: every pin goes back to off and the
+       old program's variables are forgotten, so each Run starts from a clean board. Ctrl-D on an empty raw REPL
+       line does it (as mpremote does). main.py does not run, because the board stays in raw mode. */
+    async softReset() {
+      this.buf = '';
+      await this._write('\x04');
+      const end = Date.now() + 3000;
+      while (Date.now() < end) {
+        if (this.buf.includes('soft reboot')) return (await this._waitFor(RAW_BANNER, 3000)) || this._enterRaw(2);
+        // a board that ran the empty line as a program instead ("OK", two end marks, ">") is still in raw mode
+        if (/OK[^]*\x04[^]*\x04>/.test(this.buf)) { this.buf = ''; return true; }
+        await sleep(20);
+      }
+      return this._enterRaw(2); // no answer: make sure we are back in raw mode anyway
+    }
+
+    /* Run a tiny helper program and wait for it to finish, without showing anything to the learner. */
+    async _quiet(code) {
+      this.buf = '';
+      await this._write(code + '\x04');
+      return (await this._waitFor('OK', 2000)) && (await this._waitFor('\x04', 2000)) && (await this._waitFor('\x04', 2000)) && this._waitFor('>', 2000);
     }
 
     /* Stop the running program (like pressing Ctrl-C in Thonny). */

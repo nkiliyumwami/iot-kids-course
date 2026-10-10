@@ -68,7 +68,7 @@
     const $ = (k) => root.querySelector(`[data-r="${k}"]`);
     const ta = $('code'), gutter = $('gutter'), msgs = $('msgs');
     ta.value = opts.code || '';
-    let badLine = null, running = false, outEl = null;
+    let badLine = null, running = false, outEl = null, lastPins = [];
 
     /* ---------- editor: line numbers, Tab = 4 spaces, keep the lesson's code saved on this device ---------- */
     const KEY = 'iotkids.code.' + (opts.id || location.pathname);
@@ -244,7 +244,10 @@
       // a program that never prints (like the traffic light) would leave the messages empty: point at the LEDs instead
       const quiet = setTimeout(() => { if (running && !outEl) card('', '<b>👀 Your program is running!</b><p>It doesn’t print any messages, so watch the lights on your board. Press <strong>Stop</strong> to end it.</p>'); }, 2500);
       try {
-        const r = await link.exec(code, { onOut });
+        // start from a clean board: the old program forgotten and its lights off (GPIO 2 is the blue LED from Lesson 0)
+        const offPins = [...new Set([2, ...lastPins, ...BL.outputPins(code)])];
+        lastPins = BL.outputPins(code);
+        const r = await link.exec(code, { onOut, offPins });
         const x = BL.explain(r.err, code);
         if (!x) card('good', '<b>Your program finished ✓</b>');
         else if (x.kind === 'stopped') {
