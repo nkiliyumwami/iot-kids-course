@@ -65,14 +65,15 @@ header.hero { padding-block: 40px 28px; display: grid; grid-template-columns: au
 .cta-note { font-size: 14px; color: var(--muted); }
 
 /* The story: the whole course in one 3D scene (assets/story/story-scene.js). The 3D loads only when it scrolls into view. */
-.story { margin: 0 0 36px; }
+.story-wide { max-width: 1440px; margin: 0 auto; padding-inline: 16px; }
+.story { margin: 0 0 44px; }
 .story-stage { position: relative; aspect-ratio: 16 / 9; border-radius: 22px; overflow: hidden; background: #f3f7fa; border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(21,32,42,.10); }
 .story-stage canvas, .story-poster { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; }
 .story-poster { transition: opacity .6s; }
 .story-stage.live .story-poster { opacity: 0; pointer-events: none; }
 .story-cap { position: absolute; left: 16px; bottom: 16px; max-width: min(460px, calc(100% - 32px)); background: rgba(255,255,255,.94); border: 1px solid var(--line); border-radius: 16px; padding: 10px 14px 12px; box-shadow: 0 6px 18px rgba(21,32,42,.12); }
 .story-cap .chip { display: inline-block; background: var(--accent); color: #fff; border-radius: 999px; padding: 1px 10px; font-size: 12px; font-weight: 800; letter-spacing: .04em; }
-.story-cap b { display: block; font-family: var(--font-display); font-size: 22px; line-height: 1.15; margin-top: 4px; }
+.story-cap b { display: block; font-family: var(--font-display); font-size: clamp(20px, 2vw, 26px); line-height: 1.15; margin-top: 4px; }
 .story-cap span.sub { display: block; color: var(--muted); font-size: 14px; margin-top: 2px; }
 .story-cap .bar { height: 4px; border-radius: 99px; background: var(--line); margin-top: 8px; overflow: hidden; }
 .story-cap .bar i { display: block; height: 100%; width: 0; background: var(--accent); }
@@ -86,7 +87,7 @@ header.hero { padding-block: 40px 28px; display: grid; grid-template-columns: au
 .story-steps button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; font: inherit; font-weight: 800; font-size: 14px; cursor: pointer; color: var(--ink); }
 .story-steps button[aria-current="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
 @media (max-width: 700px) {
-  .story-stage { aspect-ratio: 1 / 1; border-radius: 16px; }
+  .story-stage { aspect-ratio: 4 / 5; border-radius: 16px; }
   .story-cap { left: 8px; right: 8px; bottom: 8px; max-width: none; padding: 6px 10px 8px; }
   .story-cap b { font-size: 17px; display: inline; margin-left: 6px; }
   .story-cap span.sub { display: none; }
@@ -215,6 +216,8 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
     <div class="hero-ohm-bubble"><span>Hi, I’m Officer Ohm!</span><img class="hero-ohm" src="assets/ohm/wave.svg" alt="Officer Ohm, your guide, waving hello" width="170" height="198"></div>
   </header>
 
+</div>
+<div class="story-wide">
   <section class="story" aria-label="Watch what you will build">
     <div class="story-stage" id="storyStage">
       <img class="story-poster" src="assets/story/poster.jpg" alt="What you will build: an ESP32 traffic light on a breadboard, next to a model road where cars stop at red and people cross the zebra" width="1280" height="720">
@@ -228,6 +231,8 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
     </div>
     <ol class="story-steps" id="storySteps" aria-label="Jump to a lesson in the story"></ol>
   </section>
+</div>
+<div class="wrap">
 
   <section class="sec" aria-labelledby="realTitle">
     <div class="sec-head">
