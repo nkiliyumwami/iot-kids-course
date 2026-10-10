@@ -1,9 +1,13 @@
 # Car models for the model road
 
-Put free car models (`.glb`, CC0 or with credit) in this folder, then list them in `CAR_MODELS` at the top of the
-"optional car models" part of `assets/road/model-road.js`. Until then the road uses its code-drawn cars.
+`sedan.glb`, `suv.glb`, `hatchback.glb`, `taxi.glb` and `van.glb` are real-size cars made in Blender for this course
+(credits in `../CREDITS.md`). They are listed in `CAR_MODELS` in the "optional car models" part of
+`assets/road/model-road.js`. If they fail to load, the road falls back to its code-drawn cars.
 
-First test: **Car Kit by Kenney** (https://kenney.nl/assets/car-kit, CC0). From the download, copy the `.glb` files
-from `Models/GLB format/` (and the `Textures` folder next to them, if there is one) into this folder.
+To add another model, follow the same pattern:
 
-Keep each file small (ideally under 400 KB) so lessons load fast on school Chromebooks.
+- Point the nose along -x, put the wheels on the ground (y = 0) and centre the car on x = 0, z = 0.
+- Give each wheel its own node named `wheel-…`, with its origin at the hub so it spins around z.
+- Use glass with alpha blending, and put "tail" in the name of the rear-light material so the brake lights work.
+- Keep each file under 400 KB, so lessons load fast on school Chromebooks.
+- Only use models with CC0 or CC-BY licences, and add the author, licence and link to `../CREDITS.md`.
