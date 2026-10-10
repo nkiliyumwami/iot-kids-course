@@ -53,6 +53,7 @@
         <span class="rp-status" data-r="status"><i></i><span>No board connected</span></span>
         <button type="button" class="rp-btn primary rp-ml" data-r="connect">🔌 Connect my board</button>
         <button type="button" class="rp-btn" data-r="disconnect" hidden>Disconnect</button>
+        <button type="button" class="rp-btn" data-r="prepare" title="Install MicroPython on the board (once)">🧰 Prepare my board</button>
       </div>
       ${opts.examples && opts.examples.length ? `<div class="rp-examples">Examples: ${opts.examples.map((e, i) => `<button type="button" data-ex="${i}">${esc(e.name)}</button>`).join('')}</div>` : ''}
       <div class="rp-editor"><div class="rp-gutter" data-r="gutter" aria-hidden="true">1</div>
@@ -108,6 +109,7 @@
       $('stop').disabled = !running;
       $('hint').textContent = running ? 'Your program is running on the board.' : ready ? 'Change the code, then press Run. (Ctrl+Enter works too.)' : 'Connect your board to run your code on it.';
     }
+    link.addEventListener('state', (e) => { if (e.detail === 'connected') status('run', 'Talking to your board… (a few seconds)'); });
     link.addEventListener('disconnect', () => {
       running = false; status('warn', 'Board unplugged'); buttons();
       card('warn', '<b>The board was unplugged</b><p>Plug it back in and press <b>Connect my board</b> again.</p>');
@@ -122,42 +124,55 @@
     }
 
     /* ---------- connect ---------- */
-    async function connect(all) {
-      clearMsgs(); status('', 'Waiting for you to choose the board…');
+    const logBox = () => `<details><summary>Connection details (for grown-ups)</summary><pre>${esc(link.log.trim() || 'Nothing received from the board.')}</pre></details>`;
+    function prepareCard(lead) {
+      const c = card('warn', `${lead}<p>MicroPython is the software that lets the ESP32 understand Python. Installing it takes about a minute and only happens once.</p>
+        <p><button type="button" class="rp-btn primary" data-prep>🧰 Prepare my board</button></p>${logBox()}`);
+      c.querySelector('[data-prep]').addEventListener('click', prepare);
+    }
+    async function connect(opts) {
+      clearMsgs(); status('', 'Choose your board in the window that opens…');
       try {
-        const r = await link.connect({ all });
+        const r = await link.connect(opts || {});
         if (r.micropython) {
           status('ok', `Connected · ${r.chip} board${r.version ? ' · ' + nice(r.version) : ''}`);
           card('good', `<b>Your board is connected! 🎉</b><p>Press <b>Run on my ESP32</b> to send your program to it.</p>`);
         } else {
           status('warn', `Connected · ${r.chip} board · MicroPython not found`);
-          card('warn', `<b>Your board answered, but it doesn’t have MicroPython yet</b>
-            <p>MicroPython is the software that lets the ESP32 understand Python. It only needs to be installed once.</p>
-            <p>A guided <b>Prepare my board</b> button is coming soon. For now, ask an adult to install it with the free Thonny editor:
-            <i>Tools → Options → Interpreter → MicroPython (ESP32) → Install or update MicroPython</i>.</p>
-            <p>Already installed? Press the <b>EN</b> button on the board, then disconnect and connect again.</p>`);
+          if (r.reason === 'other-program') prepareCard(`<b>Your board is running a different program</b><p>It’s talking, but not in Python: it probably has a program from Arduino, Schematik or another app on it.</p>`);
+          else if (r.reason === 'download-mode') prepareCard(`<b>Your board is waiting to be programmed</b><p>Another tool left it in “download mode”. Press the <b>EN</b> button on the board and connect again, or prepare it with MicroPython now.</p>`);
+          else prepareCard(`<b>The board isn’t answering yet</b><p>Check you picked the right device (it often says <b>CH340</b>, <b>CP210x</b> or <b>USB Serial</b>, with a COM number on Windows). If it’s the right one, the board probably doesn’t have MicroPython yet.</p>`);
         }
       } catch (e) {
         status('', 'No board connected');
         if (e.code === 'cancelled') connectHelp();
-        else if (e.code === 'busy') card('error', `<b>Another program is using the board</b><p>Close Thonny, Arduino or any other tab that is connected to the board, then try again.</p>`);
+        else if (e.code === 'busy') card('error', `<b>Another program is using the board</b><p>Close Thonny, Arduino IDE, Schematik or any other tab that is connected to the board (only one program can use it at a time), then try again.</p>`);
         else card('error', `<b>We couldn’t open the board</b><p>Unplug it, plug it back in, and try again.</p><details><summary>Original message</summary><pre>${esc(e.message)}</pre></details>`);
       }
       buttons();
     }
+    function prepare() {
+      if (!window.PrepareBoard) { card('error', '<b>The installer didn’t load.</b> Reload the page and try again.'); return; }
+      window.PrepareBoard.open({ link, base: opts.base || '', onDone: () => {
+        clearMsgs();
+        status('ok', `Connected · ${link.chip} board${link.version ? ' · ' + nice(link.version) : ''}`);
+        card('good', '<b>MicroPython is installed and your board is connected! 🎉</b><p>Press <b>Run on my ESP32</b>.</p>');
+        buttons();
+      } });
+    }
+    $('prepare').addEventListener('click', prepare);
     const nice = (v) => (v || '').replace(/^micropython\s*/i, 'MicroPython ').replace(/\s+esp32\S*$/i, '').trim();
     function connectHelp() {
-      const c = card('warn', `<b>Don’t see your board in the list?</b><ul>
+      card('warn', `<b>Don’t see your board in the list?</b><ul>
         <li><b>Check the cable.</b> Some USB cables only charge and can’t carry data. Try another one.</li>
         <li><b>USB-C board?</b> Use a USB-A → USB-C cable (rectangular plug at the computer end). Some boards don’t start with a USB-C → USB-C cable.</li>
         <li>Is the board’s little <b>red light</b> on? If not, it isn’t getting power: try another USB socket.</li>
         <li>It may need a free driver for its USB chip: <a href="${DRIVERS.CH340}" target="_blank" rel="noopener">CH340</a> or
           <a href="${DRIVERS.CP2102}" target="_blank" rel="noopener">CP2102</a> (look at the small chip next to the USB socket). Ask an adult to install it.</li>
-        <li>Close Thonny or Arduino if they are open.</li></ul>
-        <p><button type="button" class="rp-btn" data-all>Show all devices</button></p>`);
-      c.querySelector('[data-all]').addEventListener('click', () => connect(true));
+        <li>Close Thonny, Arduino IDE or Schematik if they are open: only one program can use the board at a time.</li>
+        <li>On Windows the board appears as a <b>COM</b> port, e.g. “USB-SERIAL CH340 (COM5)”. Ignore Bluetooth ports.</li></ul>`);
     }
-    $('connect').addEventListener('click', () => connect(false));
+    $('connect').addEventListener('click', () => connect());
     $('disconnect').addEventListener('click', async () => { await link.disconnect(); running = false; status('', 'No board connected'); buttons(); });
 
     /* ---------- run / stop ---------- */

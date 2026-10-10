@@ -1,0 +1,47 @@
+name: MicroPython firmware
+
+# Downloads the official MicroPython firmware for the ESP32 DevKit V1 (ESP32_GENERIC) from micropython.org and
+# commits it to firmware/micropython/, so the "Prepare my board" wizard can install it from our own site.
+# Runs when firmware/micropython/WANTED changes, or by hand from the Actions tab.
+on:
+  push:
+    paths: ['firmware/micropython/WANTED']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download the firmware
+        run: |
+          set -euo pipefail
+          want=$(grep -v '^#' firmware/micropython/WANTED | tr -d '[:space:]')
+          if [ -z "$want" ] || [ "$want" = "latest" ]; then
+            path=$(curl -fsSL https://micropython.org/download/ESP32_GENERIC/ \
+              | grep -oE '/resources/firmware/ESP32_GENERIC-[0-9]{8}-v[0-9]+\.[0-9]+\.[0-9]+\.bin' | head -1)
+          else
+            path="/resources/firmware/$want"
+          fi
+          test -n "$path"
+          curl -fsSL -o firmware/micropython/esp32-generic.bin "https://micropython.org$path"
+          bytes=$(stat -c%s firmware/micropython/esp32-generic.bin)
+          test "$bytes" -gt 1000000   # a real ESP32 image is about 1.6 MB
+          # the first byte of an ESP32 app image is the magic number 0xE9
+          test "$(head -c1 firmware/micropython/esp32-generic.bin | od -An -tx1 | tr -d ' ')" = "e9"
+          version=$(echo "$path" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
+          sha=$(sha256sum firmware/micropython/esp32-generic.bin | cut -d' ' -f1)
+          printf '{"board":"ESP32_GENERIC","version":"%s","file":"%s","bytes":%s,"sha256":"%s","address":4096,"source":"https://micropython.org%s"}\n' \
+            "$version" "$(basename "$path")" "$bytes" "$sha" "$path" > firmware/micropython/firmware.json
+          cat firmware/micropython/firmware.json
+      - name: Commit it
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add firmware/micropython
+          git diff --cached --quiet && { echo "Already up to date"; exit 0; }
+          git commit -m "Update MicroPython firmware for the Prepare my board wizard"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

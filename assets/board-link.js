@@ -2,7 +2,9 @@
    It uses MicroPython's "raw REPL", the same protocol Thonny and mpremote use:
      Ctrl-C (\x03) stops whatever is running, Ctrl-A (\x01) enters raw mode, then we send the code and Ctrl-D (\x04).
      The board answers "OK", then the program's output, \x04, any error message, \x04 and ">".
-   Nothing is installed or erased here: this only runs code on a board that already has MicroPython.
+   Nothing is installed or erased here (assets/prepare-board.js does that). Like esptool and Schematik, we list every
+   serial port (the board shows up as e.g. "USB-SERIAL CH340 (COM5)") and reset the board cleanly when connecting.
+   If MicroPython doesn't answer, connect() says why: another program on the board, download mode, or silence.
    Exposes window.BoardLink. Events (BoardLink is an EventTarget): 'out' (text), 'state', 'disconnect'. */
 (function () {
   'use strict';
@@ -10,6 +12,7 @@
   const FILTERS = Object.keys(CHIPS).map((v) => ({ usbVendorId: +v }));
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const RAW_BANNER = 'raw REPL; CTRL-B to exit\r\n>';
+  const hex = (n) => (n == null ? '?' : '0x' + n.toString(16).padStart(4, '0'));
 
   class BoardLink extends EventTarget {
     constructor() {
@@ -17,37 +20,71 @@
       this.port = null; this.reader = null; this.writer = null;
       this.buf = ''; this.job = null; this.state = 'disconnected';
       this.chip = ''; this.version = ''; this.micropython = false;
-      this.decoder = new TextDecoder();
+      this.decoder = new TextDecoder(); this.log = ''; this.reason = '';
       this._onDisconnect = (e) => { if (e.target === this.port || e.port === this.port) this._lost(); };
     }
     static supported() { return typeof navigator !== 'undefined' && 'serial' in navigator; }
     _set(state) { this.state = state; this.dispatchEvent(new CustomEvent('state', { detail: state })); }
 
-    /* Ask the learner to pick the board (the browser shows its own permission window). */
+    _note(t) { this.log += `\n[${new Date().toLocaleTimeString()}] ${t}\n`; if (this.log.length > 12000) this.log = this.log.slice(-10000); }
+
+    /* Ask the learner to pick the board (the browser shows its own permission window), or reuse opts.port. */
     async connect(opts) {
+      opts = opts || {};
       if (!BoardLink.supported()) throw Object.assign(new Error('Web Serial is not available'), { code: 'unsupported' });
-      let port;
-      try { port = await navigator.serial.requestPort(opts && opts.all ? {} : { filters: FILTERS }); }
-      catch (e) { throw Object.assign(new Error('No board chosen'), { code: 'cancelled', cause: e }); }
-      try { await port.open({ baudRate: 115200 }); }
-      catch (e) { throw Object.assign(new Error(e.message), { code: /already open|in use|access/i.test(e.message) ? 'busy' : 'open', cause: e }); }
-      this.port = port;
-      // Opening the port can pulse the reset lines on DevKit boards; release both so the ESP32 runs normally.
-      try { await port.setSignals({ dataTerminalReady: false, requestToSend: false }); } catch (e) { /* not every adapter supports it */ }
+      this.log = ''; this.reason = '';
+      let port = opts.port || this.lastPort;
+      if (!port || opts.choose !== false && !opts.port) {
+        // No filter: show every serial port, like esptool and Schematik do. Filters can hide boards with unusual USB chips.
+        try { port = await navigator.serial.requestPort(opts.filtered ? { filters: FILTERS } : {}); }
+        catch (e) { throw Object.assign(new Error('No board chosen'), { code: 'cancelled', cause: e }); }
+      }
       const info = port.getInfo ? port.getInfo() : {};
       this.chip = CHIPS[info.usbVendorId] || 'USB serial';
+      this._note(`Port chosen: USB vendor ${hex(info.usbVendorId)} product ${hex(info.usbProductId)} (${this.chip})`);
+      try { await port.open({ baudRate: 115200, bufferSize: 4096 }); }
+      catch (e) {
+        this._note('Could not open the port: ' + e.message);
+        throw Object.assign(new Error(e.message), { code: /already open|in use|access|denied|Failed to open/i.test(e.message) ? 'busy' : 'open', cause: e });
+      }
+      this.port = this.lastPort = port;
       this.writer = port.writable.getWriter();
       this._readLoop();
       navigator.serial.addEventListener('disconnect', this._onDisconnect);
       this._set('connected');
-      // Is MicroPython there? Stop any running program (e.g. main.py), then try the raw REPL a few times while it boots.
-      this.micropython = await this._enterRaw(4);
+      // Restart the board cleanly (the EN line), exactly like esptool's "hard reset": this also gets it out of
+      // download mode if another tool left it there. Native-USB chips drop the connection on reset, so skip it there.
+      if (info.usbVendorId !== 0x303a && opts.reset !== false) {
+        try {
+          await port.setSignals({ dataTerminalReady: false, requestToSend: true });
+          await sleep(120);
+          await port.setSignals({ dataTerminalReady: false, requestToSend: false });
+          this._note('Board restarted (EN)');
+        } catch (e) { this._note('Reset lines not available: ' + e.message); }
+        await sleep(1600); // let it boot; MicroPython's own start-up takes about a second
+      }
+      // Is MicroPython there? Stop any running program (e.g. main.py), then try the raw REPL a few times.
+      this.micropython = await this._enterRaw(3);
       if (this.micropython) {
         const r = await this.exec("import sys\nprint(sys.implementation.name, '.'.join(str(x) for x in sys.implementation.version[:3]), sys.platform)", { timeout: 4000 });
         this.version = (r.out || '').trim();
+        this._note('MicroPython answered: ' + this.version);
+      } else {
+        const heard = this.log.replace(/\[[^\]]*\][^\n]*\n/g, '');
+        this.reason = /waiting for download/i.test(this.log) ? 'download-mode' : heard.trim() ? 'other-program' : 'silent';
+        this._note('MicroPython did not answer (' + this.reason + ')');
       }
       this._set(this.micropython ? 'ready' : 'no-micropython');
-      return { chip: this.chip, micropython: this.micropython, version: this.version };
+      return { chip: this.chip, micropython: this.micropython, version: this.version, reason: this.reason };
+    }
+
+    /* Give the port to another tool (the MicroPython installer) without asking the learner to choose it again. */
+    async release() {
+      try { if (this.job) await this.stop(); } catch (e) { /* ignore */ }
+      const port = this.port || this.lastPort;
+      await this._close();
+      this._set('disconnected');
+      return port;
     }
 
     async disconnect() {
@@ -79,7 +116,10 @@
           for (;;) {
             const { value, done } = await this.reader.read();
             if (done) break;
-            this.buf += this.decoder.decode(value, { stream: true });
+            const text = this.decoder.decode(value, { stream: true });
+            this.buf += text;
+            this.log += text.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, (c) => '<' + c.charCodeAt(0).toString(16).padStart(2, '0') + '>');
+            if (this.log.length > 12000) this.log = this.log.slice(-10000);
             this._pump();
           }
         } catch (e) {
@@ -117,7 +157,7 @@
         await sleep(t ? 400 : 150);
         this.buf = '';
         await this._write('\x01');
-        if (await this._waitFor(RAW_BANNER, 1200)) return true;
+        if (await this._waitFor(RAW_BANNER, 1000)) return true;
       }
       return false;
     }
