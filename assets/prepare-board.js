@@ -94,9 +94,13 @@
         // 1. get the port: reuse the connected one so the learner doesn't have to pick it again
         if (opts.link && (opts.link.port || opts.link.lastPort)) port = await opts.link.release();
         if (!port) {
-          msg('Choose your board in the window that opens (for example “USB-SERIAL CH340 (COM5)”).');
-          port = await navigator.serial.requestPort({});
+          msg('Choose your board in the window that opens (for example “USB-SERIAL CH340 (COM5)” or “USB Serial (ttyUSB0)”).');
+          port = await navigator.serial.requestPort({ filters: (window.BoardLink && window.BoardLink.FILTERS) || [] });
         }
+        if (port.readable || port.writable) { try { await port.close(); } catch (e) { /* still open somewhere */ } }
+        const info = port.getInfo ? port.getInfo() : {};
+        if (info.usbVendorId == null) throw Object.assign(new Error('Not a USB port'), { code: 'not-usb' });
+        addLog(`Port: USB vendor 0x${info.usbVendorId.toString(16)} product 0x${(info.usbProductId || 0).toString(16)}\n`);
         msg('Downloading MicroPython…');
         const [{ ESPLoader, Transport }, bin] = await Promise.all([
           import(new URL(base + 'assets/vendor/esptool-js-0.5.4.js', location.href).href),
@@ -108,8 +112,12 @@
         transport = new Transport(port, false);
         const loader = new ESPLoader({ transport, baudrate: 460800, romBaudrate: 115200, terminal, debugLogging: false });
         let chip;
-        try { chip = await loader.main(); }
-        catch (e) { throw Object.assign(e, { code: 'sync' }); }
+        // never wait forever: esptool tries several resets; give up after 45 s and show the BOOT-button help
+        try { chip = await Promise.race([loader.main(), sleep(45000).then(() => { throw new Error('No answer from the bootloader after 45 s'); })]); }
+        catch (e) {
+          if (/open|InvalidState/i.test(e && e.message || '')) throw Object.assign(e, { code: 'busy' });
+          throw Object.assign(e, { code: 'sync' });
+        }
         addLog(`Chip: ${chip}\n`);
         if (!/^ESP32(?![-‑]?[SCHP]\d)/i.test(String(chip).trim()) || (loader.chip && loader.chip.CHIP_NAME && loader.chip.CHIP_NAME !== 'ESP32')) {
           throw Object.assign(new Error('This board is a ' + chip), { code: 'chip', chip });
@@ -152,6 +160,8 @@
         if (e && e.code === 'sync') end.innerHTML = `<div class="bad"><b>The board didn’t answer</b><p>Some boards need a little help to start installing:</p>
           <ol><li>Press <b>Try again</b>.</li><li>As soon as it says “Talking to the board…”, <b>press and hold the BOOT button</b> on the board.</li><li>Let go when the progress bar starts moving.</li></ol>
           <p>Still stuck? Try another USB cable or socket, and close other programs that use the board.</p></div>${tryAgain}`;
+        else if (e && e.code === 'not-usb') end.innerHTML = `<div class="bad"><b>That port isn’t your board</b><p>Pick the one that says <b>USB</b>, <b>CH340</b> or <b>CP210x</b> (for example “USB Serial (ttyUSB0)” on Linux or “USB-SERIAL CH340 (COM5)” on Windows). Nothing was erased.</p></div>${tryAgain}`;
+        else if (e && e.code === 'busy') end.innerHTML = `<div class="bad"><b>Another program is using the board</b><p>Close Thonny, Arduino IDE, a terminal (screen/minicom) or other tabs using the board, then try again. Nothing was erased.</p></div>${tryAgain}`;
         else if (e && e.code === 'chip') end.innerHTML = `<div class="bad"><b>This is a different kind of ESP32 (${esc(e.chip)})</b><p>This course and its MicroPython file are made for the ESP32 DevKit V1 (classic ESP32). Nothing was erased.</p></div><div class="row"><button type="button" class="btn" data-close>Close</button></div>`;
         else if (e && e.code === 'check') end.innerHTML = `<div class="warn"><b>MicroPython is installed, but the board didn’t answer yet</b><p>Press the <b>EN</b> button on the board, then press <b>Connect my board</b> again.</p></div><div class="row"><button type="button" class="btn primary" data-close>OK</button></div>`;
         else end.innerHTML = `<div class="bad"><b>Something went wrong</b><p>${esc(e && e.message || e)}</p><p>Unplug the board, plug it back in and try again. Nothing is broken: you can always run the installer again.</p></div>${tryAgain}`;

@@ -8,8 +8,10 @@
    Exposes window.BoardLink. Events (BoardLink is an EventTarget): 'out' (text), 'state', 'disconnect'. */
 (function () {
   'use strict';
-  const CHIPS = { 0x10c4: 'CP2102', 0x1a86: 'CH340', 0x0403: 'FTDI', 0x303a: 'ESP32 native USB' };
+  // USB-to-serial chips used on ESP32 boards (WCH CH340/CH9102, Silicon Labs CP210x, FTDI, Prolific, Espressif native USB)
+  const CHIPS = { 0x10c4: 'CP2102', 0x1a86: 'CH340', 0x0403: 'FTDI', 0x067b: 'Prolific', 0x303a: 'ESP32 native USB' };
   const FILTERS = Object.keys(CHIPS).map((v) => ({ usbVendorId: +v }));
+
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const RAW_BANNER = 'raw REPL; CTRL-B to exit\r\n>';
   const hex = (n) => (n == null ? '?' : '0x' + n.toString(16).padStart(4, '0'));
@@ -35,11 +37,16 @@
       this.log = ''; this.reason = '';
       let port = opts.port || this.lastPort;
       if (!port || opts.choose !== false && !opts.port) {
-        // No filter: show every serial port, like esptool and Schematik do. Filters can hide boards with unusual USB chips.
-        try { port = await navigator.serial.requestPort(opts.filtered ? { filters: FILTERS } : {}); }
+        // Only list USB boards: without a filter Chrome also lists built-in ports (ttyS0… on Linux, COM1 and
+        // Bluetooth on Windows) that open fine but never answer. "Show all ports" (opts.all) is the escape hatch.
+        try { port = await navigator.serial.requestPort(opts.all ? {} : { filters: FILTERS }); }
         catch (e) { throw Object.assign(new Error('No board chosen'), { code: 'cancelled', cause: e }); }
       }
       const info = port.getInfo ? port.getInfo() : {};
+      if (info.usbVendorId == null) {
+        this.lastPort = null;
+        throw Object.assign(new Error('Not a USB port'), { code: 'not-usb' });
+      }
       this.chip = CHIPS[info.usbVendorId] || 'USB serial';
       this._note(`Port chosen: USB vendor ${hex(info.usbVendorId)} product ${hex(info.usbProductId)} (${this.chip})`);
       try { await port.open({ baudRate: 115200, bufferSize: 4096 }); }
@@ -49,7 +56,7 @@
       }
       this.port = this.lastPort = port;
       this.writer = port.writable.getWriter();
-      this._readLoop();
+      this._loop = this._readLoop();
       navigator.serial.addEventListener('disconnect', this._onDisconnect);
       this._set('connected');
       // 1) Like mpremote and Thonny: keep the board running (DTR and RTS released = no reset, normal boot) and
@@ -102,10 +109,18 @@
 
     async _close() {
       navigator.serial && navigator.serial.removeEventListener('disconnect', this._onDisconnect);
+      const port = this.port, loop = this._loop;
+      this.loopId = (this.loopId || 0) + 1; // tells the read loop to stop
       try { if (this.reader) await this.reader.cancel(); } catch (e) { /* ignore */ }
-      try { if (this.writer) this.writer.releaseLock(); } catch (e) { /* ignore */ }
-      try { if (this.port) await this.port.close(); } catch (e) { /* ignore */ }
+      if (loop) await Promise.race([loop, sleep(1000)]); // the loop releases its reader lock as it ends
+      try { if (this.writer) { await this.writer.close().catch(() => {}); this.writer.releaseLock(); } } catch (e) { /* ignore */ }
       this.port = this.reader = this.writer = null;
+      if (port) {
+        // the port must really be closed before another tool (the installer) can open it
+        for (let i = 0; i < 3; i++) {
+          try { await port.close(); break; } catch (e) { if (!port.readable && !port.writable) break; this._note('Port still busy, retrying close: ' + e.message); await sleep(200); }
+        }
+      }
     }
     _lost() {
       if (this.job) { this.job.reject(Object.assign(new Error('Board unplugged'), { code: 'unplugged' })); this.job = null; }
@@ -267,4 +282,5 @@
   window.BoardLink.explain = explain;
   window.BoardLink.outputPins = outputPins;
   window.BoardLink.CHIPS = CHIPS;
+  window.BoardLink.FILTERS = FILTERS;
 })();
