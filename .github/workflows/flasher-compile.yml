@@ -1,0 +1,66 @@
+name: Flasher compile service
+
+# Step 1 of the web flasher: builds the PlatformIO Docker image and verifies POST /api/compile for real
+# (unit tests, integration tests with Docker, and a curl check of a blink sketch). Web Serial is never tested here.
+on:
+  push:
+    paths: ['flasher/**', '.github/workflows/flasher-compile.yml']
+  pull_request:
+    paths: ['flasher/**', '.github/workflows/flasher-compile.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compile-service:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: flasher
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: flasher/package-lock.json
+      - name: Build the PlatformIO image
+        run: docker build -t kundakode-pio compiler
+      - run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Unit tests
+        run: npm test
+      - name: Integration tests (real compiles in Docker)
+        run: npm run test:compile
+      - name: Build and start the app
+        run: |
+          NEXT_TELEMETRY_DISABLED=1 npm run build
+          (npm start -- -p 3000 > server.log 2>&1 &)
+          for i in $(seq 1 30); do curl -sf http://localhost:3000/ >/dev/null && break; sleep 1; done
+      - name: Curl check (blink -> 4 images, firmware starts with 0xE9)
+        run: |
+          set -euo pipefail
+          python3 - > req.json <<'PY'
+          import json
+          src = open('test/sketches.ts').read().split('`')[1]
+          print(json.dumps({"board": "esp32dev", "files": {"src/main.cpp": src}}))
+          PY
+          curl -sS -o res.json -w '%{http_code}\n' -X POST -H 'content-type: application/json' --data @req.json http://localhost:3000/api/compile | tee code.txt
+          test "$(cat code.txt)" = "200"
+          python3 - <<'PY'
+          import json, base64
+          r = json.load(open('res.json'))
+          assert r["ok"], r.get("log", "")[-2000:]
+          imgs = r["images"]
+          print([(hex(i["address"]), i["name"], len(base64.b64decode(i["data"]))) for i in imgs])
+          assert len(imgs) == 4, imgs
+          fw = base64.b64decode(next(i["data"] for i in imgs if i["name"] == "firmware.bin"))
+          assert fw[0] == 0xE9, hex(fw[0])
+          print("firmware.bin OK: %d bytes, first byte 0x%02X" % (len(fw), fw[0]))
+          PY
+      - name: Server log
+        if: always()
+        run: tail -50 server.log || true
