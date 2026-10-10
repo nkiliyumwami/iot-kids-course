@@ -12,6 +12,7 @@
     "test:compile": "vitest run test/integration"
   },
   "dependencies": {
+    "esptool-js": "0.7.0",
     "next": "15.5.27",
     "react": "19.1.1",
     "react-dom": "19.1.1"
@@ -19,7 +20,11 @@
   "devDependencies": {
     "@types/node": "22.18.6",
     "@types/react": "19.1.13",
+    "@types/w3c-web-serial": "1.0.8",
     "typescript": "5.9.2",
-    "vitest": "3.2.4"
+    "vitest": "5.0.3"
+  },
+  "overrides": {
+    "postcss": "^8.5.23"
   }
 }
