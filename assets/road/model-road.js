@@ -159,8 +159,8 @@
       g.add(mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.06, 20), pole, 0, 0.03, 0));
       g.add(mesh(new THREE.CylinderGeometry(0.055, 0.065, Y - 0.5, 16), pole, 0, (Y - 0.5) / 2, 0));
       // a pedestrian push button, like the one in lesson 3
-      g.add(mesh(new THREE.BoxGeometry(0.12, 0.18, 0.08), std(0xf2b705, { roughness: 0.5 }), 0, 0.95, 0.08));
-      const btn = mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.02, 16), std(0x15202a), 0, 0.97, 0.13, false); btn.rotation.x = Math.PI / 2; g.add(btn);
+      g.add(mesh(new THREE.BoxGeometry(0.12, 0.18, 0.08), std(0xf2b705, { roughness: 0.5 }), 0, 0.42, 0.08)); // at hand height
+      const btn = mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.02, 16), std(0x15202a), 0, 0.39, 0.13, false); btn.rotation.x = Math.PI / 2; g.add(btn);
       const housingGeo = new THREE.ExtrudeGeometry(roundedRect(0.4, 1.12, 0.07), { depth: 0.3, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 3, curveSegments: 6 });
       housingGeo.translate(0, 0, -0.15);
       g.add(mesh(housingGeo, body, 0, Y, 0));
@@ -302,6 +302,7 @@
       road.add(g);
       cars.push({ g, dir, s, L: STYLES[st].L, wr: STYLES[st].wr, v: o.reduceMotion ? 0 : 1.2, vmax: [2.5, 2.1, 2.7, 2.3][k % 4], go: false, warned: false, a: 1 });
     });
+    let yieldTo = null; // set by the pedestrians: () => true while someone is crossing
     const CAR_A = 1.8, CAR_B = 3.2, CAR_COMFY = 1.8, GAP = 0.55, FADE = 1.4;
     function placeCar(c) {
       c.g.position.set(c.dir * c.s, 0.035, ROAD_Z + c.dir * LANE);
@@ -332,6 +333,8 @@
           if (state === 'go') { c.go = false; c.warned = false; }
           let limit = Infinity;
           if (before && state !== 'go' && !c.go) limit = STOP_S - c.L / 2 - 0.06;
+          // give way to anyone on the crossing, whatever colour the light is
+          if (before && yieldTo && yieldTo()) limit = Math.min(limit, STOP_S - c.L / 2 - 0.06);
           // keep a safe gap to the car in front
           const lead = i > 0 ? lane[i - 1] : null;
           if (lead && lead.g.visible) limit = Math.min(limit, lead.s - lead.L / 2 - c.L / 2 - GAP);
@@ -419,7 +422,7 @@
     }
     useModels().catch(() => { /* keep the code-drawn cars */ });
     if (o.tagPart) o.tagPart(road, 'road');
-    return { group: road, cars, update, setLamps, placeCar, placeAll: () => cars.forEach(placeCar), ROAD_Z, ROAD_W, LANE, STOP_S };
+    return { group: road, cars, update, setLamps, placeCar, placeAll: () => cars.forEach(placeCar), setYield: (fn) => { yieldTo = fn; }, envMap, ROAD_Z, ROAD_W, LANE, STOP_S };
   }
   window.ModelRoad = { create };
 })();

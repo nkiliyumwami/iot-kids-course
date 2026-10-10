@@ -581,6 +581,7 @@ pre.code .tick {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="../../assets/road/model-road.js"></script>
+<script src="../../assets/road/pedestrians.js"></script>
 <script src="../../course.js"></script>
 <script src="../../assets/ohm/ohm.js"></script>
 <script src="../../assets/rewards.js"></script>
@@ -1130,7 +1131,10 @@ scene.add(bigLed);
 /* ---------- model road (assets/road/model-road.js): cars obey the same traffic light ---------- */
 const roadApi = ModelRoad.create({ THREE, scene, renderer, getLit: () => litIndex, reduceMotion, glow: getGlowTexture, tagPart, suddenRed: true });
 const road = roadApi.group, cars = roadApi.cars, ROAD_Z = roadApi.ROAD_Z, ROAD_W = roadApi.ROAD_W;
-const setRoadLamps = (idx) => roadApi.setLamps(idx), updateRoad = (dt) => roadApi.update(dt), placeCar = (c) => roadApi.placeCar(c);
+const walkers = Pedestrians.create({ THREE, road: roadApi, reduceMotion, signals: true, getPressed: () => isPressed(),
+  // people may cross while the cars have red, which is what the button asks for
+  walkWindow: () => (sim.running && litIndex === 0 ? Infinity : 0) });
+const setRoadLamps = (idx) => roadApi.setLamps(idx), updateRoad = (dt) => { roadApi.update(dt); walkers.update(dt); }, placeCar = (c) => roadApi.placeCar(c);
 
 const PARTS = {};
 CH.forEach((_, i) => {
@@ -1848,7 +1852,7 @@ function renderExtra(s) {
       <li><i class="chip-lamp green"></i><span><b>Button not pressed</b> → GREEN. Cars go.</span></li>
       <li><i class="chip-lamp red"></i><span><b>Button held down</b> → RED. Cars wait behind the stop line.</span></li>
     </ul><p class="note" style="margin-top:8px">The button on the left presses itself every few seconds. Use <b>Hold to press the button</b> under the 3D scene to press it yourself.</p></div>`));
-    extra.appendChild(el(`<div class="card"><h4>🚗 On the model road</h4><p class="note" style="margin:0">The cars follow the lights. A car that is already too close to stop carries on, because braking hard is dangerous. That is a clue that this first version is not a fair crossing yet: lesson 4 fixes it. The road is pretend, to show what your lights mean.</p></div>`));
+    extra.appendChild(el(`<div class="card"><h4>🚗 On the model road</h4><p class="note" style="margin:0">When you press, the walker by the pole presses the real crossing button too. The little walking figure turns green only while the cars have red. A car that is already too close to stop carries on, because braking hard is dangerous, so the walker waits for it to pass and looks both ways before stepping out. That is a clue that this first version is not a fair crossing yet: lesson 4 fixes it. The road is pretend, to show what your lights mean.</p></div>`));
   }
   if (s.extra === 'B2') {
     extra.appendChild(el(`<div class="card"><h4>Inside the button</h4>
@@ -2245,7 +2249,7 @@ goTo(0, { instant: true });
 requestAnimationFrame(frame);
 
 // expose a tiny hook for automated checks
-window.__lesson = { camera, controls, goTo, get step() { return stepIndex; }, sim, setHeld, selectPart, cars, tick(dt) { updateSim(dt); updateRoad(dt); } };
+window.__lesson = { camera, controls, goTo, get step() { return stepIndex; }, sim, setHeld, selectPart, cars, walkers, tick(dt) { updateSim(dt); updateRoad(dt); } };
   // the program for "Try it on my real board": exactly the code shown in this lesson
   window.__lessonProgram = () => codeLines(true, sim.cfg).map((l) => l[0]).join('\n') + '\n';
 })();

@@ -592,6 +592,7 @@ pre.code .tick {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="../../assets/road/model-road.js"></script>
+<script src="../../assets/road/pedestrians.js"></script>
 <script src="../../course.js"></script>
 <script src="../../assets/ohm/ohm.js"></script>
 <script src="../../assets/rewards.js"></script>
@@ -1141,7 +1142,10 @@ scene.add(bigLed);
 /* ---------- model road (assets/road/model-road.js): cars obey the same traffic light ---------- */
 const roadApi = ModelRoad.create({ THREE, scene, renderer, getLit: () => litIndex, reduceMotion, glow: getGlowTexture, tagPart, suddenRed: true });
 const road = roadApi.group, cars = roadApi.cars, ROAD_Z = roadApi.ROAD_Z, ROAD_W = roadApi.ROAD_W;
-const setRoadLamps = (idx) => roadApi.setLamps(idx), updateRoad = (dt) => roadApi.update(dt), placeCar = (c) => roadApi.placeCar(c);
+const walkers = Pedestrians.create({ THREE, road: roadApi, reduceMotion, signals: true, minWindow: 2.5, getPressed: () => isPressed(), getWaiting: () => sim.running && sim.waiting,
+  // the walker's turn is the red after a remembered press
+  walkWindow: () => (sim.running && sim.phase === 'red' ? sim.cfg.cross - sim.t : 0) });
+const setRoadLamps = (idx) => roadApi.setLamps(idx), updateRoad = (dt) => { roadApi.update(dt); walkers.update(dt); }, placeCar = (c) => roadApi.placeCar(c);
 
 const PARTS = {};
 CH.forEach((_, i) => {
@@ -1850,7 +1854,7 @@ function renderExtra(s) {
       <li><i class="chip-lamp red"></i><span><b>Red</b>: the walker crosses. Then back to green.</span></li>
     </ul><p class="note" style="margin-top:8px">The button on the left taps itself on every other green. Use <b>Hold to press the button</b> under the 3D scene to tap it yourself.</p></div>`));
     extra.appendChild(flagCard());
-    extra.appendChild(el(`<div class="card"><h4>🚗 On the model road</h4><p class="note" style="margin:0">The cars follow the lights. Now there is always a yellow before the red, so a car has time to stop safely. The road is pretend, to show what your lights mean.</p></div>`));
+    extra.appendChild(el(`<div class="card"><h4>🚗 On the model road</h4><p class="note" style="margin:0">Tap the button and <b>WAIT</b> lights up on the pole: that is your <b>waiting = True</b> note. The walker waits while the green finishes and the yellow warns the cars, then crosses on the red, when the little walking figure turns green. Now there is always a yellow before the red, so every car has time to stop safely. The road is pretend, to show what your lights mean.</p></div>`));
   }
   if (s.extra === 'B1') {
     const card = el(`<div class="card"><h4>Try it: a program that forgets (pretend)</h4>
@@ -2216,7 +2220,7 @@ goTo(0, { instant: true });
 requestAnimationFrame(frame);
 
 // expose a tiny hook for automated checks
-window.__lesson = { camera, controls, goTo, get step() { return stepIndex; }, sim, setHeld, selectPart, cars, tick(dt) { updateSim(dt); updateRoad(dt); } };
+window.__lesson = { camera, controls, goTo, get step() { return stepIndex; }, sim, setHeld, selectPart, cars, walkers, tick(dt) { updateSim(dt); updateRoad(dt); } };
   // the program for "Try it on my real board": exactly the code shown in this lesson
   window.__lessonProgram = () => codeLines(sim.cfg).map((l) => l[0]).join('\n') + '\n';
 })();
