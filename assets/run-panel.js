@@ -151,11 +151,15 @@
           if (r.reason === 'micropython-busy') prepareCard(`<b>MicroPython is on your board, but it didn’t answer in time</b><p>Press the <b>EN</b> button on the board, wait two seconds, then press <b>Try again</b>. If a program is running in a fast loop, this stops it.</p>`, false);
           else if (r.reason === 'other-program') prepareCard(`<b>Your board is running a different program</b><p>It’s talking, but not in Python: it probably has a program from Arduino, Schematik or another app on it.</p>`);
           else if (r.reason === 'download-mode') prepareCard(`<b>Your board is waiting to be programmed</b><p>Another tool left it in “download mode”. Press the <b>EN</b> button on the board and connect again, or prepare it with MicroPython now.</p>`);
-          else prepareCard(`<b>The board isn’t answering yet</b><p>Check you picked the right device (it often says <b>CH340</b>, <b>CP210x</b> or <b>USB Serial</b>, with a COM number on Windows). If it’s the right one, the board probably doesn’t have MicroPython yet.</p>`);
+          else prepareCard(`<b>Nothing came back from this port</b><p>An ESP32 with MicroPython always answers, so this is probably not your board, or the board is busy:</p>
+            <ul><li>Close Thonny, Arduino IDE or a terminal that is connected to the board.</li>
+            <li>Press the <b>EN</b> button on the board, then <b>Try again</b>.</li>
+            <li>Still nothing? Unplug the board, plug it back in and connect again.</li></ul>`, false);
         }
       } catch (e) {
         status('', 'No board connected');
         if (e.code === 'cancelled') connectHelp();
+        else if (e.code === 'not-usb') card('error', `<b>That port isn’t your board</b><p>It’s a built-in port of the computer (like <b>ttyS0</b> on Linux, or <b>COM1</b> / Bluetooth on Windows). Choose the one that says <b>USB</b>, <b>CH340</b> or <b>CP210x</b>.</p>`);
         else if (e.code === 'busy') card('error', `<b>Another program is using the board</b><p>Close Thonny, Arduino IDE, Schematik or any other tab that is connected to the board (only one program can use it at a time), then try again.</p>`);
         else card('error', `<b>We couldn’t open the board</b><p>Unplug it, plug it back in, and try again.</p><details><summary>Original message</summary><pre>${esc(e.message)}</pre></details>`);
       }
@@ -180,7 +184,9 @@
         <li>It may need a free driver for its USB chip: <a href="${DRIVERS.CH340}" target="_blank" rel="noopener">CH340</a> or
           <a href="${DRIVERS.CP2102}" target="_blank" rel="noopener">CP2102</a> (look at the small chip next to the USB socket). Ask an adult to install it.</li>
         <li>Close Thonny, Arduino IDE or Schematik if they are open: only one program can use the board at a time.</li>
-        <li>On Windows the board appears as a <b>COM</b> port, e.g. “USB-SERIAL CH340 (COM5)”. Ignore Bluetooth ports.</li></ul>`);
+        <li>Your board shows up as e.g. “USB-SERIAL CH340 (COM5)” on Windows or “USB Serial (ttyUSB0)” on Linux.</li></ul>
+        <p><button type="button" class="rp-btn" data-all>Show all ports</button> (only if your board really isn’t in the list)</p>`);
+      const all = msgs.lastElementChild.querySelector('[data-all]'); if (all) all.addEventListener('click', () => connect({ all: true }));
     }
     $('connect').addEventListener('click', () => connect());
     $('disconnect').addEventListener('click', async () => { await link.disconnect(); running = false; status('', 'No board connected'); buttons(); });
