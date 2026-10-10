@@ -40,6 +40,7 @@
 .rp-card details{margin-top:6px}.rp-card summary{cursor:pointer;font-weight:800;font-size:13px}
 .rp-card pre{margin:6px 0 0;background:#fff;border-radius:8px;padding:6px 8px;font-size:12px;white-space:pre-wrap}
 .rp-card a{color:var(--rp-accent-d);font-weight:800}
+.rp-mon pre{background:#0E1820;color:#CFE3EA;max-height:220px;overflow:auto}.rp-mon .rp-btn{padding:5px 10px;font-size:13px}.rp-hint{font-size:13px;color:var(--rp-muted)}.rp-card .rp-hint b{display:inline;margin:0}
 `;
 
   function mount(root, opts) {
@@ -124,7 +125,43 @@
     }
 
     /* ---------- connect ---------- */
-    const logBox = () => `<details><summary>Connection details (for grown-ups)</summary><pre>${esc(link.log.trim() || 'Nothing received from the board.')}</pre></details>`;
+    const logBox = () => `<details class="rp-mon"><summary>🔧 Board monitor (for grown-ups): see exactly what the board sends</summary>
+      <pre data-live>${esc(link.log.trim() || 'Nothing received from the board yet.')}</pre>
+      <p style="display:flex;gap:6px;flex-wrap:wrap">
+        <button type="button" class="rp-btn" data-m="en">Restart board (EN)</button>
+        <button type="button" class="rp-btn" data-m="cc">Send Ctrl-C</button>
+        <button type="button" class="rp-btn" data-m="cr">Send Enter</button>
+        <button type="button" class="rp-btn" data-m="cd">Soft reboot (Ctrl-D)</button>
+        <button type="button" class="rp-btn" data-m="off">Lines DTR/RTS off</button>
+        <button type="button" class="rp-btn" data-m="on">Lines DTR/RTS on</button>
+        <button type="button" class="rp-btn primary" data-m="look">Look for MicroPython again</button></p>
+      <p class="rp-hint">Tip: press the board’s <b>EN</b> button while watching. MicroPython prints a line starting with “MicroPython v…” and then <code>&gt;&gt;&gt;</code>.</p></details>`;
+    function wireMonitor(c) {
+      const pre = c.querySelector('[data-live]'); if (!pre) return;
+      const tick = setInterval(() => {
+        if (!document.body.contains(pre)) return clearInterval(tick);
+        const t = link.log.trim() || 'Nothing received from the board yet.';
+        if (pre.textContent !== t) { pre.textContent = t; pre.scrollTop = pre.scrollHeight; }
+      }, 400);
+      c.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', async () => {
+        try {
+          const m = b.dataset.m;
+          if (m === 'en') await link.resetEN();
+          else if (m === 'cc') await link.sendRaw('\x03');
+          else if (m === 'cr') await link.sendRaw('\r\n');
+          else if (m === 'cd') await link.sendRaw('\x04');
+          else if (m === 'off') await link.setLines(false, false);
+          else if (m === 'on') await link.setLines(true, true);
+          else if (m === 'look') {
+            b.disabled = true; b.textContent = 'Looking…';
+            const ok = await link.retry();
+            b.disabled = false; b.textContent = 'Look for MicroPython again';
+            if (ok) { clearMsgs(); status('ok', `Connected · ${boardName()} · ${nice(link.version)}`); card('good', '<b>Found MicroPython! Your board is connected 🎉</b><p>Press <b>Run on my ESP32</b>.</p>'); buttons(); }
+          }
+        } catch (e) { link._note('Monitor action failed: ' + e.message); }
+      }));
+    }
+    const boardName = () => (link.chip === 'serial port' ? 'COM port' : link.chip + ' board');
     function prepareCard(lead, offerPrepare) {
       const c = card('warn', `${lead}
         ${offerPrepare === false ? '' : '<p>If the board has no MicroPython, <b>Prepare my board</b> installs it (about a minute, once).</p>'}
@@ -133,6 +170,7 @@
         <button type="button" class="rp-btn" data-copy>📋 Copy details</button></p>${logBox()}`);
       c.querySelector('[data-again]').addEventListener('click', async () => { await link.release(); connect({ port: link.lastPort }); });
       const pr = c.querySelector('[data-prep]'); if (pr) pr.addEventListener('click', prepare);
+      wireMonitor(c);
       c.querySelector('[data-copy]').addEventListener('click', (e) => {
         const t = `KundaKode board check\n${navigator.userAgent}\n${link.log}`;
         const done = () => { e.target.textContent = '✓ Copied'; };
@@ -144,10 +182,10 @@
       try {
         const r = await link.connect(opts || {});
         if (r.micropython) {
-          status('ok', `Connected · ${r.chip} board${r.version ? ' · ' + nice(r.version) : ''}`);
+          status('ok', `Connected · ${boardName()}${r.version ? ' · ' + nice(r.version) : ''}`);
           card('good', `<b>Your board is connected! 🎉</b><p>Press <b>Run on my ESP32</b> to send your program to it.</p>`);
         } else {
-          status('warn', `Connected · ${r.chip} board · MicroPython not found`);
+          status('warn', `Connected · ${boardName()} · MicroPython not found`);
           if (r.reason === 'micropython-busy') prepareCard(`<b>MicroPython is on your board, but it didn’t answer in time</b><p>Press the <b>EN</b> button on the board, wait two seconds, then press <b>Try again</b>. If a program is running in a fast loop, this stops it.</p>`, false);
           else if (r.reason === 'other-program') prepareCard(`<b>Your board is running a different program</b><p>It’s talking, but not in Python: it probably has a program from Arduino, Schematik or another app on it.</p>`);
           else if (r.reason === 'download-mode') prepareCard(`<b>Your board is waiting to be programmed</b><p>Another tool left it in “download mode”. Press the <b>EN</b> button on the board and connect again, or prepare it with MicroPython now.</p>`);
@@ -169,7 +207,7 @@
       if (!window.PrepareBoard) { card('error', '<b>The installer didn’t load.</b> Reload the page and try again.'); return; }
       window.PrepareBoard.open({ link, base: opts.base || '', onDone: () => {
         clearMsgs();
-        status('ok', `Connected · ${link.chip} board${link.version ? ' · ' + nice(link.version) : ''}`);
+        status('ok', `Connected · ${boardName()}${link.version ? ' · ' + nice(link.version) : ''}`);
         card('good', '<b>MicroPython is installed and your board is connected! 🎉</b><p>Press <b>Run on my ESP32</b>.</p>');
         buttons();
       } });
@@ -185,8 +223,7 @@
           <a href="${DRIVERS.CP2102}" target="_blank" rel="noopener">CP2102</a> (look at the small chip next to the USB socket). Ask an adult to install it.</li>
         <li>Close Thonny, Arduino IDE or Schematik if they are open: only one program can use the board at a time.</li>
         <li>Your board shows up as e.g. “USB-SERIAL CH340 (COM5)” on Windows or “USB Serial (ttyUSB0)” on Linux.</li></ul>
-        <p><button type="button" class="rp-btn" data-all>Show all ports</button> (only if your board really isn’t in the list)</p>`);
-      const all = msgs.lastElementChild.querySelector('[data-all]'); if (all) all.addEventListener('click', () => connect({ all: true }));
+`);
     }
     $('connect').addEventListener('click', () => connect());
     $('disconnect').addEventListener('click', async () => { await link.disconnect(); running = false; status('', 'No board connected'); buttons(); });
@@ -219,7 +256,7 @@
         if (e.code !== 'unplugged') card('error', `<b>The board stopped answering</b><p>Press the <b>EN</b> button on the board, then disconnect and connect again.</p><details><summary>Original message</summary><pre>${esc(e.message)}</pre></details>`);
       }
       running = false;
-      if (link.state === 'ready') status('ok', `Connected · ${link.chip} board${link.version ? ' · ' + nice(link.version) : ''}`);
+      if (link.state === 'ready') status('ok', `Connected · ${boardName()}${link.version ? ' · ' + nice(link.version) : ''}`);
       buttons();
     }
     // after Stop, switch off the pins the program used as outputs, so no light is left on
