@@ -17,6 +17,7 @@
     for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
     return ('0000000' + h.toString(16)).slice(-8);
   }
+  const VOICE_V = 'naledi1'; // change when the MP3s are re-made, so browsers fetch the new voice
   let audio = null, utter = null, token = 0;
   function stop() {
     token++;
@@ -36,7 +37,7 @@
     o = o || {}; stop();
     const my = ++token, t = clean(text), done = () => { if (my === token && o.onend) o.onend(); };
     if (!t) { done(); return; }
-    audio = new Audio((o.base || '') + 'assets/voice/en/' + id(t) + '.mp3');
+    audio = new Audio((o.base || '') + 'assets/voice/en/' + id(t) + '.mp3?v=' + VOICE_V);
     audio.onended = () => { audio = null; done(); };
     audio.onerror = () => { audio = null; if (my === token) browserVoice(t, done); }; // no file yet: the browser reads it
     const p = audio.play(); if (p && p.catch) p.catch(() => { if (my === token && audio) { audio = null; browserVoice(t, done); } });
