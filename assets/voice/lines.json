@@ -1,44 +1,44 @@
 [
   {
-    "id": "5088044f",
-    "file": "assets/voice/en/5088044f.mp3",
+    "id": "38c1f16c",
+    "file": "assets/voice/en/38c1f16c.mp3",
     "where": "story l0",
-    "text": "Meet the ESP32. A tiny computer you program. Its first job: blink a blue light.",
+    "text": "The world our children are growing up in runs on smart machines: robots, smart homes, self-driving cars. Someone has to invent and build them. Why not your child? It all starts with a tiny computer like this one.",
     "done": true
   },
   {
-    "id": "2bec947a",
-    "file": "assets/voice/en/2bec947a.mp3",
+    "id": "68c08359",
+    "file": "assets/voice/en/68c08359.mp3",
     "where": "story l1",
-    "text": "Build a traffic light. Three LEDs, three resistors and a few wires. Your code runs red, green and yellow, and the cars obey.",
+    "text": "At KundaKode, kids don’t just watch videos. They wire real circuits with their own hands, write real code, and watch their own traffic light come to life. That’s the moment a child thinks: I built this!",
     "done": true
   },
   {
-    "id": "0946aea3",
-    "file": "assets/voice/en/0946aea3.mp3",
+    "id": "6f46fac0",
+    "file": "assets/voice/en/6f46fac0.mp3",
     "where": "story l2",
-    "text": "Make your own patterns. Change the code, change the lights.",
+    "text": "Then they make it their own. Change the code, try a new idea, test it, fix it. That’s how engineers think, and it’s a skill for life, whatever your child becomes.",
     "done": true
   },
   {
-    "id": "13d52c10",
-    "file": "assets/voice/en/13d52c10.mp3",
+    "id": "8d906ade",
+    "file": "assets/voice/en/8d906ade.mp3",
     "where": "story l3",
-    "text": "Teach it to listen. Add a button. Press it and the cars get red, so the walker can cross.",
+    "text": "Next, the machine learns to listen. A button, a sensor, a signal: the same ideas behind robots, drones and smart devices. For a curious kid, it feels like a superpower.",
     "done": true
   },
   {
-    "id": "9647ea70",
-    "file": "assets/voice/en/9647ea70.mp3",
+    "id": "583b135f",
+    "file": "assets/voice/en/583b135f.mp3",
     "where": "story l4",
-    "text": "A fair crossing. A tap is remembered: WAIT lights up, the green finishes, then people cross safely.",
+    "text": "And it’s all about people. Our young makers solve real problems from their own homes and communities: safer road crossings, gardens that water themselves, homes that save power.",
     "done": true
   },
   {
-    "id": "279ad705",
-    "file": "assets/voice/en/279ad705.mp3",
+    "id": "8c37c8db",
+    "file": "assets/voice/en/8c37c8db.mp3",
     "where": "story end",
-    "text": "Build it yourself. Every wire, hole and line of code comes with a “why”.",
+    "text": "No experience needed, just curiosity. From age ten, step by step, your child goes from using technology to creating it. Start the free course today, and build the future with KundaKode.",
     "done": true
   },
   {
