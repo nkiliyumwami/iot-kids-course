@@ -161,18 +161,18 @@
     "done": true
   },
   {
-    "id": "30ba4b35",
-    "file": "assets/voice/en/30ba4b35.mp3",
+    "id": "a2cde6d5",
+    "file": "assets/voice/en/a2cde6d5.mp3",
     "where": "lab1-light-it-up · Place the resistor",
-    "text": "Place the resistor. Put the resistor across the middle gap, in column 7: one leg above the gap and one leg below. Why across the gap? Then electricity arriving at the top strip can only reach the bottom strip by going through the resistor.",
-    "done": true
+    "text": "Place the resistor. Put the resistor across the middle gap, in row 7: one leg above the gap and one leg below. Why across the gap? Then electricity arriving at the top strip can only reach the bottom strip by going through the resistor.",
+    "done": false
   },
   {
-    "id": "58308af7",
-    "file": "assets/voice/en/58308af7.mp3",
+    "id": "d79f6167",
+    "file": "assets/voice/en/d79f6167.mp3",
     "where": "lab1-light-it-up · Place the LED",
-    "text": "Place the LED. Now the LED. Its long leg goes in the same strip as the resistor’s bottom leg: column 7, below the gap. The short leg goes next door, in column 8.",
-    "done": true
+    "text": "Place the LED. Now the LED. Its long leg goes in the same strip as the resistor’s bottom leg: row 7, below the gap. The short leg goes next door, in row 8.",
+    "done": false
   },
   {
     "id": "34188780",
@@ -189,11 +189,11 @@
     "done": true
   },
   {
-    "id": "dc00ce33",
-    "file": "assets/voice/en/dc00ce33.mp3",
+    "id": "3e4bec9d",
+    "file": "assets/voice/en/3e4bec9d.mp3",
     "where": "lab1-light-it-up · Power goes in last",
-    "text": "Power goes in last. Last wire: the red one brings the power. It goes from 3V3 (3.3 volts, always on) to column 7 above the gap, the resistor’s top strip. We connect power last, so nothing can get power until the whole circuit is ready.",
-    "done": true
+    "text": "Power goes in last. Last wire: the red one brings the power. It goes from 3V3 (3.3 volts, always on) to row 7 above the gap, the resistor’s top strip. We connect power last, so nothing can get power until the whole circuit is ready.",
+    "done": false
   },
   {
     "id": "59631ca7",
@@ -222,5 +222,82 @@
     "where": "lab1-light-it-up · Lab quiz",
     "text": "Lab quiz. Three quick questions and the Circuit Lab 1 badge is yours.",
     "done": true
+  },
+  {
+    "id": "71ec644c",
+    "file": "assets/voice/en/71ec644c.mp3",
+    "where": "lab2-code-switch · Your light, your code",
+    "text": "Your light, your code. In Circuit Lab 1 you lit an LED with power from 3V3. It stays on all the time: the only way to switch it off is to pull out the cable! Today the ESP32’s code becomes the switch. Only one wire moves.",
+    "done": false
+  },
+  {
+    "id": "1e68125c",
+    "file": "assets/voice/en/1e68125c.mp3",
+    "where": "lab2-code-switch · Unplug first",
+    "text": "Unplug first. You know the golden rule: never move wires while the board has power.",
+    "done": false
+  },
+  {
+    "id": "04cf6fd2",
+    "file": "assets/voice/en/04cf6fd2.mp3",
+    "where": "lab2-code-switch · Move the red wire",
+    "text": "Move the red wire. Move the top end of the red wire from 3V3 to D25. In code, D25 is Pin(25). Remember the name trick from Pin Detective? The other end stays in the breadboard, so the rest of your circuit doesn’t change.",
+    "done": false
+  },
+  {
+    "id": "b6d2531d",
+    "file": "assets/voice/en/b6d2531d.mp3",
+    "where": "lab2-code-switch · Plug in… and nothing?",
+    "text": "Plug in… and nothing? Everything is wired. Plug the USB cable back in and watch your LED.",
+    "done": false
+  },
+  {
+    "id": "7488e60c",
+    "file": "assets/voice/en/7488e60c.mp3",
+    "where": "lab2-code-switch · Get the pin ready",
+    "text": "Get the pin ready. Every MicroPython program starts by getting its tools. Then we tell the ESP32 that pin 25 is an output: it will push electricity out to the LED.",
+    "done": false
+  },
+  {
+    "id": "90980005",
+    "file": "assets/voice/en/90980005.mp3",
+    "where": "lab2-code-switch · Switch it on",
+    "text": "Switch it on. Now the magic line. led.value(1) sets the pin HIGH: 3.3 volts flow out, through the resistor and the LED, and home to GND. led.value(0) sets it LOW again.",
+    "done": false
+  },
+  {
+    "id": "7aeacc03",
+    "file": "assets/voice/en/7aeacc03.mp3",
+    "where": "lab2-code-switch · Be the computer",
+    "text": "Be the computer. Can you make the LED blink? Tap ON and OFF again and again, as fast as you can!",
+    "done": false
+  },
+  {
+    "id": "bf2e2fac",
+    "file": "assets/voice/en/bf2e2fac.mp3",
+    "where": "lab2-code-switch · Blink forever",
+    "text": "Blink forever. Here is a whole program. while True: repeats the lines inside it forever. time.sleep(0.5) waits half a second, so your eyes can see each change.",
+    "done": false
+  },
+  {
+    "id": "2bde1e0a",
+    "file": "assets/voice/en/2bde1e0a.mp3",
+    "where": "lab2-code-switch · Make it yours",
+    "text": "Make it yours. Change how long each sleep lasts. Smaller numbers make a faster blink. Can you make a super-fast flash, and then a slow, sleepy blink?",
+    "done": false
+  },
+  {
+    "id": "4fc8a281",
+    "file": "assets/voice/en/4fc8a281.mp3",
+    "where": "lab2-code-switch · Run it on your real ESP32",
+    "text": "Run it on your real ESP32. Now the real thing! On your real breadboard, move the red wire from 3V3 to D25, with the board unplugged. Then send your program to the ESP32.",
+    "done": false
+  },
+  {
+    "id": "d507d94e",
+    "file": "assets/voice/en/d507d94e.mp3",
+    "where": "lab2-code-switch · Lab quiz",
+    "text": "Lab quiz. Three quick questions and the Circuit Lab 2 badge is yours.",
+    "done": false
   }
 ]

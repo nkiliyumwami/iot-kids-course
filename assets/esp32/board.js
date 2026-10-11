@@ -55,6 +55,8 @@
     ohm: { term: 'Ohm (Ω)', say: 'ome', kid: 'The unit for how strongly a resistor slows electricity. A bigger number lets less current through. Ours is 330 Ω: orange, orange, brown. (Officer Ohm is named after it!)', pro: 'Use a 330 Ω resistor for the LED.' },
     circuit: { term: 'Circuit', say: 'SUR-kit', kid: 'A complete loop that electricity can flow around: out of the power pin, through the parts, and back home to GND. Any gap in the loop stops it.', pro: 'The circuit is complete, so the LED lights.' },
     debug: { term: 'Debugging', say: 'dee-BUG-ing', kid: 'Finding out why something does not work, and fixing it. Every engineer does it every day!', pro: 'I debugged the circuit: the LED was in backwards.' },
+    high: { term: 'HIGH and LOW', say: 'high and low', kid: 'The two states of an output pin. HIGH (1) means the pin gives 3.3 volts, so the LED is on. LOW (0) means 0 volts, so it is off.', pro: 'Set D25 HIGH to light the LED.' },
+    loop: { term: 'Loop (while True)', say: 'loop', kid: 'Code that repeats. while True: means “do the lines inside me again and again, forever”. Almost every microcontroller program has a main loop.', pro: 'The blink code runs inside a while True loop.' },
     micropython: { term: 'MicroPython', say: 'MY-kro PIE-thon', kid: 'A small version of the Python programming language, made to run on microcontrollers.', pro: 'The ESP32 runs MicroPython firmware.' },
   };
   // Words that are linked automatically when they appear in pin descriptions (first match only).
