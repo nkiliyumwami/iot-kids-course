@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The story · IoT for Young Makers · KundaKode</title>
+<meta name="description" content="The KundaKode 3D story on its own, for embedding on other sites: lessons 0 to 4 of IoT for Young Makers in about 45 seconds.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* The landing page's 3D story on its own page, made to be embedded in an <iframe> (for example on the KundaKode site).
+   Same scene, captions and lesson buttons as index.html; links open the course in the whole browser tab. */
+:root {
+  --bg: #E3EBF0;
+  --surface: #FFFFFF;
+  --surface-2: #F1F5F8;
+  --ink: #15202A;
+  --muted: #526170;
+  --line: #D2DCE3;
+  --accent: #0A7480;
+  --accent-strong: #075A63;
+  --accent-soft: #DAEEF0;
+  --red: #C93131;
+  --amber: #FFB400;
+  --green: #16834A;
+  --hl: #F2B705;
+  --font-display: 'Baloo 2', 'Trebuchet MS', system-ui, sans-serif;
+  --font-body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --font-code: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.55; }
+a { color: var(--accent-strong); }
+:focus-visible { outline: 3px solid var(--hl); outline-offset: 2px; }
+.wrap { max-width: 1060px; margin: 0 auto; padding-inline: 16px; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; background: transparent; color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.55; }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.1; margin: 0; }
+:focus-visible { outline: 3px solid var(--hl); outline-offset: 2px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
+  border-radius: 999px; padding: 11px 20px; font-weight: 800; font-size: 16px;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line);
+}
+.btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 6px 16px rgba(10,116,128,.3); }
+.btn.primary:hover { background: var(--accent-strong); }
+/* The story: the whole course in one 3D scene (assets/story/story-scene.js). The 3D loads only when it scrolls into view. */
+.story-wide { max-width: 1440px; margin: 0 auto; padding-inline: 16px; }
+.story { margin: 0 0 44px; }
+.story-stage { position: relative; aspect-ratio: 16 / 9; border-radius: 22px; overflow: hidden; background: #f3f7fa; border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(21,32,42,.10); }
+.story-stage canvas, .story-poster { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; }
+.story-poster { transition: opacity .6s; }
+.story-stage.live .story-poster { opacity: 0; pointer-events: none; }
+.story-cap { position: absolute; left: 16px; bottom: 16px; max-width: min(460px, calc(100% - 32px)); background: rgba(255,255,255,.94); border: 1px solid var(--line); border-radius: 16px; padding: 10px 14px 12px; box-shadow: 0 6px 18px rgba(21,32,42,.12); }
+.story-cap .chip { display: inline-block; background: var(--accent); color: #fff; border-radius: 999px; padding: 1px 10px; font-size: 12px; font-weight: 800; letter-spacing: .04em; }
+.story-cap b { display: block; font-family: var(--font-display); font-size: clamp(20px, 2vw, 26px); line-height: 1.15; margin-top: 4px; }
+.story-cap span.sub { display: block; color: var(--muted); font-size: 14px; margin-top: 2px; }
+.story-cap .bar { height: 4px; border-radius: 99px; background: var(--line); margin-top: 8px; overflow: hidden; }
+.story-cap .bar i { display: block; height: 100%; width: 0; background: var(--accent); }
+.story-pause { position: absolute; top: 12px; right: 12px; border: 1px solid var(--line); background: rgba(255,255,255,.94); border-radius: 999px; padding: 6px 14px; font: inherit; font-weight: 800; font-size: 14px; cursor: pointer; color: var(--ink); }
+.story-end { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; gap: 10px; padding: 16px; background: rgba(243,247,250,.72); backdrop-filter: blur(2px); }
+.story-end h3 { font-size: clamp(28px, 5vw, 44px); }
+.story-end p { margin: 0; color: var(--muted); font-size: 17px; }
+.story-end .btn { justify-self: center; }
+.story-stage.ended .story-cap { display: none; }
+.story-steps { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.story-steps button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; font: inherit; font-weight: 800; font-size: 14px; cursor: pointer; color: var(--ink); }
+.story-steps button[aria-current="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+@media (max-width: 700px) {
+  .story-stage { aspect-ratio: 4 / 5; border-radius: 16px; }
+  .story-cap { left: 8px; right: 8px; bottom: 8px; max-width: none; padding: 6px 10px 8px; }
+  .story-cap b { font-size: 17px; display: inline; margin-left: 6px; }
+  .story-cap span.sub { display: none; }
+  .story-cap .bar { margin-top: 6px; }
+}
+.story { margin: 0; }
+</style>
+</head>
+<body>
+  <section class="story" aria-label="Watch what you will build">
+    <div class="story-stage" id="storyStage">
+      <img class="story-poster" src="assets/story/poster.jpg" alt="What you will build: an ESP32 traffic light on a breadboard, next to a model road where cars stop at red and people cross the zebra" width="1280" height="720">
+      <div class="story-cap" aria-live="polite"><span class="chip" id="storyChip">Lessons 0–4</span><b id="storyTitle">Watch what you will build</b><span class="sub" id="storySub">A tiny computer, a traffic light, a button and a fair crossing.</span><div class="bar" aria-hidden="true"><i id="storyBar"></i></div></div>
+      <button class="story-pause" id="storyPause" type="button" hidden>❚❚ Pause</button>
+      <div class="story-end" id="storyEnd" hidden>
+        <h3>Your turn!</h3>
+        <p>Build it, wire it and code it, one lesson at a time.</p>
+        <a class="btn primary" id="storyGo" href="lessons/00-meet-esp32/index.html" target="_top">Start with lesson 0 →</a>
+      </div>
+    </div>
+    <ol class="story-steps" id="storySteps" aria-label="Jump to a lesson in the story"></ol>
+  </section>
+<script>
+window.KK_V = '20261011b';
+window.kkThree = () => window.__kkThree || (window.__kkThree = window.THREE ? Promise.resolve() : new Promise((ok, no) => {
+  const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc);
+}));
+</script>
+<script>
+/* The story: load the 3D only when it is about to scroll into view, pause it when it is off screen. */
+(function () {
+  const stage = document.getElementById('storyStage');
+  if (!stage) return;
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const CAPS = {
+    l0: ['Lesson 0', 'Meet the ESP32', 'A tiny computer you program. Its first job: blink a blue light.'],
+    l1: ['Lesson 1', 'Build a traffic light', 'Three LEDs, three resistors and a few wires. Your code runs red, green and yellow, and the cars obey.'],
+    l2: ['Lesson 2', 'Make your own patterns', 'Change the code, change the lights.'],
+    l3: ['Lesson 3', 'Teach it to listen', 'Add a button. Press it and the cars get red, so the walker can cross.'],
+    l4: ['Lesson 4', 'A fair crossing', 'A tap is remembered: WAIT lights up, the green finishes, then people cross safely.'],
+    end: ['Your turn', 'Build it yourself', 'Every wire, hole and line of code comes with a “why”.'],
+  };
+  const steps = document.getElementById('storySteps'), endCard = document.getElementById('storyEnd'), pauseBtn = document.getElementById('storyPause');
+  const ids = ['l0', 'l1', 'l2', 'l3', 'l4'];
+  steps.innerHTML = ids.map((id, k) => `<li><button type="button" data-k="${k}">${CAPS[id][0].replace('Lesson ', '')} · ${CAPS[id][1]}</button></li>`).join('');
+  let story = null, visible = false, loading = false;
+  function setChapter(id, k) {
+    const c = CAPS[id];
+    document.getElementById('storyChip').textContent = c[0];
+    document.getElementById('storyTitle').textContent = c[1];
+    document.getElementById('storySub').textContent = c[2];
+    endCard.hidden = id !== 'end';
+    stage.classList.toggle('ended', id === 'end');
+    steps.querySelectorAll('button').forEach((b) => b.setAttribute('aria-current', String(+b.dataset.k === k)));
+  }
+  const bar = document.getElementById('storyBar');
+  function load(src) { return new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = src; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); }); }
+  async function boot() {
+    if (loading) return; loading = true;
+    try {
+      await window.kkThree();
+      const v = '?v=' + window.KK_V; await load('assets/road/model-road.js' + v); await load('assets/road/pedestrians.js' + v); await load('assets/story/story-scene.js' + v);
+      const holder = document.createElement('div'); holder.style.cssText = 'position:absolute;inset:0';
+      stage.insertBefore(holder, stage.querySelector('.story-cap'));
+      story = window.KKStory.mount({ host: holder, base: '', reduceMotion: reduce, onChapter: setChapter, onTime: (k, f) => { bar.style.width = (f * 100).toFixed(1) + '%'; } });
+      if (!story) { holder.remove(); return; } // no 3D on this device: the picture stays
+      stage.classList.add('live');
+      pauseBtn.hidden = reduce;
+      if (visible) story.start(); else story.render();
+    } catch (e) { /* offline or blocked: keep the picture */ }
+  }
+  steps.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; if (!story) { boot(); return; } story.jump(+b.dataset.k); });
+  pauseBtn.addEventListener('click', () => { if (!story) return; story.pause(!story.paused); pauseBtn.textContent = story.paused ? '▶ Play' : '❚❚ Pause'; });
+  if (reduce) steps.querySelector('button').setAttribute('aria-current', 'false');
+  const io = new IntersectionObserver((es) => {
+    visible = es[0].isIntersecting;
+    if (visible && !story) boot();
+    if (story) { if (visible && !document.hidden) story.start(); else story.stop(); }
+  }, { rootMargin: '200px 0px' });
+  io.observe(stage);
+  document.addEventListener('visibilitychange', () => { if (story) { if (!document.hidden && visible) story.start(); else story.stop(); } });
+})();
+</script>
+<script>
+// tell the page that embeds this one how tall the story is, so its frame fits exactly (no scrollbars, no gap)
+(function () {
+  if (window.parent === window) return;
+  let last = 0;
+  const send = () => { const h = Math.ceil(document.documentElement.getBoundingClientRect().height); if (h !== last) { last = h; window.parent.postMessage({ kkStoryHeight: h }, '*'); } };
+  new ResizeObserver(send).observe(document.documentElement); send();
+})();
+</script>
+</body>
+</html>
