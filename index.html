@@ -71,27 +71,31 @@ header.hero { padding-block: 40px 28px; display: grid; grid-template-columns: au
 .story-stage canvas, .story-poster { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; }
 .story-poster { transition: opacity .6s; }
 .story-stage.live .story-poster { opacity: 0; pointer-events: none; }
-.story-cap { position: absolute; left: 16px; bottom: 16px; max-width: min(460px, calc(100% - 32px)); background: rgba(255,255,255,.94); border: 1px solid var(--line); border-radius: 16px; padding: 10px 14px 12px; box-shadow: 0 6px 18px rgba(21,32,42,.12); }
-.story-cap .chip { display: inline-block; background: var(--accent); color: #fff; border-radius: 999px; padding: 1px 10px; font-size: 12px; font-weight: 800; letter-spacing: .04em; }
-.story-cap b { display: block; font-family: var(--font-display); font-size: clamp(20px, 2vw, 26px); line-height: 1.15; margin-top: 4px; }
-.story-cap span.sub { display: block; color: var(--muted); font-size: 14px; margin-top: 2px; }
-.story-cap .bar { height: 4px; border-radius: 99px; background: var(--line); margin-top: 8px; overflow: hidden; }
+.story-cap { margin-top: 10px; display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: baseline; column-gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 10px 16px 12px; }
+.story-cap .chip { display: inline-block; align-self: center; background: var(--accent); color: #fff; border-radius: 999px; padding: 1px 10px; font-size: 12px; font-weight: 800; letter-spacing: .04em; }
+.story-cap b { font-family: var(--font-display); font-size: clamp(19px, 2vw, 24px); line-height: 1.15; }
+.story-cap span.sub { color: var(--muted); font-size: 15px; }
+.story-cap .bar { grid-column: 1 / -1; height: 4px; border-radius: 99px; background: var(--line); margin-top: 8px; overflow: hidden; }
 .story-cap .bar i { display: block; height: 100%; width: 0; background: var(--accent); }
 .story-pause { position: absolute; top: 12px; right: 12px; border: 1px solid var(--line); background: rgba(255,255,255,.94); border-radius: 999px; padding: 6px 14px; font: inherit; font-weight: 800; font-size: 14px; cursor: pointer; color: var(--ink); }
 .story-end { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; gap: 10px; padding: 16px; background: rgba(243,247,250,.72); backdrop-filter: blur(2px); }
 .story-end h3 { font-size: clamp(28px, 5vw, 44px); }
 .story-end p { margin: 0; color: var(--muted); font-size: 17px; }
 .story-end .btn { justify-self: center; }
-.story-stage.ended .story-cap { display: none; }
+.story-tag { position: absolute; top: 12px; left: 12px; background: rgba(21,32,42,.78); color: #fff; border-radius: 999px; padding: 4px 12px; font-weight: 800; font-size: 13px; letter-spacing: .03em; opacity: 0; transition: opacity .4s; pointer-events: none; }
+.story-tag.street { left: calc(var(--split, 1) * 100% + 12px); }
+.story-stage.split .story-tag { opacity: 1; }
+.story-stage.split.stacked .story-tag { top: 8px; left: 8px; }
+.story-stage.split.stacked .story-tag.street { top: calc(var(--split, 1) * 100% + 10px); }
+.story-stage.ended .story-tag { opacity: 0; }
 .story-steps { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .story-steps button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; font: inherit; font-weight: 800; font-size: 14px; cursor: pointer; color: var(--ink); }
 .story-steps button[aria-current="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
 @media (max-width: 700px) {
-  .story-stage { aspect-ratio: 4 / 5; border-radius: 16px; }
-  .story-cap { left: 8px; right: 8px; bottom: 8px; max-width: none; padding: 6px 10px 8px; }
-  .story-cap b { font-size: 17px; display: inline; margin-left: 6px; }
-  .story-cap span.sub { display: none; }
-  .story-cap .bar { margin-top: 6px; }
+  .story-stage { aspect-ratio: 3 / 4; border-radius: 16px; }
+  .story-cap { grid-template-columns: auto minmax(0, 1fr); padding: 8px 12px 10px; }
+  .story-cap b { font-size: 17px; }
+  .story-cap span.sub { grid-column: 1 / -1; font-size: 14px; margin-top: 2px; }
 }
 .how { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 36px; }
 .how div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
@@ -237,7 +241,7 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
   <section class="story" aria-label="Watch what you will build">
     <div class="story-stage" id="storyStage">
       <img class="story-poster" src="assets/story/poster.jpg" alt="What you will build: an ESP32 traffic light on a breadboard, next to a model road where cars stop at red and people cross the zebra" width="1280" height="720">
-      <div class="story-cap" aria-live="polite"><span class="chip" id="storyChip">Lessons 0–4</span><b id="storyTitle">Watch what you will build</b><span class="sub" id="storySub">A tiny computer, a traffic light, a button and a fair crossing.</span><div class="bar" aria-hidden="true"><i id="storyBar"></i></div></div>
+      <span class="story-tag circuit" aria-hidden="true">Your circuit</span><span class="story-tag street" aria-hidden="true">The street</span>
       <button class="story-pause" id="storyPause" type="button" hidden>❚❚ Pause</button>
       <div class="story-end" id="storyEnd" hidden>
         <h3>Your turn!</h3>
@@ -245,6 +249,7 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
         <a class="btn primary" id="storyGo" href="lessons/00-meet-esp32/index.html">Start with lesson 0 →</a>
       </div>
     </div>
+    <div class="story-cap" aria-live="polite"><span class="chip" id="storyChip">Lessons 0–4</span><b id="storyTitle">Watch what you will build</b><span class="sub" id="storySub">A tiny computer, a traffic light, a button and a fair crossing.</span><div class="bar" aria-hidden="true"><i id="storyBar"></i></div></div>
     <ol class="story-steps" id="storySteps" aria-label="Jump to a lesson in the story"></ol>
   </section>
 </div>
@@ -402,7 +407,7 @@ window.kkThree = () => window.__kkThree || (window.__kkThree = window.THREE ? Pr
       await window.kkThree();
       await load('assets/road/model-road.js'); await load('assets/road/pedestrians.js'); await load('assets/story/story-scene.js');
       const holder = document.createElement('div'); holder.style.cssText = 'position:absolute;inset:0';
-      stage.insertBefore(holder, stage.querySelector('.story-cap'));
+      stage.insertBefore(holder, stage.querySelector('.story-tag'));
       story = window.KKStory.mount({ host: holder, base: '', reduceMotion: reduce, onChapter: setChapter, onTime: (k, f) => { bar.style.width = (f * 100).toFixed(1) + '%'; } });
       if (!story) { holder.remove(); return; } // no 3D on this device: the picture stays
       stage.classList.add('live');
