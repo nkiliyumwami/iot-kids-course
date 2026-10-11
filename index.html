@@ -265,7 +265,7 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
       <article class="project"><div class="proj-media"><span class="ico" aria-hidden="true">⚽</span><canvas class="proj-3d" data-proj="football" aria-hidden="true"></canvas></div><div class="proj-body"><h3>Football goal counter</h3><p>An invisible beam across the goal counts every goal and lights up the scoreboard at the school match. No more arguing about the score!</p><p class="uses"><b>Uses:</b> beam sensor, counting, a display</p></div></article>
       <article class="project"><div class="proj-media"><span class="ico" aria-hidden="true">🗑️</span><canvas class="proj-3d" data-proj="bin" aria-hidden="true"></canvas></div><div class="proj-body"><h3>Smart bin</h3><p>A distance sensor under the lid sees how full the bin is and tells the collectors when it needs emptying, to help keep the streets clean.</p><p class="uses"><b>Uses:</b> distance sensor, levels, Wi-Fi</p></div></article>
     </div>
-    <p class="credits">3D models: sofa by Wayfair via Khronos glTF Sample Assets (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>), walking figure by Mixamo; everything else is modelled in code. <a href="assets/projects/CREDITS.md">Full credits</a>.</p>
+    <p class="credits">3D models: sofa and wall lamp by Wayfair, charcoal by Darmstadt Graphics Group, avocado (Khronos glTF Sample Assets, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> and CC0), sky light from Poly Haven (CC0), walking figure by Mixamo; everything else is modelled in code. <a href="assets/projects/CREDITS.md">Full credits</a>.</p>
   </section>
 </div>
 <div class="wrap">
@@ -347,7 +347,7 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
 <script>
 // three.js is loaded once, only when a 3D part of the page is about to be seen
 // bump this when the 3D scripts change, so browsers fetch the new copies instead of old saved ones
-window.KK_V = '20261011c';
+window.KK_V = '20261011d';
 window.kkThree = () => window.__kkThree || (window.__kkThree = window.THREE ? Promise.resolve() : new Promise((ok, no) => {
   const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc);
 }));
