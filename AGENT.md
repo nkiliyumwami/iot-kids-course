@@ -106,7 +106,7 @@ https://nkiliyumwami.github.io/iot-kids-course/. Read this whole file and `ROADM
   Use `window.OHM.set('<pose>')` only if a step needs a specific pose. Do not redraw or restyle him.
 - Officer Ohm's voice (English, proof of concept on Lesson 0 and the landing story): `assets/voice/voice.js` reads a
   step aloud only when the learner asks (🔊 Listen, "Read every step to me"), playing `assets/voice/en/<id>.mp3`
-  made with ElevenLabs, or the browser's voice when the file is missing. Spoken text = step title + text. To voice
+  made with ElevenLabs (voice "Frank – Professional Educator"), or the browser's voice when the file is missing. Spoken text = step title + text. To voice
   another lesson, add it to `VOICED` in `tools/voice/collect.mjs`, copy Lesson 0's voice-row and listen code, and
   follow `tools/voice/README.md` to make the MP3s.
 - Badges live in `assets/badges/NN.svg` (one per lesson, already drawn for lessons 1–10) and each lesson in
