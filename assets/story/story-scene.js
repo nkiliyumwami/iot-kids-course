@@ -7,12 +7,6 @@
    so the home page shows exactly what learners build. The road and people come from assets/road/.
    Needs three.js r128, assets/road/model-road.js and assets/road/pedestrians.js loaded first.
 
-   In lessons 1, 3 and 4 the picture splits in two: the circuit on the left (on top on phones) and the street on the right
-   (underneath on phones), filmed by two cameras at the same moment, so the LED and the traffic light change together.
-   The road, cars and people live on layer 1, the workbench on layer 0; the table and the lights are on both.
-   The host's parent gets the class "split" (and "stacked" on phones) and the CSS variable --split, the fraction of the
-   picture the circuit uses, so the page can place the labels.
-
    Usage: const s = KKStory.mount({ host, base: '', reduceMotion, onChapter(id, k) {} }); s.start(); s.stop(); */
 (function () {
 'use strict';
@@ -585,81 +579,55 @@ function showButton(f) {
   buttonWires.forEach((w, i) => { const k = Math.max(0, Math.min(1, f * 2 - i * 0.5)); w.group.visible = k > 0; w.set(k); });
 }
 
-/* ---------- cameras ---------- */
-// full-picture shots (lesson 0, the start of lesson 1 and the end) and the circuit half of the split picture
+/* ---------- camera ---------- */
 const SHOTS = {
   esp: { p: [2.2, 3.4, -0.6], t: [0.2, -0.1, -4.6] },
   build: { p: [0.6, 5.8, 6.4], t: [0, 0.2, -1.6] },
+  road: { p: [0.6, 6.6, 9.8], t: [0, 0.2, -4.2] },
+  leds: { p: [-0.6, 3.8, 5.0], t: [0, 0.3, 0.2] },
+  button: { p: [-4.2, 4.6, 6.2], t: [-1.6, 0.2, -3.2] },
+  crossing: { p: [1.6, 3.4, -2.0], t: [-0.6, 0.4, -9.2] },
   wide: { p: [0.4, 7.4, 11.6], t: [0, 0.1, -4.4] },
-  bench: { p: [0.5, 8.6, 5.4], t: [0.3, -0.2, -2.0] },
-  patterns: { p: [-0.6, 3.8, 5.0], t: [0, 0.3, 0.2] },
-  button: { p: [-0.5, 8.4, 6.4], t: [-0.55, -0.2, -1.3] },
 };
-// the street half: the traffic light and the cars, or the crossing with the button pole
-const ROAD_SHOTS = {
-  street: { p: [0.9, 6.0, -1.0], t: [-0.1, -0.2, -9.9] },
-  crossing: { p: [-0.3, 5.2, -2.4], t: [-0.8, 0.0, -9.8] },
-};
-const roadCam = new THREE.PerspectiveCamera(40, 1, 0.1, 200);
-roadCam.layers.set(1);
-const roadTarget = new THREE.Vector3();
-function rig(cam, tgt) { return { cam, tgt, from: { p: new THREE.Vector3(), t: new THREE.Vector3() }, to: { p: new THREE.Vector3(), t: new THREE.Vector3() }, k: 1, drift: 0 }; }
-const benchRig = rig(camera, target), roadRig = rig(roadCam, roadTarget);
-const camDur = 1.6;
-function aim(R, s, instant) {
-  R.from.p.copy(R.cam.position); R.from.t.copy(R.tgt);
-  R.to.p.set(...s.p); R.to.t.set(...s.t);
-  R.k = instant || reduceMotion ? 1 : 0;
-  if (R.k === 1) { R.cam.position.copy(R.to.p); R.tgt.copy(R.to.t); }
-}
+const camFrom = { p: new THREE.Vector3(), t: new THREE.Vector3() }, camTo = { p: new THREE.Vector3(), t: new THREE.Vector3() };
+let camT = 1, camDur = 1.6;
 function shot(key, instant) {
-  const s = SHOTS[key], v = { p: s.p.slice(), t: s.t };
-  // a tall picture (phones, full width) steps back a little so everything fits
-  const a = host.clientWidth / Math.max(1, host.clientHeight);
-  if (splitTo > 0.999 && a < 1.2) { const k = 1 + (1.2 - a) * 0.55; v.p = s.p.map((x, i) => s.t[i] + (x - s.t[i]) * k); }
-  aim(benchRig, v, instant);
+  const s = SHOTS[key];
+  camFrom.p.copy(camera.position); camFrom.t.copy(target);
+  camTo.p.set(...s.p); camTo.t.set(...s.t);
+  if (camera.aspect < 1.2) camTo.p.sub(camTo.t).multiplyScalar(1 + (1.2 - camera.aspect) * 0.55).add(camTo.t); // phones: step back a little
+  camT = instant || reduceMotion ? 1 : 0;
+  if (camT === 1) { camera.position.copy(camTo.p); target.copy(camTo.t); }
 }
-function roadShot(key, instant) { aim(roadRig, ROAD_SHOTS[key], instant); }
 const ease = (x) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
-function moveRig(R, dt, sway) {
-  if (R.k < 1) {
-    R.k = Math.min(1, R.k + dt / camDur);
-    const f = ease(R.k);
-    R.cam.position.lerpVectors(R.from.p, R.to.p, f); R.tgt.lerpVectors(R.from.t, R.to.t, f);
+let drift = 0;
+function updateCam(dt) {
+  if (camT < 1) {
+    camT = Math.min(1, camT + dt / camDur);
+    const f = ease(camT);
+    camera.position.lerpVectors(camFrom.p, camTo.p, f); target.lerpVectors(camFrom.t, camTo.t, f);
   } else if (!reduceMotion) {
     // a slow sideways drift keeps the picture alive
-    R.drift += dt;
-    R.cam.position.x = R.to.p.x + Math.sin(R.drift * 0.25) * sway;
+    drift += dt;
+    camera.position.x = camTo.p.x + Math.sin(drift * 0.25) * 0.35;
   }
-  R.cam.lookAt(R.tgt);
-}
-// how much of the picture the circuit uses: 1 = all of it, SPLIT = side by side with the street
-const SPLIT = 0.47;
-let split = 1, splitTo = 1;
-function updateCam(dt) {
-  moveRig(benchRig, dt, 0.35); moveRig(roadRig, dt, 0.25);
-  // the street slides in (and out again) smoothly
-  if (reduceMotion || dt === 0) split = splitTo;
-  else { const d = splitTo - split; split = Math.abs(d) < 0.002 ? splitTo : split + d * Math.min(1, dt * 3.2); }
+  camera.lookAt(target);
 }
 
 /* ---------- the story: one chapter per lesson ---------- */
 const CHAPTERS = [
   { id: 'l0', len: 5.5, shot: 'esp' },
-  { id: 'l1', len: 11, shot: 'bench', full: 'build', road: 'street' },
-  { id: 'l2', len: 5, shot: 'patterns' }, // lesson 2 has no street: the circuit gets the whole picture
-  { id: 'l3', len: 8, shot: 'button', road: 'crossing', split: true },
-  { id: 'l4', len: 10.5, shot: 'button', road: 'crossing', split: true },
+  { id: 'l1', len: 11, shot: 'build' },
+  { id: 'l2', len: 5, shot: 'leds' },
+  { id: 'l3', len: 8, shot: 'button' },
+  { id: 'l4', len: 10.5, shot: 'crossing' },
   { id: 'end', len: 5, shot: 'wide' },
 ];
 let chapter = -1, ct = 0, paused = false;
 function go(k) {
-  chapter = k; ct = 0; benchRig.drift = 0; roadRig.drift = 0;
+  chapter = k; ct = 0; drift = 0;
   const c = CHAPTERS[k];
-  // lesson 0 and the start of lesson 1 use the whole picture; the street joins once the traffic light is built
-  splitTo = c.split ? SPLIT : 1;
-  shot(c.split ? c.shot : c.full || c.shot);
-  if (c.road) roadShot(c.road, split > 0.999);
+  shot(c.shot);
   if (o.onChapter) o.onChapter(c.id, k);
 }
 // what the world looks like at time t of a chapter
@@ -678,11 +646,11 @@ function play(dt) {
       // red 5.5 s (long enough to cross), green 2.5 s, yellow 1.5 s
       const k = (t - 3.8) % 9.5;
       if (k < 5.5) { setLights(0); walkWin = 5.5 - k; } else if (k < 8) setLights(2); else setLights(1);
-      if (splitTo > 0.999) { splitTo = SPLIT; shot('bench'); } // the street joins as the lights start
+      if (t > 4.6 && c.shot === 'build' && camTo.p.z < 9) shot('road');
     }
   } else if (c.id === 'l2') {
     showTraffic(1); showButton(0);
-    // the pattern lesson: the LEDs chase (the street is out of the picture; its cars wait at red)
+    // the pattern lesson: the LEDs chase while the cars wait at red
     setLeds([[0], [1], [2], [1], [0, 1, 2], []][Math.floor(t * 4) % 6]);
     roadLit = 0; roadApi.setLamps(0); walkWin = 0;
   } else if (c.id === 'l3') {
@@ -713,37 +681,7 @@ let btnCapDown = 0;
 function resize() {
   const w = Math.max(1, host.clientWidth), h = Math.max(1, host.clientHeight);
   renderer.setSize(w, h, false);
-}
-const fovFor = (a) => (a < 0.75 ? 56 : a < 1.2 ? 48 : 38);
-function view(cam, x, y, w, h) {
-  cam.aspect = w / h; cam.fov = fovFor(cam.aspect); cam.updateProjectionMatrix();
-  renderer.setViewport(x, y, w, h); renderer.setScissor(x, y, w, h);
-  renderer.render(scene, cam);
-}
-const GAP = 6, stage = host.parentElement;
-let lastSplitCss = '';
-function draw() {
-  const w = Math.max(1, host.clientWidth), h = Math.max(1, host.clientHeight), stacked = w / h < 1.2;
-  const css = split > 0.999 ? 'full' : (stacked ? 'stacked ' : '') + split.toFixed(3);
-  if (stage && css !== lastSplitCss) {
-    lastSplitCss = css;
-    stage.classList.toggle('split', split < 0.999); stage.classList.toggle('stacked', stacked);
-    stage.style.setProperty('--split', split.toFixed(4));
-  }
-  renderer.setScissorTest(true);
-  if (split > 0.999) { camera.layers.enableAll(); view(camera, 0, 0, w, h); renderer.setScissorTest(false); return; }
-  camera.layers.set(0);
-  renderer.setScissor(0, 0, w, h); renderer.setClearColor(0xffffff, 1); renderer.clear();
-  if (!stacked) {
-    const wl = Math.round(w * split);
-    view(camera, 0, 0, wl, h);
-    if (w - wl - GAP > 1) view(roadCam, wl + GAP, 0, w - wl - GAP, h);
-  } else {
-    const ht = Math.round(h * split);
-    view(camera, 0, h - ht, w, ht);
-    if (h - ht - GAP > 1) view(roadCam, 0, 0, w, h - ht - GAP);
-  }
-  renderer.setScissorTest(false);
+  camera.aspect = w / h; camera.fov = camera.aspect < 1.2 ? 50 : 38; camera.updateProjectionMatrix();
 }
 new ResizeObserver(resize).observe(host);
 resize();
@@ -761,31 +699,26 @@ function frame(now) {
   updateCam(dt);
   // Officer Ohm bobs gently
   cop.position.y = -0.4 + Math.sin(now / 500) * 0.03;
-  draw();
+  renderer.render(scene, camera);
   if (o.onTime) o.onTime(chapter, ct / CHAPTERS[chapter].len);
   raf = requestAnimationFrame(frame);
 }
 function start() { if (running) return; running = true; last = 0; if (!raf) raf = requestAnimationFrame(frame); }
 function stop() { running = false; }
-// the street and its people are filmed only by the street camera; the table and the lights belong to both views
-roadApi.group.traverse((x) => x.layers.set(1));
-table.layers.enable(1);
-scene.traverse((x) => { if (x.isLight) x.layers.enable(1); });
 go(reduceMotion ? 4 : 0);
-split = splitTo; shot(CHAPTERS[chapter].shot, true); if (CHAPTERS[chapter].road) roadShot(CHAPTERS[chapter].road, true);
+shot(CHAPTERS[chapter].shot, true);
 if (reduceMotion) { ct = 6; } // a still scene: the walkers' turn in the fair crossing
 // render one frame straight away, so there is a picture before the loop starts
-play(0); updateCam(0); draw();
+play(0); updateCam(0); renderer.render(scene, camera);
 return {
   start, stop,
-  jump: (k) => { go(k); if (reduceMotion) { ct = CHAPTERS[k].len * 0.6; play(0); updateCam(0); draw(); } },
+  jump: (k) => { go(k); if (reduceMotion) { ct = CHAPTERS[k].len * 0.6; play(0); updateCam(0); renderer.render(scene, camera); } },
   pause: (p) => { paused = p; },
   get paused() { return paused; },
   get chapter() { return chapter; },
   CHAPTERS, roadApi, walkers,
   tick: (dt) => { ct += dt; if (ct >= CHAPTERS[chapter].len) go((chapter + 1) % CHAPTERS.length); play(dt); roadApi.update(dt); walkers.update(dt); updateCam(dt); },
-  render: draw,
-  get split() { return split; },
+  render: () => renderer.render(scene, camera),
 };
 }
 window.KKStory = { mount };
