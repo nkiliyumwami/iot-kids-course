@@ -560,12 +560,12 @@ code { font-family: var(--font-code); background: var(--surface-2); border-radiu
             if (tapped.size >= 3) setTimeout(() => { if (step === 1 && phase === 'explore') challenge(); }, 1200);
             return;
           }
-          if (p.kind === 'rail') { say('Rails run along the long edge and are only joined to themselves. The ⭐ is in column 12.', false); return; }
+          if (p.kind === 'rail') { say('Rails run along the long edge and are only joined to themselves. The ⭐ is in row 12.', false); return; }
           if (p.c === star.c && p.r === star.r) { say('That’s the ⭐ hole itself. Find a <b>different</b> hole on the same strip.', false); return; }
-          if (p.c === star.c && half(p.r) === 'near') { say(`So close! <b>${p.r}${p.c}</b> is across the middle gap. The gap splits every column into two strips that are <b>not</b> joined.`, false); return; }
-          if (p.c !== star.c) { say(`That’s column ${p.c}. Strips go up and down along one column, so look in column 12.`, false); return; }
+          if (p.c === star.c && half(p.r) === 'near') { say(`So close! <b>${p.r}${p.c}</b> is across the middle gap. The gap splits every numbered row into two strips that are <b>not</b> joined.`, false); return; }
+          if (p.c !== star.c) { say(`That’s row ${p.c}. Each strip is one numbered row of 5 holes, so look in row 12.`, false); return; }
           showStrip(p);
-          complete(['breadboard', 'rail'], `Yes! <b>${p.r}12</b> and <b>c12</b> are on the same strip. Every column has two strips of 5 holes: one above the gap, one below. The long <b>rails</b> along the edges are joined all the way along.`);
+          complete(['breadboard', 'rail'], `Yes! <b>${p.r}12</b> and <b>c12</b> are on the same strip. Every numbered row has two strips of 5 holes: one above the gap, one below. The long <b>rails</b> along the edges are joined all the way along.`);
         };
       } },
 
@@ -647,7 +647,7 @@ code { font-family: var(--font-code); background: var(--surface-2); border-radiu
       } },
 
     { eyebrow: 'Mission 5', title: 'Place the resistor', cam: 'build',
-      text: `<p>Put the resistor across the middle gap, in column 7: one leg above the gap and one leg below.</p>
+      text: `<p>Put the resistor across the middle gap, in row 7: one leg above the gap and one leg below.</p>
              <p>Why across the gap? Then electricity arriving at the top strip can only reach the bottom strip by going through the resistor.</p>`,
       enter() {
         ensure('unplug');
@@ -655,19 +655,19 @@ code { font-family: var(--font-code); background: var(--surface-2); border-radiu
         if (B.res) { task('Place the resistor across the gap'); return; }
         hand('🖐 Holding: the 330 Ω resistor');
         ringAt(H(7, 'd')); ringAt(H(7, 'g'));
-        kit.callout('column 7', holeAt(7, 'a'), 'gold', 22);
-        task('Tap a hole for the first leg (column 7)');
+        kit.callout('row 7', holeAt(7, 'a'), 'gold', 22);
+        task('Tap a hole for the first leg (row 7)');
         const placer = twoTaps({
           checkFirst: (e) => {
-            if (e.k === 'rail') return 'That’s a rail along the edge. The resistor goes in the middle area, in column 7.';
-            if (e.c !== 7) return `That’s hole <b>${holeName(e)}</b>, in column ${e.c}. Look along the numbers on the edge of the board for <b>7</b> (the gold rings).`;
+            if (e.k === 'rail') return 'That’s a rail along the edge. The resistor goes in the middle area, in row 7.';
+            if (e.c !== 7) return `That’s hole <b>${holeName(e)}</b>, in row ${e.c}. Look along the numbers on the edge of the board for <b>7</b> (the gold rings).`;
             return '';
           },
-          firstOk: (e) => `First leg in <b>${holeName(e)}</b>. Now put the other leg in column 7 on the <b>${half(e.r) === 'far' ? 'bottom' : 'top'}</b> side of the gap.`,
+          firstOk: (e) => `First leg in <b>${holeName(e)}</b>. Now put the other leg in row 7 on the <b>${half(e.r) === 'far' ? 'bottom' : 'top'}</b> side of the gap.`,
           rings: (first) => [half(first.r) === 'far' ? H(7, 'g') : H(7, 'd')],
           checkSecond: (e, first) => {
-            if (e.k === 'rail') return 'That’s a rail. Keep both legs in column 7.';
-            if (e.c !== 7) return `Keep the resistor straight: the other leg goes in column 7 too (you tapped ${holeName(e)}).`;
+            if (e.k === 'rail') return 'That’s a rail. Keep both legs in row 7.';
+            if (e.c !== 7) return `Keep the resistor straight: the other leg goes in row 7 too (you tapped ${holeName(e)}).`;
             if (half(e.r) === half(first.r)) return `Both legs in the same strip would join each other, and electricity would skip the resistor! Put this leg <b>across the gap</b>.`;
             return '';
           },
@@ -675,7 +675,7 @@ code { font-family: var(--font-code); background: var(--surface-2); border-radiu
             const [top, bottom] = half(a.r) === 'far' ? [a, b] : [b, a];
             B.res = { a: top, b: bottom };
             await animateIn(sync());
-            complete([], `Bridge built! The resistor stands in <b>${holeName(top)}</b> and <b>${holeName(bottom)}</b>. The top and bottom strips of column 7 are now joined only through the resistor.`);
+            complete([], `Bridge built! The resistor stands in <b>${holeName(top)}</b> and <b>${holeName(bottom)}</b>. The top and bottom strips of row 7 are now joined only through the resistor.`);
             $('#extraBox').insertAdjacentHTML('beforeend', why('Which way round?', 'A resistor has no polarity: it works either way round, so you don’t need to check its colours this time.'));
           },
         });
@@ -683,7 +683,7 @@ code { font-family: var(--font-code); background: var(--surface-2); border-radiu
       } },
 
     { eyebrow: 'Mission 6', title: 'Place the LED', cam: 'build',
-      text: `<p>Now the LED. Its long leg goes in the same strip as the resistor’s bottom leg: column 7, below the gap. The short leg goes next door, in column 8.</p>`,
+      text: `<p>Now the LED. Its long leg goes in the same strip as the resistor’s bottom leg: row 7, below the gap. The short leg goes next door, in row 8.</p>`,
       enter() {
         ensure('unplug', 'res');
         kit.kinds = new Set(['hole', 'rail']);
@@ -696,20 +696,20 @@ code { font-family: var(--font-code); background: var(--surface-2); border-radiu
         this.onTap = async (hit) => {
           if (B.led || this.busy) return;
           const p = hit.point;
-          if (!p || p.kind === 'pin') { say('Tap a hole on the breadboard: column 7, below the gap.', false); return; }
-          if (p.kind === 'rail') { say('That’s a rail. The LED’s long leg must share a strip with the resistor’s bottom leg: column 7, below the gap.', false); return; }
+          if (!p || p.kind === 'pin') { say('Tap a hole on the breadboard: row 7, below the gap.', false); return; }
+          if (p.kind === 'rail') { say('That’s a rail. The LED’s long leg must share a strip with the resistor’s bottom leg: row 7, below the gap.', false); return; }
           const e = H(p.c, p.r);
           if (!free(e)) { say(`Hole <b>${holeName(e)}</b> already has the resistor’s leg in it. Pick another hole in the same strip.`, false); return; }
-          if (p.c === 7 && half(p.r) === 'far') { say(`<b>${holeName(e)}</b> is above the gap, on the resistor’s <b>top</b> strip. Then electricity would skip the resistor! Use column 7 <b>below</b> the gap.`, false); return; }
-          if (p.c === 8 && half(p.r) === 'near') { say('Close! That’s where the <b>short</b> leg will go. The long leg goes one hole to the left, in column 7.', false); return; }
-          if (p.c !== 7) { say(`That’s column ${p.c}. The long leg must be in the same strip as the resistor’s bottom leg: column 7, below the gap.`, false); return; }
+          if (p.c === 7 && half(p.r) === 'far') { say(`<b>${holeName(e)}</b> is above the gap, on the resistor’s <b>top</b> strip. Then electricity would skip the resistor! Use row 7 <b>below</b> the gap.`, false); return; }
+          if (p.c === 8 && half(p.r) === 'near') { say('Close! That’s where the <b>short</b> leg will go. The long leg goes one hole to the left, in row 7.', false); return; }
+          if (p.c !== 7) { say(`That’s row ${p.c}. The long leg must be in the same strip as the resistor’s bottom leg: row 7, below the gap.`, false); return; }
           if (!free(H(8, p.r))) { say(`The short leg would land in ${p.r}8, but that hole is busy. Try another row.`, false); return; }
           this.busy = true; kit.clearTemps();
           B.led = { a: e, k: H(8, p.r) };
           await animateIn(sync());
           this.busy = false;
           complete([], `The long leg (anode) is in <b>${holeName(e)}</b>, sharing a strip with the resistor, so electricity can flow resistor → LED. The short leg (cathode) is in <b>${p.r}8</b>: a strip of its own, waiting for the road home.`);
-          $('#extraBox').insertAdjacentHTML('beforeend', why('Why next door, in column 8?', 'If both legs were in the same strip, they would be joined, and electricity would go around the LED instead of through it.'));
+          $('#extraBox').insertAdjacentHTML('beforeend', why('Why next door, in row 8?', 'If both legs were in the same strip, they would be joined, and electricity would go around the LED instead of through it.'));
         };
       } },
 
@@ -723,12 +723,12 @@ code { font-family: var(--font-code); background: var(--surface-2); border-radiu
         hand('🖐 Holding: a black jumper wire');
         kit.strip(kit.stripHoles(kc, 'near'), 0x2e9e57);
         kit.strip(kit.railHoles('BN'), 0x2f6fde);
-        task(`Tap a free hole in column ${kc} (below the gap), then a hole on the blue − rail`);
+        task(`Tap a free hole in row ${kc} (below the gap), then a hole on the blue − rail`);
         const placer = twoTaps({
           checkFirst: (e) => {
-            if (e.k === 'rail') return `First the end near the LED: tap a free hole in column ${kc}, below the gap.`;
+            if (e.k === 'rail') return `First the end near the LED: tap a free hole in row ${kc}, below the gap.`;
             if (e.c === B.led.a.c && half(e.r) === 'near') return 'That strip is joined to the LED’s <b>long</b> leg. The road home starts from the <b>short</b> leg’s strip.';
-            if (e.c !== kc || half(e.r) !== 'near') return `Hole ${holeName(e)} isn’t joined to the short leg. Use column ${kc}, below the gap (the green strip).`;
+            if (e.c !== kc || half(e.r) !== 'near') return `Hole ${holeName(e)} isn’t joined to the short leg. Use row ${kc}, below the gap (the green strip).`;
             return '';
           },
           firstOk: (e) => `Black wire in <b>${holeName(e)}</b>. Now tap a hole on the <b>blue − rail</b>, along the bottom edge.`,
@@ -782,7 +782,7 @@ code { font-family: var(--font-code); background: var(--surface-2); border-radiu
       } },
 
     { eyebrow: 'Mission 9', title: 'Power goes in last', cam: 'pw',
-      text: `<p>Last wire: the red one brings the power. It goes from 3V3 (3.3 volts, always on) to column 7 above the gap, the resistor’s top strip.</p>
+      text: `<p>Last wire: the red one brings the power. It goes from 3V3 (3.3 volts, always on) to row 7 above the gap, the resistor’s top strip.</p>
              <p>We connect power last, so nothing can get power until the whole circuit is ready.</p>`,
       enter() {
         ensure('unplug', 'res', 'led', 'gw', 'gnd');
@@ -791,7 +791,7 @@ code { font-family: var(--font-code); background: var(--surface-2); border-radiu
         hand('🖐 Holding: a red jumper wire');
         ringAt(PIN('far:3V3'));
         kit.strip(kit.stripHoles(B.res.a.c, 'far'), 0xd93b3b);
-        task('Tap the 3V3 pin, then a free hole in column 7 above the gap');
+        task('Tap the 3V3 pin, then a free hole in row 7 above the gap');
         const placer = twoTaps({
           partHint: 'Tap the 3V3 pin on the ESP32 (the gold ring).',
           checkFirst: (e) => {
@@ -802,13 +802,13 @@ code { font-family: var(--font-code); background: var(--surface-2); border-radiu
             if (n !== '3V3') return `That’s <b>${n}</b>, a GPIO pin that code switches on and off. Today we want power that is always on: <b>3V3</b>.`;
             return '';
           },
-          firstOk: () => 'Red wire on 3V3. Now tap a free hole in column 7, <b>above</b> the gap (the red strip).',
+          firstOk: () => 'Red wire on 3V3. Now tap a free hole in row 7, <b>above</b> the gap (the red strip).',
           checkSecond: (e) => {
-            if (e.k === 'pin') return 'The other end goes on the breadboard: column 7, above the gap.';
-            if (e.k === 'rail') return 'Not a rail this time. The red wire goes into the resistor’s top strip: column 7, above the gap.';
+            if (e.k === 'pin') return 'The other end goes on the breadboard: row 7, above the gap.';
+            if (e.k === 'rail') return 'Not a rail this time. The red wire goes into the resistor’s top strip: row 7, above the gap.';
             if (e.c === B.led.a.c && half(e.r) === 'near') return 'Careful! Below the gap is the LED’s strip. Power there would skip the resistor. Go <b>above</b> the gap.';
-            if (e.c === B.led.k.c && half(e.r) === 'near') return 'That’s the short leg’s strip: the road home. Power goes in column 7, above the gap.';
-            if (e.c !== B.res.a.c || half(e.r) !== 'far') return `Hole ${holeName(e)} isn’t joined to the resistor. Use column 7, above the gap (the red strip).`;
+            if (e.c === B.led.k.c && half(e.r) === 'near') return 'That’s the short leg’s strip: the road home. Power goes in row 7, above the gap.';
+            if (e.c !== B.res.a.c || half(e.r) !== 'far') return `Hole ${holeName(e)} isn’t joined to the resistor. Use row 7, above the gap (the red strip).`;
             return '';
           },
           place: async (a, b) => {
@@ -827,7 +827,7 @@ code { font-family: var(--font-code); background: var(--surface-2); border-radiu
         ensure('res', 'led', 'gw', 'gnd', 'pw');
         kit.kinds = new Set();
         const ok = analyze(Object.assign({}, B, { usb: true })).state === 'lit';
-        const items = ['3V3 → red wire → column 7, above the gap', 'Resistor across the gap', 'LED: long leg on the resistor’s strip, short leg next door', 'Short leg → black wire → − rail', '− rail → black wire → GND'];
+        const items = ['3V3 → red wire → row 7, above the gap', 'Resistor across the gap', 'LED: long leg on the resistor’s strip, short leg next door', 'Short leg → black wire → − rail', '− rail → black wire → GND'];
         $('#extraBox').innerHTML = `<div><b>✅ Pre-flight check</b><ul class="checklist">${items.map((t) => `<li class="${ok ? 'ok' : ''}">${t}</li>`).join('')}</ul></div>`;
         task('Plug the USB cable back in');
         this.onTap = (hit) => {
@@ -904,7 +904,7 @@ code { font-family: var(--font-code); background: var(--surface-2); border-radiu
           <ol class="build-steps">
             <li>Unplug the ESP32 from the computer.</li>
             <li>Resistor across the gap: <b>${n(B.res.a)}</b> and <b>${n(B.res.b)}</b>.</li>
-            <li>LED: long leg in <b>${n(B.led.a)}</b>, short leg in <b>${n(B.led.k)}</b> (flat edge towards column ${B.led.k.c}).</li>
+            <li>LED: long leg in <b>${n(B.led.a)}</b>, short leg in <b>${n(B.led.k)}</b> (flat edge towards row ${B.led.k.c}).</li>
             <li>Black wire: <b>${n(B.gw.a)}</b> to the blue <b>−</b> rail.</li>
             <li>Black wire: the − rail to a <b>GND</b> pin. The female end slides onto the pin.</li>
             <li>Red wire: <b>3V3</b> to <b>${n(B.pw.b)}</b>.</li>
@@ -930,7 +930,7 @@ code { font-family: var(--font-code); background: var(--surface-2); border-radiu
             $('#realBox').innerHTML = `<div class="why"><b>Debugging checklist</b><ul style="margin:4px 0;padding-left:20px">
               <li>Is the red power light on the ESP32 on? If not, try another USB cable (some only charge).</li>
               <li>Is the LED the right way round? Long leg towards the resistor, flat edge towards the black wire.</li>
-              <li>Are the legs pushed all the way into the holes, in the right rows and columns?</li>
+              <li>Are the legs pushed all the way into the holes, in the right holes?</li>
               <li>Is the resistor really across the middle gap?</li>
               <li>Is the black wire on the blue <b>−</b> rail, not the red + rail?</li></ul>
               Unplug before you change anything! <button type="button" class="btn" data-real="fixed">✅ Fixed it!</button></div>`;
@@ -953,7 +953,7 @@ code { font-family: var(--font-code); background: var(--surface-2); border-radiu
           ['Which leg of the LED goes towards the power?', ['The short leg (cathode)', 'The long leg (anode)', 'It doesn’t matter'], 1,
             'Electricity goes in through the long leg (anode) and out of the short leg (cathode).'],
           ['Why does the resistor stand across the middle gap?', ['So electricity has to go through it to reach the LED', 'To keep it cool', 'Because it’s too long for one strip'], 0,
-            'The gap splits the column into two strips. The resistor is the only bridge between them.'],
+            'The gap splits each row into two strips. The resistor is the only bridge between them.'],
           ['When should you move wires?', ['While the board is plugged in, so you can see the light', 'Only while the board is unplugged', 'Any time you like'], 1,
             'Unplug first, then check, then plug in. That keeps your parts (and you) safe.'],
         ];
@@ -1021,7 +1021,7 @@ code { font-family: var(--font-code); background: var(--surface-2); border-radiu
   kit.onHover = (t) => {
     const hint = $('#vhint');
     if (!t || t.kind === 'custom') hint.textContent = 'Drag to spin · Pinch or scroll to zoom · Tap holes, pins and parts';
-    else hint.textContent = t.kind === 'hole' ? `Hole ${t.r}${t.c} · column ${t.c}, ${half(t.r) === 'far' ? 'above' : 'below'} the gap` : t.kind === 'rail' ? `${railName(t.rail)[0].toUpperCase()}${railName(t.rail).slice(1)}` : `Pin ${t.name}`;
+    else hint.textContent = t.kind === 'hole' ? `Hole ${t.r}${t.c} · row ${t.c}, ${half(t.r) === 'far' ? 'above' : 'below'} the gap` : t.kind === 'rail' ? `${railName(t.rail)[0].toUpperCase()}${railName(t.rail).slice(1)}` : `Pin ${t.name}`;
   };
 
   // read aloud: the step's title, then its text (tools/voice/collect.mjs reads the same)

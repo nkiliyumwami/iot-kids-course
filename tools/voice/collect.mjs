@@ -21,7 +21,7 @@ const caps = home.slice(home.indexOf('const CAPS = {'), home.indexOf('};', home.
 for (const m of caps.matchAll(/(\w+): \['([^']*)', '([^']*)', '([^']*)'\]/g)) add(`story ${m[1]}`, `${m[3]}. ${m[4]}`);
 
 // 2. lesson steps: "title. text" for every step that has both (lessons with a voice: see VOICED)
-const VOICED = ['00-meet-esp32', 'lab1-light-it-up'];
+const VOICED = ['00-meet-esp32', 'lab1-light-it-up', 'lab2-code-switch'];
 for (const slug of VOICED) {
   const src = readFileSync(`lessons/${slug}/index.html`, 'utf8');
   const body = src.slice(src.indexOf('const STEPS = ['));

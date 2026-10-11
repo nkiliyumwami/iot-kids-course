@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Circuit Lab 2: Let Code Switch It · KundaKode</title>
+<script src="../../assets/brand.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Circuit Lab 2: the LED circuit from Circuit Lab 1, with the red wire moved from 3V3 to D25. Code becomes the switch:
+   Pin(25, Pin.OUT), led.value(1) / led.value(0), then a blink loop, on the 3D bench and on the learner's real ESP32. */
+:root {
+  --bg: #E3EBF0; --surface: #FFFFFF; --surface-2: #F1F5F8; --ink: #15202A; --muted: #526170; --line: #D2DCE3;
+  --accent: #0A7480; --accent-strong: #075A63; --accent-soft: #DAEEF0; --hl: #F2B705; --good: #2E9E57; --try: #D9821A;
+  --red: #C93131; --ground: #2E3136; --code-bg: #13202A; --code-ink: #E3ECF1;
+  --font-display: 'Baloo 2', 'Trebuchet MS', system-ui, sans-serif;
+  --font-body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --font-code: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--hl); outline-offset: 2px; }
+.app { display: grid; grid-template-rows: auto 1fr; height: 100%; padding: 12px 16px 16px; gap: 10px; }
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.top a.back { font-weight: 800; color: var(--accent-strong); text-decoration: none; font-size: 13px; }
+.top h1 { font-family: var(--font-display); font-weight: 800; font-size: 26px; margin: 0; line-height: 1.05; }
+.top p { margin: 0; color: var(--muted); font-size: 13px; }
+.prog { margin-left: auto; display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 13px; color: var(--muted); }
+.bar { width: 160px; height: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 99px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .4s; }
+.bookbtn { border: 2px solid var(--hl); background: #FFF6D6; border-radius: 999px; padding: 4px 12px; font-weight: 800; font-size: 13px; cursor: pointer; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(330px, 430px); gap: 14px; min-height: 0; }
+.viewport { position: relative; min-height: 0; border-radius: 18px; overflow: hidden; background: #F3F7FA; border: 1px solid var(--line); }
+#scene, #scene canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#scene canvas { touch-action: none; cursor: grab; }
+.fail { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; font-weight: 700; color: var(--muted); }
+.labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.lbl { position: absolute; left: 0; top: 0; width: 0; height: 0; --lift: 10px; will-change: transform; color: var(--ink); }
+.lbl > span { position: absolute; left: 0; bottom: var(--lift); transform: translateX(-50%); white-space: nowrap; background: rgba(255,255,255,.94);
+  border: 1px solid var(--line); border-radius: 8px; padding: 2px 8px; font-weight: 800; font-size: 12.5px; box-shadow: 0 2px 8px rgba(21,32,42,.12); display: inline-flex; align-items: center; gap: 6px; }
+.lbl::after { content: ''; position: absolute; left: -1px; bottom: 0; width: 2px; height: var(--lift); background: rgba(21,32,42,.45); }
+.lbl.pin > span { font-family: var(--font-code); font-size: 11.5px; padding: 1px 6px; }
+.lbl.pin.power > span { background: #FBE3E3; border-color: #E8A0A0; }
+.lbl.callout > span { background: var(--ink); color: #fff; border-color: transparent; font-size: 13px; }
+.lbl.callout::after { background: var(--ink); }
+.lbl.callout.gold > span { background: var(--hl); color: var(--ink); }
+.lbl.callout.blue > span { background: #2F6FDE; }
+.lbl.callout.red > span { background: var(--red); }
+.lbl.callout.ground > span { background: var(--ground); }
+.reset { position: absolute; top: 12px; right: 12px; border: 0; background: var(--accent); color: #fff; border-radius: 999px; padding: 9px 16px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 16px rgba(10,116,128,.3); }
+.vhint { position: absolute; left: 12px; bottom: 10px; margin: 0; font-size: 12px; font-weight: 700; color: var(--muted); pointer-events: none; background: rgba(243,247,250,.85); border-radius: 8px; padding: 2px 6px; }
+.hand { position: absolute; left: 12px; top: 12px; background: var(--surface); border: 2px solid var(--hl); border-radius: 14px; padding: 6px 12px; font-family: var(--font-display); font-weight: 800; font-size: 17px; max-width: calc(100% - 150px); }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; min-height: 0; display: grid; grid-template-rows: 1fr auto; overflow: hidden; }
+.scroll { overflow: auto; padding: 16px; display: grid; gap: 12px; align-content: start; grid-auto-rows: max-content; }
+.guide { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; align-items: start; }
+.guide svg { width: 72px; height: 84px; }
+.voice-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; }
+.listen { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 5px 14px; font: inherit; font-weight: 800; font-size: 14px; cursor: pointer; color: var(--ink); }
+.listen[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.readme { font-size: 14px; font-weight: 700; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.eyebrow { font-weight: 800; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+.guide h2 { font-family: var(--font-display); font-size: 25px; line-height: 1.1; margin: 0 0 4px; }
+.guide p { margin: 4px 0; }
+.task { border: 2px solid var(--accent); background: var(--accent-soft); border-radius: 14px; padding: 10px 12px; }
+.task b.t { display: block; font-family: var(--font-display); font-size: 18px; }
+.task .count { font-weight: 800; color: var(--accent-strong); }
+.task.done { border-color: var(--good); background: #E3F5EA; }
+.task.done b.t::after { content: ' ✓'; color: var(--good); }
+.feedback { border-radius: 12px; padding: 8px 12px; font-weight: 700; animation: fbIn .25s ease-out; }
+.feedback.good { background: #E3F5EA; border-left: 5px solid var(--good); }
+.feedback.try { background: #FFF1DF; border-left: 5px solid var(--try); }
+@keyframes fbIn { from { transform: translateY(6px); opacity: 0 } to { transform: none; opacity: 1 } }
+.unlock { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: #FFF6D6; border: 2px dashed var(--hl); border-radius: 14px; padding: 8px 12px; font-weight: 800; }
+.unlock .w, .words-strip .w { white-space: nowrap; }
+.unlock .w { font-size: 17px; }
+code { font-family: var(--font-code); background: var(--surface-2); border-radius: 6px; padding: 0 5px; font-size: .92em; }
+.why { border-left: 5px solid var(--hl); background: #FFFBEA; border-radius: 12px; padding: 8px 12px; font-size: 15px; }
+.why b:first-child { display: block; font-family: var(--font-display); font-size: 16px; }
+.meter { border: 2px solid var(--line); border-radius: 14px; padding: 10px 12px; display: grid; gap: 8px; }
+.meter .row { display: flex; flex-wrap: wrap; gap: 8px; }
+.gauge { position: relative; height: 18px; border-radius: 99px; background: linear-gradient(90deg, #2E9E57 0 30%, #F2B705 30% 55%, #C93131 55% 100%); }
+.gauge i { position: absolute; top: -5px; bottom: -5px; width: 5px; margin-left: -2px; background: var(--ink); border-radius: 3px; box-shadow: 0 0 0 2px #fff; left: 0; transition: left .6s cubic-bezier(.2,1.4,.4,1); }
+.meter .read { font-weight: 800; }
+.meter .read.bad { color: var(--red); }
+.checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-weight: 700; }
+.checklist li::before { content: '⬜ '; }
+.checklist li.ok::before { content: '✅ '; }
+.checklist li.bad::before { content: '❌ '; }
+.build-steps { margin: 0; padding-left: 22px; display: grid; gap: 4px; }
+.opts { display: grid; gap: 8px; }
+.opt-btn { text-align: left; background: var(--surface-2); border: 2px solid var(--line); border-radius: 10px; padding: 8px 12px; font-weight: 800; cursor: pointer; }
+.opt-btn:hover { border-color: var(--accent); }
+.opt-btn.right { background: #E3F5EA; border-color: var(--good); }
+.opt-btn.wrong { background: #FFF1DF; border-color: var(--try); }
+.done-card { border: 2px solid var(--hl); background: #FFFBEA; border-radius: 16px; padding: 12px 14px; }
+.done-card h3 { font-family: var(--font-display); margin: 0 0 4px; font-size: 22px; }
+.done-card .links, .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 2px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 16px; font-weight: 800; cursor: pointer; text-decoration: none; color: var(--ink); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 6px 16px rgba(10,116,128,.3); }
+.btn.on { outline: 3px solid var(--good); }
+.btn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.nav { display: flex; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--line); background: var(--surface); }
+.nav .btn.primary { margin-left: auto; }
+.words-strip { font-size: 13px; color: var(--muted); }
+.small { font-size: 14px; color: var(--muted); }
+@media (max-width: 860px) {
+  .app { height: auto; min-height: 100%; }
+  main { grid-template-columns: minmax(0, 1fr); }
+  .viewport { height: 58vh; min-height: 380px; }
+  .panel { overflow: visible; }
+  .scroll { overflow: visible; }
+  .nav { position: sticky; bottom: 0; border-radius: 0 0 18px 18px; }
+  .prog { margin-left: 0; }
+  .bar { width: 110px; }
+  .hand { font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) { .feedback { animation: none; } .gauge i { transition: none; } }
+.lbl.pin.high > span { background: var(--hl); border-color: transparent; }
+.code { margin: 0; max-width: 100%; background: var(--code-bg); color: var(--code-ink); border-radius: 12px; padding: 8px 0; font-family: var(--font-code); font-size: 12.5px; overflow-x: auto; }
+.scroll { grid-template-columns: minmax(0, 1fr); }
+.prog { flex-wrap: wrap; justify-content: flex-end; }
+@media (max-width: 860px) { .prog { justify-content: flex-start; } .prog .kkb-open { padding: 5px 12px; font-size: 13px; } }
+.code .ln { display: block; padding: 1px 12px; white-space: pre; min-height: 1.4em; }
+.code .ln.hl { background: #24404F; box-shadow: inset 4px 0 0 var(--hl); }
+.code .c { color: #8BA0AE; } .code .kw { color: #FF9EC4; } .code .fn { color: #7FE0A0; } .code .num { color: #FFD479; }
+.repl { display: grid; gap: 8px; border: 2px solid #3aa0ff; border-radius: 12px; padding: 10px 12px; background: #EEF6FF; }
+.repl .row { display: flex; flex-wrap: wrap; gap: 8px; }
+.repl button.run { border: 0; border-radius: 10px; padding: 8px 12px; cursor: pointer; font-family: var(--font-code); font-weight: 600; background: var(--code-bg); color: var(--code-ink); }
+.repl button.run.ran { outline: 3px solid var(--good); }
+.out { font-family: var(--font-code); font-size: 13px; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; min-height: 2.2em; }
+.sliders { display: grid; gap: 10px; }
+.sliders label { display: grid; gap: 4px; font-weight: 800; }
+.sliders input { width: 100%; accent-color: var(--accent); }
+.progbar { display: flex; gap: 8px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <a class="back" href="../../lessons.html">← All lessons</a>
+      <h1>Let Code Switch It</h1>
+      <p>Circuit Lab 2 · Move one wire, and your code becomes the switch</p>
+    </div>
+    <div class="prog"><span id="progressText">Step 1 of 11</span><div class="bar" aria-hidden="true"><i id="barFill"></i></div>
+      <button type="button" class="bookbtn" data-wordbook>📖 My words <span id="wordCount"></span></button></div>
+  </header>
+  <main>
+    <section class="viewport" aria-label="3D workbench with your LED circuit and an ESP32">
+      <div id="scene"></div>
+      <div class="labels" id="labels"></div>
+      <div class="hand" id="hand" hidden></div>
+      <button class="reset" id="resetView" type="button">↺ Reset view</button>
+      <p class="vhint" id="vhint">Drag to spin · Pinch or scroll to zoom · Tap pins and parts</p>
+    </section>
+    <aside class="panel">
+      <div class="scroll" id="scroll" aria-live="polite">
+        <div class="guide">
+          <svg viewBox="0 0 72 84" aria-hidden="true"><circle cx="36" cy="30" r="20" fill="#F5C9A0"/><rect x="16" y="50" width="40" height="30" rx="10" fill="#1F3A68"/></svg>
+          <div><div class="eyebrow" id="eyebrow"></div><h2 id="stepTitle"></h2><div id="stepText"></div>
+            <div class="voice-row"><button class="listen" id="listenBtn" type="button" aria-pressed="false">🔊 Listen</button><label class="readme"><input type="checkbox" id="readToMe"> Read every step to me</label></div></div>
+        </div>
+        <div id="taskBox"></div>
+        <div id="fbBox"></div>
+        <div id="extraBox"></div>
+        <p class="words-strip" id="wordsStrip"></p>
+      </div>
+      <div class="nav">
+        <button type="button" class="btn" id="prevBtn">← Back</button>
+        <button type="button" class="btn primary" id="nextBtn">Next →</button>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="../../course.js"></script>
+<script src="../../assets/voice/voice.js?v=naledi1"></script>
+<script src="../../assets/rewards.js"></script>
+<script src="../../assets/esp32/board.js"></script>
+<script src="../../assets/circuit/kit3d.js"></script>
+<script>
+(function () {
+  'use strict';
+  const LESSON_SLUG = 'lab2-code-switch';
+  const E = window.ESP32, esc = E.esc, chip = E.chip;
+  const $ = (s) => document.querySelector(s);
+  E.initWords();
+  const countWords = () => { $('#wordCount').textContent = `(${E.book.list().length})`; };
+  document.addEventListener('makerword', countWords); countWords();
+
+  let kit;
+  try {
+    if (!window.THREE || !window.THREE.OrbitControls) throw new Error('no three');
+    kit = CircuitKit.create({ host: $('#scene'), layer: $('#labels') });
+  } catch (e) {
+    if (window.console) console.error(e);
+    $('#scene').innerHTML = '<div class="fail">The 3D workbench could not start. Check your internet connection, or try Chrome or Edge, and reload the page.</div>';
+    return;
+  }
+  const { THREE, V, colX, ROWZ, FAR_ROWS, holeAt, railAt, pinAt, SLEEVE, HEADER_TOP } = kit;
+  const RED_WIRE = 0xe0413b, BLACK_WIRE = 0x2b2b2e;
+
+  /* =========================================================
+     The workbench: the circuit from Circuit Lab 1, on the breadboard next to the ESP32
+     ========================================================= */
+  const breadboard = kit.makeBreadboard(); kit.scene.add(breadboard);
+  const esp = kit.makeESP32([['far', 14], ['near', 13], ['near', 7]]); kit.scene.add(esp);
+  const usb = kit.makeUSB(); kit.scene.add(usb);
+
+  const H = (c, r) => ({ k: 'hole', c, r }), R = (c, rail = 'BN') => ({ k: 'rail', rail, c }), PIN = (id) => ({ k: 'pin', id });
+  const CANON = {
+    res: { a: H(7, 'd'), b: H(7, 'g') },
+    led: { a: H(7, 'i'), k: H(8, 'i') },
+    gw: { a: H(8, 'j'), b: R(8) },
+    gnd: { a: PIN('near:GND'), b: R(30) },
+    pw: { a: PIN('far:3V3'), b: H(7, 'b') },
+  };
+  const WIRES = { pw: RED_WIRE, gw: BLACK_WIRE, gnd: BLACK_WIRE };
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  // start from the learner's own Circuit Lab 1 build when there is one
+  const lab1 = (window.COURSE && window.COURSE.readProgress()['lab1-light-it-up']) || {};
+  const okBuild = (b) => b && b.res && b.led && b.gw && b.gnd && b.pw && b.led.k.c === b.led.a.c + 1;
+  const START = Object.assign(okBuild(lab1.build) ? clone(lab1.build) : clone(CANON), { usb: true });
+  START.pw.a = PIN('far:3V3');
+  let B = clone(START);
+  // what the program has done to pin 25: made it an output, and set it HIGH or LOW
+  const pin25 = { out: false, high: false };
+  const half = (r) => (FAR_ROWS.includes(r) ? 'far' : 'near');
+  const netOf = (e) => {
+    if (e.k === 'hole') return (half(e.r) === 'far' ? 'T' : 'B') + e.c;
+    if (e.k === 'rail') return e.rail;
+    const name = kit.pinById(e.id).name;
+    if (name === '3V3') return 'V';
+    if (name === 'D25' && pin25.out && pin25.high) return 'V'; // a HIGH output pin gives 3.3 V, just like 3V3
+    return name === 'GND' ? 'G' : 'P:' + name;
+  };
+  const holeName = (e) => (e.k === 'hole' ? `${e.r}${e.c}` : e.k === 'rail' ? 'the − rail' : kit.pinById(e.id).name);
+
+  /* ---------- the same tiny circuit simulator as Circuit Lab 1 ---------- */
+  function analyze(b) {
+    const edges = [];
+    ['pw', 'gw', 'gnd'].forEach((w) => { if (b[w]) edges.push({ id: w, type: 'wire', a: b[w].a, b: b[w].b }); });
+    if (b.res) edges.push({ id: 'res', type: 'res', a: b.res.a, b: b.res.b });
+    if (b.led) edges.push({ id: 'led', type: 'led', a: b.led.a, b: b.led.k });
+    const out = [];
+    const walk = (net, seen, trail) => {
+      if (net === 'G') { out.push(trail.slice()); return; }
+      for (const e of edges) {
+        for (const [from, to, rev] of [[e.a, e.b, false], [e.b, e.a, true]]) {
+          if (e.type === 'led' && rev) continue;
+          if (netOf(from) !== net || seen.has(netOf(to)) || trail.some((t) => t.e === e)) continue;
+          seen.add(netOf(to)); trail.push({ e, from, to, rev });
+          walk(netOf(to), seen, trail);
+          trail.pop(); seen.delete(netOf(to));
+        }
+      }
+    };
+    walk('V', new Set(['V']), []);
+    const good = out.find((p) => p.some((t) => t.e.type === 'led') && p.some((t) => t.e.type === 'res'));
+    return { state: b.usb && good ? 'lit' : 'off', path: good || null };
+  }
+
+  /* ---------- 3D for the placed parts ---------- */
+  const surf = (e) => (e.k === 'pin' ? pinAt(e.id, HEADER_TOP) : e.k === 'rail' ? railAt(e.c, e.rail, 0.03) : holeAt(e.c, e.r, 0.03));
+  const wireEnd = (e) => (e.k === 'pin' ? pinAt(e.id, HEADER_TOP + SLEEVE) : e.k === 'rail' ? railAt(e.c, e.rail, SLEEVE) : holeAt(e.c, e.r, SLEEVE));
+  const built = {};
+  function makeFor(key, spec) {
+    if (key === 'res') { const o = kit.makeResistor(ROWZ[spec.a.r], ROWZ[spec.b.r]); o.position.x = colX(spec.a.c); kit.tagPart(o, 'resistor'); return { obj: o }; }
+    if (key === 'led') { const o = kit.makeLED(0xff3030); o.position.set(colX(spec.a.c), 0, ROWZ[spec.a.r]); kit.tagPart(o, 'led'); return { obj: o }; }
+    const w = kit.makeWire(kit.wirePoints(wireEnd(spec.a), wireEnd(spec.b)), WIRES[key]);
+    kit.tagPart(w.group, 'wire-' + key);
+    return { obj: w.group, wire: w };
+  }
+  let sim = analyze(B), flow = null;
+  function sync() {
+    const fresh = [];
+    for (const key of ['res', 'led', 'gw', 'gnd', 'pw']) {
+      const spec = B[key], sig = spec ? JSON.stringify(spec) : '';
+      if (built[key] && built[key].sig === sig) continue;
+      if (built[key]) { kit.scene.remove(built[key].obj); kit.dispose(built[key].obj); delete built[key]; }
+      if (spec) { built[key] = Object.assign({ sig }, makeFor(key, spec)); kit.scene.add(built[key].obj); fresh.push(built[key]); }
+    }
+    esp.userData.setPower(B.usb); usb.userData.setPlugged(B.usb);
+    sim = analyze(B);
+    if (built.led) built.led.obj.userData.setLit(sim.state === 'lit' ? 1 : 0);
+    flow = sim.state === 'lit' ? buildFlow(sim.path) : null;
+    return fresh;
+  }
+  async function animateIn(fresh) { for (const f of fresh) { if (f.wire) await kit.drawWire(f.wire, 0.9); else await kit.dropIn(f.obj); } }
+  function buildFlow(path) {
+    const pts = [];
+    path.forEach((t, i) => {
+      const a = surf(t.from), b = surf(t.to);
+      if (t.e.type === 'wire') { const cp = built[t.e.id].wire.curve.getPoints(48); pts.push(a, ...(t.rev ? cp.reverse() : cp), b); }
+      else if (t.e.type === 'res') pts.push(a, V(a.x, 0.3, a.z), V(b.x, 0.3, b.z), b);
+      else pts.push(a, V(a.x, 0.45, a.z), V((a.x + b.x) / 2, 0.72, a.z), V(b.x, 0.45, b.z), b);
+      if (path[i + 1]) pts.push(surf(path[i + 1].from));
+    });
+    const cum = [0];
+    for (let k = 1; k < pts.length; k++) cum.push(cum[k - 1] + pts[k].distanceTo(pts[k - 1]));
+    return { pts, cum, len: cum[cum.length - 1] };
+  }
+  const DOTS = 30;
+  const dotMat = new THREE.MeshBasicMaterial({ color: 0xffd23f, depthTest: false, transparent: true, opacity: 0.95 });
+  const dots = [];
+  for (let k = 0; k < DOTS; k++) { const d = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 8), dotMat); d.renderOrder = 10; d.visible = false; kit.scene.add(d); dots.push(d); }
+  let flowOffset = 0;
+  function pointAlong(path, s) {
+    const { pts, cum } = path;
+    let lo = 0, hi = cum.length - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (cum[m] < s) lo = m; else hi = m; }
+    const seg = cum[hi] - cum[lo] || 1;
+    return pts[lo].clone().lerp(pts[hi], (s - cum[lo]) / seg);
+  }
+  kit.onFrame((dt) => {
+    const show = !!flow && !kit.reduceMotion;
+    dots.forEach((d) => { d.visible = show; });
+    if (!show) return;
+    flowOffset = (flowOffset + dt * 1.6) % flow.len;
+    const gap = flow.len / DOTS;
+    dots.forEach((d, k) => d.position.copy(pointAlong(flow, (flowOffset + k * gap) % flow.len)));
+  });
+  function setPin(high) { pin25.high = high; sync(); }
+
+  /* ---------- labels ---------- */
+  let labelStep = 0;
+  kit.addLabel('ESP32 DevKit', V(-1.2, 0.05, kit.ESP.cz), { obj: esp, lift: 6 });
+  kit.addLabel('USB cable', V(kit.ESP.x1 + 1.6, 0.05, kit.ESP.cz), { obj: usb, lift: 8, show: () => labelStep === 1 || labelStep === 3 });
+  kit.addLabel('3V3', pinAt('far:3V3', HEADER_TOP + 0.05), { cls: 'pin power', lift: 14 });
+  kit.addLabel('GND', pinAt('near:GND', HEADER_TOP + 0.05), { cls: 'pin', lift: 14 });
+  kit.addLabel('D25', pinAt('near:D25', HEADER_TOP + 0.05), { cls: 'pin', lift: 30, update: (L) => {
+    const on = B.pw.a.id === 'near:D25';
+    const txt = !on ? 'D25' : !pin25.out ? 'D25 · not set up' : pin25.high ? 'D25 · HIGH (1)' : 'D25 · LOW (0)';
+    if (L._t !== txt) { L.el.firstChild.textContent = txt; L._t = txt; }
+    L.el.classList.toggle('high', on && pin25.out && pin25.high);
+  } });
+  kit.addLabel('Your LED', () => holeAt(B.led.a.c, B.led.a.r, 1.0), { lift: 16 });
+
+  const CAM = {
+    loop: { p: [3.0, 9.6, 9.4], t: [0.0, 0, -1.6] },
+    usb: { p: [5.6, 4.6, -0.4], t: [2.4, -0.2, -4.4] },
+    pins: { p: [1.4, 6.4, 1.4], t: [0.4, 0, -3.6] },
+    blink: { p: [-0.6, 6.2, 6.2], t: [-0.9, 0, -1.6] },
+  };
+  const fly = (k, instant) => kit.flyTo(CAM[k], instant);
+
+  /* =========================================================
+     Code: a tiny pretend MicroPython for this lab, with line highlighting
+     ========================================================= */
+  function hl(src) {
+    return src.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/(#.*$)|\b(from|import|while|True)\b|\b(Pin|value|sleep|OUT)\b|\b(\d+(?:\.\d+)?)\b/g, (m, c, kw, fn, num) =>
+        c ? `<span class="c">${c}</span>` : kw ? `<span class="kw">${kw}</span>` : fn ? `<span class="fn">${fn}</span>` : `<span class="num">${num}</span>`);
+  }
+  const timing = { on: 0.5, off: 0.5 };
+  const PROGRAM = () => [
+    'from machine import Pin',
+    'import time',
+    '',
+    'led = Pin(25, Pin.OUT)   # D25 is an output',
+    '',
+    'while True:',
+    '    led.value(1)          # HIGH: the LED is on',
+    `    time.sleep(${timing.on})`,
+    '    led.value(0)          # LOW: the LED is off',
+    `    time.sleep(${timing.off})`,
+  ];
+  const programText = () => PROGRAM().join('\n') + '\n';
+  // runs the blink program on the pretend board until the step changes or Stop is pressed
+  let runner = null;
+  function codeCard(id) {
+    return `<pre class="code" id="${id}" aria-label="MicroPython program">${PROGRAM().map((l) => `<span class="ln">${hl(l) || ' '}</span>`).join('')}</pre>`;
+  }
+  function refreshCode(id) { const pre = document.getElementById(id); if (pre) pre.innerHTML = PROGRAM().map((l) => `<span class="ln">${hl(l) || ' '}</span>`).join(''); }
+  function mark(id, n) { const pre = document.getElementById(id); if (!pre) return; [...pre.children].forEach((el, i) => el.classList.toggle('hl', i === n)); }
+  async function runProgram(id, onBlink) {
+    stopProgram();
+    const me = runner = { stop: false };
+    const t0 = kit.token;
+    const alive = () => !me.stop && kit.token === t0;
+    const step = async (n, secs) => { mark(id, n); await kit.wait(secs); return alive(); };
+    if (!(await step(0, 0.35)) || !(await step(1, 0.35)) || !(await step(3, 0.35))) return;
+    pin25.out = true; sync();
+    while (alive()) {
+      if (!(await step(5, 0.15))) break;
+      mark(id, 6); setPin(true); if (onBlink) onBlink();
+      if (!(await step(7, timing.on))) break;
+      mark(id, 8); setPin(false);
+      if (!(await step(9, timing.off))) break;
+    }
+  }
+  function stopProgram() { if (runner) runner.stop = true; runner = null; }
+
+  /* =========================================================
+     Panel helpers (the same mission style as the other labs)
+     ========================================================= */
+  const st = { done: new Set(), words: [] };
+  function say(html, good) { const d = document.createElement('div'); d.className = 'feedback ' + (good ? 'good' : 'try'); d.innerHTML = html; $('#fbBox').replaceChildren(d); }
+  function task(title, body) { $('#taskBox').innerHTML = `<div class="task" id="task"><b class="t">🎯 ${title}</b>${body ? `<div id="taskBody">${body}</div>` : ''}</div>`; }
+  function taskBody(html) { const b = $('#taskBody'); if (b) b.innerHTML = html; }
+  function hand(text) { const h = $('#hand'); h.hidden = !text; h.innerHTML = text || ''; }
+  function complete(wordKeys, msg) {
+    st.done.add(step);
+    const t = $('#task'); if (t) t.classList.add('done');
+    if (msg) say(msg, true);
+    hand(null);
+    (wordKeys || []).forEach((k) => { E.book.add(k); if (!st.words.includes(k)) st.words.push(k); });
+    if (wordKeys && wordKeys.length) {
+      $('#extraBox').insertAdjacentHTML('afterbegin', `<div class="unlock">🔑 New maker word${wordKeys.length > 1 ? 's' : ''}: ${wordKeys.map((k) => chip(k)).join(' ')} <span class="small" style="font-weight:700">tap to read</span></div>`);
+      E.showWord(wordKeys[0]);
+    }
+    updateNav(); stripWords();
+    if (window.COURSE) window.COURSE.saveProgress(LESSON_SLUG, { step, steps: STEPS.length });
+  }
+  function stripWords() { $('#wordsStrip').innerHTML = st.words.length ? `Words you’ve found today: ${st.words.map((k) => chip(k)).join(' ')}` : ''; }
+  const why = (title, html) => `<div class="why"><b>Why? ${title}</b>${html}</div>`;
+  // each step starts from the state the earlier steps left: wire on 3V3 or D25, plugged in or not, pin set up or not
+  function setup(o) {
+    B.pw.a = PIN(o.d25 ? 'near:D25' : 'far:3V3');
+    B.usb = o.usb;
+    pin25.out = !!o.out; pin25.high = false;
+    sync();
+  }
+
+  /* =========================================================
+     The missions
+     ========================================================= */
+  let step = 0;
+  const STEPS = [
+    { eyebrow: 'Mission briefing', title: 'Your light, your code', cam: 'loop',
+      text: `<p>In Circuit Lab 1 you lit an LED with power from 3V3. It stays on all the time: the only way to switch it off is to pull out the cable!</p>
+             <p>Today the ESP32’s code becomes the switch. Only one wire moves.</p>`,
+      enter() {
+        setup({ d25: false, usb: true });
+        kit.kinds = new Set();
+        task('Tap the red wire to see where its power comes from');
+        this.onTap = (hit) => {
+          if (st.done.has(step)) return;
+          if (hit.part && hit.part.part === 'wire-pw') {
+            kit.callout('3V3: always 3.3 volts', pinAt('far:3V3', 0.2), 'red', 40);
+            complete([], 'The red wire comes from <b>3V3</b>, which is <b>always on</b>. No code can switch it off. To let your code decide, we’ll move the wire to a GPIO pin.');
+          } else say('Find the red wire: it runs from the ESP32 to the breadboard.', false);
+        };
+      } },
+
+    { eyebrow: 'Mission 1', title: 'Unplug first', cam: 'usb',
+      text: `<p>You know the golden rule: never move wires while the board has power.</p>`,
+      enter() {
+        setup({ d25: false, usb: !st.done.has(step) });
+        kit.kinds = new Set();
+        task('Unplug the USB cable');
+        this.onTap = (hit) => {
+          if (st.done.has(step)) return;
+          if (hit.part && hit.part.part === 'usb') { B.usb = false; sync(); complete([], 'Unplugged: the LED and the red power light are off. Safe to move a wire.'); }
+          else say('Tap the USB cable at the end of the ESP32.', false);
+        };
+      } },
+
+    { eyebrow: 'Mission 2', title: 'Move the red wire', cam: 'pins',
+      text: `<p>Move the top end of the red wire from 3V3 to D25. In code, D25 is Pin(25). Remember the name trick from Pin Detective?</p>
+             <p>The other end stays in the breadboard, so the rest of your circuit doesn’t change.</p>`,
+      enter() {
+        setup({ d25: st.done.has(step), usb: false });
+        kit.kinds = new Set(['pin']);
+        if (st.done.has(step)) { task('Move the red wire to D25'); return; }
+        hand('🖐 Holding: the top end of the red wire');
+        task('Tap the pin D25 on the ESP32');
+        this.onTap = async (hit) => {
+          if (st.done.has(step) || this.busy) return;
+          const p = hit.point;
+          if (!p || p.kind !== 'pin') { say('Tap a pin on the ESP32. Look for the one printed <b>D25</b>.', false); return; }
+          const n = p.name;
+          const hint = {
+            '3V3': 'That’s where the wire is now: always on. Move it to <b>D25</b>.',
+            GND: 'That’s GND, the road home. Power has to come from a pin your code controls: <b>D25</b>.',
+            VIN: 'VIN is about 5 volts, always on. We want a pin the code controls: <b>D25</b>.',
+            D2: 'D2 is wired to the board’s blue LED and is a start-up pin. Our LED uses <b>D25</b>.',
+          }[n] || (/^(D34|D35|VP|VN)$/.test(n) ? `${n} can only <b>listen</b> (input only), so it can’t power an LED. Find <b>D25</b>.`
+            : /^D\d+$/.test(n) ? `That’s ${n}. It could work too, but we use <b>D25</b> so your traffic light in Lesson 1 matches. Find D25!`
+            : `That’s <b>${n}</b>, a pin with a special job. Find <b>D25</b>.`);
+          if (n !== 'D25') { say(hint, false); return; }
+          this.busy = true; hand(null);
+          B.pw.a = PIN('near:D25');
+          await animateIn(sync());
+          this.busy = false;
+          complete([], 'Moved! The red wire now runs from <b>D25</b> to the resistor’s strip. Pin(25) means GPIO 25, printed D25: the 8th pin on its side, not the 25th.');
+          $('#extraBox').insertAdjacentHTML('beforeend', why('Why a GPIO pin?', 'GPIO pins are the ones your program can switch. 3V3 is always on, but D25 gives 3.3 volts only when your code says so.'));
+        };
+      } },
+
+    { eyebrow: 'Mission 3', title: 'Plug in… and nothing?', cam: 'loop',
+      text: `<p>Everything is wired. Plug the USB cable back in and watch your LED.</p>`,
+      enter() {
+        setup({ d25: true, usb: st.done.has(step) });
+        kit.kinds = new Set();
+        task('Plug the USB cable back in');
+        this.onTap = (hit) => {
+          if (st.done.has(step)) return;
+          if (hit.part && hit.part.part === 'usb') {
+            B.usb = true; sync();
+            complete([], 'The ESP32’s red power light is on, but your LED stays <b>dark</b>! D25 is a GPIO pin: it gives <b>0 volts</b> until your code says otherwise. Engineers call 0 volts <b>LOW</b>. Time to write some code!');
+          } else say('Tap the USB cable to plug it in.', false);
+        };
+      } },
+
+    { eyebrow: 'Mission 4', title: 'Get the pin ready', cam: 'blink',
+      text: `<p>Every MicroPython program starts by getting its tools. Then we tell the ESP32 that pin 25 is an output: it will push electricity out to the LED.</p>`,
+      enter() {
+        setup({ d25: true, usb: true, out: st.done.has(step) });
+        kit.kinds = new Set();
+        const ran = new Set(st.done.has(step) ? [0, 1] : []);
+        task('Run the two lines, in order', '<span class="count">Tap ▶ on each line</span>');
+        $('#extraBox').innerHTML = `<div class="repl"><b>💻 Talk to your ESP32 (MicroPython)</b>
+          <div class="row"><button type="button" class="run" data-l="0">▶ from machine import Pin</button></div>
+          <div class="row"><button type="button" class="run" data-l="1">▶ led = Pin(25, Pin.OUT)</button></div>
+          <div class="out" id="out">&gt;&gt;&gt;</div></div>`;
+        $('#extraBox').querySelectorAll('[data-l]').forEach((b) => b.addEventListener('click', () => {
+          const l = +b.dataset.l;
+          if (l === 1 && !ran.has(0)) { $('#out').textContent = 'NameError: name \'Pin\' isn\'t defined'; say('Python doesn’t know <code>Pin</code> yet! Run the first line first: it fetches the Pin tool.', false); return; }
+          ran.add(l); b.classList.add('ran');
+          if (l === 0) { $('#out').innerHTML = '&gt;&gt;&gt; ✓ Got the <b>Pin</b> tool from the machine library'; say('<code>from machine import Pin</code> fetches the tool for controlling pins.', true); }
+          else {
+            pin25.out = true; sync();
+            $('#out').innerHTML = '&gt;&gt;&gt; ✓ <b>led</b> is now pin 25, an output (LOW)';
+            if (!st.done.has(step)) complete(['micropython', 'output'], 'Now <code>led</code> is your program’s name for pin 25. <code>Pin(25)</code> means GPIO 25 (printed D25), and <code>Pin.OUT</code> makes it an <b>output</b>. The LED is still off: the pin is LOW.');
+          }
+        }));
+      } },
+
+    { eyebrow: 'Mission 5', title: 'Switch it on', cam: 'blink',
+      text: `<p>Now the magic line. led.value(1) sets the pin HIGH: 3.3 volts flow out, through the resistor and the LED, and home to GND.</p>
+             <p>led.value(0) sets it LOW again.</p>`,
+      enter() {
+        setup({ d25: true, usb: true, out: true });
+        kit.kinds = new Set();
+        const ran = new Set();
+        task('Run led.value(1), then led.value(0)');
+        $('#extraBox').innerHTML = `<div class="repl"><b>💻 Talk to your ESP32</b>
+          <div class="row"><button type="button" class="run" data-v="1">▶ led.value(1)</button><button type="button" class="run" data-v="0">▶ led.value(0)</button></div>
+          <div class="out" id="out">&gt;&gt;&gt;</div></div>`;
+        $('#extraBox').querySelectorAll('[data-v]').forEach((b) => b.addEventListener('click', () => {
+          const on = b.dataset.v === '1';
+          setPin(on); ran.add(b.dataset.v); b.classList.add('ran');
+          $('#out').innerHTML = on ? '&gt;&gt;&gt; 💡 D25 is <b>HIGH</b>: 3.3 volts out. The LED is ON!' : '&gt;&gt;&gt; 🌑 D25 is <b>LOW</b>: 0 volts. The LED is OFF.';
+          if (ran.size === 2 && !st.done.has(step)) complete(['high'], 'You switched a real circuit with code! <b>1</b> means <b>HIGH</b> (3.3 volts, on) and <b>0</b> means <b>LOW</b> (0 volts, off). Tip: <code>led.on()</code> and <code>led.off()</code> do exactly the same.');
+          else if (!st.done.has(step)) say(on ? 'It lights up! Watch the yellow dots: the electricity now starts at D25. Now switch it off.' : 'Off again. Now switch it on!', true);
+        }));
+      } },
+
+    { eyebrow: 'Mission 6', title: 'Be the computer', cam: 'blink',
+      text: `<p>Can you make the LED blink? Tap ON and OFF again and again, as fast as you can!</p>`,
+      enter() {
+        setup({ d25: true, usb: true, out: true });
+        kit.kinds = new Set();
+        let n = 0;
+        task('Blink the LED 10 times by hand', `<span class="count">0 of 10</span>`);
+        $('#extraBox').innerHTML = `<div class="repl"><div class="row"><button type="button" class="run" data-v="1">▶ led.value(1)</button><button type="button" class="run" data-v="0">▶ led.value(0)</button></div></div>`;
+        $('#extraBox').querySelectorAll('[data-v]').forEach((b) => b.addEventListener('click', () => {
+          const on = b.dataset.v === '1';
+          if (on && !pin25.high) n++;
+          setPin(on);
+          if (st.done.has(step)) return;
+          taskBody(`<span class="count">${Math.min(n, 10)} of 10</span>`);
+          if (n >= 10 && !on) complete([], 'Phew, that’s tiring! And a real blinking light would need you to tap forever. Computers never get tired of repeating, so let’s teach the ESP32 to blink by itself.');
+        }));
+      } },
+
+    { eyebrow: 'Mission 7', title: 'Blink forever', cam: 'blink',
+      text: `<p>Here is a whole program. while True: repeats the lines inside it forever. time.sleep(0.5) waits half a second, so your eyes can see each change.</p>`,
+      enter() {
+        setup({ d25: true, usb: true, out: false });
+        kit.kinds = new Set();
+        timing.on = 0.5; timing.off = 0.5;
+        let blinks = 0;
+        task('Run the program and watch it blink 3 times', '<span class="count">0 blinks</span>');
+        $('#extraBox').innerHTML = `${codeCard('prog')}<div class="progbar"><button type="button" class="btn primary" id="runBtn">▶ Run on the pretend ESP32</button><button type="button" class="btn" id="stopBtn">■ Stop</button></div>
+          ${why('Why sleep?', 'The ESP32 runs millions of lines every second. Without <code>time.sleep()</code> the LED would switch so fast that it would just look dimly on.')}`;
+        $('#runBtn').addEventListener('click', () => runProgram('prog', () => {
+          blinks++;
+          if (st.done.has(step)) return;
+          taskBody(`<span class="count">${blinks} blink${blinks === 1 ? '' : 's'}</span>`);
+          if (blinks >= 3) complete(['loop'], 'Your LED blinks by itself! The ESP32 runs the <b>loop</b> over and over: on, wait, off, wait… It never gets bored.');
+        }));
+        $('#stopBtn').addEventListener('click', () => { stopProgram(); mark('prog', -1); setPin(false); });
+      },
+      leave() { stopProgram(); } },
+
+    { eyebrow: 'Mission 8', title: 'Make it yours', cam: 'blink',
+      text: `<p>Change how long each sleep lasts. Smaller numbers make a faster blink. Can you make a super-fast flash, and then a slow, sleepy blink?</p>`,
+      enter() {
+        setup({ d25: true, usb: true, out: false });
+        kit.kinds = new Set();
+        const tried = { fast: false, slow: false };
+        task('Try a fast blink and a slow blink', '<span class="count">Fast: no · Slow: no</span>');
+        $('#extraBox').innerHTML = `<div class="sliders">
+            <label>💡 ON time: <span id="onV">${timing.on}</span> s<input type="range" id="onR" min="0.1" max="2" step="0.1" value="${timing.on}"></label>
+            <label>🌑 OFF time: <span id="offV">${timing.off}</span> s<input type="range" id="offR" min="0.1" max="2" step="0.1" value="${timing.off}"></label></div>
+          ${codeCard('prog2')}`;
+        const upd = () => {
+          timing.on = +$('#onR').value; timing.off = +$('#offR').value;
+          $('#onV').textContent = timing.on; $('#offV').textContent = timing.off;
+          refreshCode('prog2');
+          const total = timing.on + timing.off;
+          if (total <= 0.6) tried.fast = true;
+          if (total >= 2.4) tried.slow = true;
+          taskBody(`<span class="count">Fast: ${tried.fast ? 'yes ✓' : 'no'} · Slow: ${tried.slow ? 'yes ✓' : 'no'}</span>`);
+          if (tried.fast && tried.slow && !st.done.has(step)) complete([], 'You’re the programmer now! The same circuit can do very different things, just by changing numbers in the code.');
+        };
+        $('#onR').addEventListener('input', upd); $('#offR').addEventListener('input', upd);
+        runProgram('prog2');
+      },
+      leave() { stopProgram(); } },
+
+    { eyebrow: 'Mission 9', title: 'Run it on your real ESP32', cam: 'loop',
+      text: `<p>Now the real thing! On your real breadboard, move the red wire from 3V3 to D25, with the board unplugged. Then send your program to the ESP32.</p>`,
+      enter() {
+        setup({ d25: true, usb: true, out: false });
+        kit.kinds = new Set();
+        $('#extraBox').innerHTML = `<div><b>🔧 On your real board</b>
+          <ol class="build-steps">
+            <li>Unplug the ESP32.</li>
+            <li>Move the red wire’s female end from <b>3V3</b> to <b>D25</b>. Its other end stays in <b>${holeName(B.pw.b)}</b>.</li>
+            <li>Plug in. The LED stays dark: D25 is LOW.</li>
+            <li>Open the real-board panel, then <b>Connect my board</b> and <b>▶ Run on my ESP32</b>. First time? <b>🧰 Prepare my board</b> installs MicroPython (about 2 minutes).</li>
+          </ol>
+          <div class="btn-row"><button type="button" class="btn primary" id="openBoard">🔌 Open the real-board panel</button></div>
+          <p class="small">Works in Chrome or Edge on a computer, with a USB data cable. Your program uses ON ${timing.on} s and OFF ${timing.off} s.</p></div>
+          <div id="realBox"></div>`;
+        $('#openBoard').addEventListener('click', () => { if (window.__board) window.__board.open(); else say('The real-board panel needs Chrome or Edge on a computer.', false); });
+        runProgram('none');
+        task('Did your real LED blink?', `<div class="btn-row"><button type="button" class="btn primary" data-real="yes">💡 Yes, it blinks!</button><button type="button" class="btn" data-real="no">🤔 It doesn’t blink</button><button type="button" class="btn" data-real="later">⏭ I’ll try it later</button></div>`);
+        const onReal = (ev) => {
+          const b = ev.target.closest('[data-real]'); if (!b) return;
+          if (b.dataset.real === 'no') {
+            $('#realBox').innerHTML = `<div class="why"><b>Debugging checklist</b><ul style="margin:4px 0;padding-left:20px">
+              <li>Did your LED light in Circuit Lab 1? If not, fix that circuit first.</li>
+              <li>Is the red wire on <b>D25</b>? D25 is the 8th pin from the EN end, on the same side as GND and VIN.</li>
+              <li>Does the panel say MicroPython is ready? If not, use <b>🧰 Prepare my board</b>.</li>
+              <li>Did you press <b>▶ Run</b>? The Board messages should say <code>on</code> and <code>off</code>.</li>
+              <li>Some USB cables only charge. Try another cable.</li></ul>
+              <button type="button" class="btn" data-real="fixed">✅ Fixed it!</button></div>`;
+            say('Real engineers debug too. Check one thing at a time.', false);
+            return;
+          }
+          if (!st.done.has(step)) complete([], b.dataset.real === 'later' ? 'That’s fine! Your program is ready in the panel whenever you are.' : '🎉 Your code is switching a real light! That’s exactly how every traffic light, toy and robot is controlled.');
+        };
+        $('#task').addEventListener('click', onReal);
+        $('#realBox').addEventListener('click', onReal);
+      },
+      leave() { stopProgram(); } },
+
+    { eyebrow: 'Final check', title: 'Lab quiz', cam: 'loop',
+      text: `<p>Three quick questions and the Circuit Lab 2 badge is yours.</p>`,
+      enter() {
+        setup({ d25: true, usb: true, out: false });
+        runProgram('none');
+        kit.kinds = new Set();
+        const QS = [
+          ['What does <code>led = Pin(25, Pin.OUT)</code> do?', ['It makes pin 25 (D25) an output that your code can switch', 'It turns the LED on', 'It connects the ESP32 to Wi-Fi'], 0,
+            '<code>Pin.OUT</code> makes GPIO 25 an output, and <code>led</code> becomes its name in your program.'],
+          ['Why was the LED dark when you plugged in, before any code ran?', ['The LED was broken', 'D25 was LOW (0 volts) until code set it HIGH', 'The resistor was missing'], 1,
+            'A GPIO pin only gives 3.3 volts when your code sets it HIGH.'],
+          ['What does <code>time.sleep(0.5)</code> do?', ['Waits half a second', 'Switches the ESP32 off', 'Makes the LED half as bright'], 0,
+            'It pauses the program, so your eyes can see the LED change.'],
+        ];
+        let q = 0;
+        const render = () => {
+          const [text, opts] = QS[q];
+          task(`Question ${q + 1} of ${QS.length}`, `<p style="margin:4px 0 8px">${text}</p><div class="opts">${opts.map((o, i) => `<button type="button" class="opt-btn" data-o="${i}">${o}</button>`).join('')}</div>`);
+          $('#taskBox').querySelectorAll('[data-o]').forEach((b) => b.addEventListener('click', () => {
+            const [, , right, w] = QS[q];
+            if (+b.dataset.o === right) {
+              b.classList.add('right'); say(`✓ Right! ${w}`, true);
+              setTimeout(() => { if (step !== STEPS.length - 1) return; q++; if (q < QS.length) render(); else finish(); }, 1300);
+            } else { b.classList.add('wrong'); say('Not quite. Have another look and try again!', false); }
+          }));
+        };
+        const finish = () => {
+          complete([], null);
+          const C = window.COURSE, next = C.nextLesson(LESSON_SLUG);
+          $('#taskBox').innerHTML = '';
+          $('#extraBox').innerHTML = `<div class="done-card" id="quizDone"><h3>💡 Lab complete: your code is the switch!</h3>
+            <p>You moved one wire from 3V3 to D25, set the pin up as an output, switched it HIGH and LOW, and wrote a program that blinks forever.</p>
+            <p>Next: <b>three</b> lights, the same way, and they become a traffic light.</p>
+            <div class="links">${next ? `<a class="btn primary" href="../${next.slug}/index.html">Next: ${esc(C.name(next))}, ${esc(next.title)} →</a>` : ''}
+            <button type="button" class="btn" data-wordbook>📖 Review my words</button></div></div>`;
+          C.saveProgress(LESSON_SLUG, { step, steps: STEPS.length, done: true });
+          setTimeout(() => { const r = document.querySelector('#quizDone .reward') || $('#quizDone'); r.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, 400);
+        };
+        render();
+      },
+      leave() { stopProgram(); } },
+  ];
+  const cur = () => STEPS[step];
+
+  /* ---------- navigation ---------- */
+  function updateNav() {
+    $('#prevBtn').disabled = step === 0;
+    $('#nextBtn').hidden = step === STEPS.length - 1;
+    const ok = st.done.has(step);
+    $('#nextBtn').disabled = !ok;
+    $('#nextBtn').textContent = ok ? 'Next mission →' : 'Do the mission first';
+  }
+  function go(i, instant) {
+    const old = cur();
+    if (old && old.leave) old.leave.call(old);
+    stopProgram();
+    kit.cancelAnimations(); kit.clearTemps(); kit.clearPoints(); hand(null);
+    step = Math.max(0, Math.min(STEPS.length - 1, i));
+    labelStep = step;
+    const s = cur();
+    s.busy = false; delete s.onTap;
+    $('#eyebrow').textContent = s.eyebrow;
+    $('#stepTitle').textContent = s.title;
+    $('#stepText').innerHTML = s.text;
+    $('#taskBox').innerHTML = ''; $('#fbBox').innerHTML = ''; $('#extraBox').innerHTML = '';
+    $('#progressText').textContent = `Step ${step + 1} of ${STEPS.length}`;
+    $('#barFill').style.width = ((step + 1) / STEPS.length * 100) + '%';
+    if (s.cam) fly(s.cam, instant);
+    s.enter && s.enter.call(s);
+    if (st.done.has(step) && step !== STEPS.length - 1) { const t = $('#task'); if (t) t.classList.add('done'); hand(null); }
+    updateNav(); stripWords();
+    $('#scroll').scrollTop = 0;
+    if (window.COURSE) window.COURSE.saveProgress(LESSON_SLUG, { step, steps: STEPS.length });
+    if (window.KKVoice) { KKVoice.stop(); setListening(false); if (readToMe.checked) listen(); }
+  }
+  kit.onTap = (hit) => { const s = cur(); if (s.onTap) s.onTap.call(s, hit); };
+  kit.onHover = (t) => { $('#vhint').textContent = t && t.kind === 'pin' ? `Pin ${t.name}` : 'Drag to spin · Pinch or scroll to zoom · Tap pins and parts'; };
+
+  const readToMe = $('#readToMe'), listenBtn = $('#listenBtn');
+  try { readToMe.checked = localStorage.getItem('kk-read-to-me') === '1'; } catch (e) { /* no storage: off */ }
+  readToMe.addEventListener('change', () => { try { localStorage.setItem('kk-read-to-me', readToMe.checked ? '1' : '0'); } catch (e) { /* fine */ } if (readToMe.checked) listen(); else stopTalking(); });
+  function setListening(on) { listenBtn.setAttribute('aria-pressed', String(on)); listenBtn.textContent = on ? '■ Stop' : '🔊 Listen'; }
+  function stopTalking() { if (window.KKVoice) KKVoice.stop(); setListening(false); }
+  function listen() { if (!window.KKVoice) return; const s = cur(); setListening(true); KKVoice.say(s.title + (/[.!?]$/.test(s.title) ? ' ' : '. ') + s.text, { base: '../../', onend: () => setListening(false) }); }
+  listenBtn.addEventListener('click', () => (listenBtn.getAttribute('aria-pressed') === 'true' ? stopTalking() : listen()));
+  $('#prevBtn').addEventListener('click', () => go(step - 1));
+  $('#nextBtn').addEventListener('click', () => go(step + 1));
+  $('#resetView').addEventListener('click', () => { const s = cur(); if (s.cam) fly(s.cam); });
+
+  const prog = (window.COURSE && window.COURSE.readProgress()[LESSON_SLUG]) || {};
+  if (prog.done) STEPS.forEach((_, i) => { if (i < STEPS.length - 1) st.done.add(i); });
+  sync();
+  go(0, true);
+
+  // for automated tests: where a pin or part is on screen
+  function screenOf(q) {
+    let v = null;
+    if (q.pin) v = pinAt(q.pin, 0.12);
+    else if (q.part) {
+      let o = null;
+      kit.scene.traverse((x) => { if (!o && x.userData.part === q.part && x.visible) o = x; });
+      if (!o) return null;
+      v = o.userData.wire ? o.userData.wire.curve.getPoint(0.5) : new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3());
+    }
+    const r = kit.renderer.domElement.getBoundingClientRect();
+    v.project(kit.camera);
+    return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
+  }
+  window.__lesson = { screenOf, goTo: (i) => go(i, true), get step() { return step; }, STEPS, kit, get B() { return B; }, sim: () => sim, pin25, done: (i) => { st.done.add(i); updateNav(); } };
+  // the program for "Try it on my real board": the blink, with the learner's own times
+  window.__lessonProgram = () => programText().replace('led.value(1)          # HIGH: the LED is on', 'led.value(1)          # HIGH: the LED is on\n    print("on")').replace('led.value(0)          # LOW: the LED is off', 'led.value(0)          # LOW: the LED is off\n    print("off")');
+})();
+</script>
+<script src="../../assets/board-link.js"></script>
+<script src="../../assets/prepare-board.js"></script>
+<script src="../../assets/run-panel.js"></script>
+<script src="../../assets/board-drawer.js"></script>
+<script>window.__board = window.KKBoard ? KKBoard.attach({ id: 'lab2-code-switch', base: '../../', buttonHost: 'header.top .prog', program: () => window.__lessonProgram(), wiring: 'Your LED circuit from Circuit Lab 1, with the red wire moved from 3V3 to D25.' }) : null;</script>
+</body>
+</html>

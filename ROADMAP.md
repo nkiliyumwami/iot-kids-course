@@ -10,8 +10,8 @@ One new idea per lesson. Each daily run takes the first unchecked item. See `AGE
   the breadboard's hidden strips, the LED's long and short legs, the resistor (pretend current meter), unplug first, the
   resistor across the gap in column 7, the LED in i7/i8, black wires to the − rail and GND, the red wire from 3V3 last,
   then plug in. A fix-it shop of three broken circuits, then the same build on the real board (3V3 lights it with no code).
-- [ ] **Circuit Lab 2: Let Code Switch It** (`lab2-code-switch`): no new hardware. Move the red wire from 3V3 to D25;
-  `Pin(25, Pin.OUT)`, `led.on()` / `led.off()`, then a blink with `time.sleep()`, run on the real board.
+- [x] **Circuit Lab 2: Let Code Switch It** (`lab2-code-switch`): no new hardware. Move the red wire from 3V3 to D25;
+  `Pin(25, Pin.OUT)`, `led.value(1)` / `led.value(0)`, then a blink with `while True:` and `time.sleep()`, run on the real board.
 
 ## Part 1: Build the thing
 
@@ -70,3 +70,4 @@ an extra interactive demo, or fixes from the course owner's comments. Add any ne
 - 2026-10-11: Officer Ohm now speaks with a real ElevenLabs voice ("Frank – Professional Educator", a warm West African English teacher) on the 6 story chapters and the 12 Lesson 0 steps: 18 MP3s in `assets/voice/en/` (64 kbps mono, 1.5 MB in total). Next: voice Lessons 1–4.
 - 2026-10-11: Narration switched to a clear woman's voice, "Naledi – Clear and Concise" (ElevenLabs), on all 18 lines; `VOICE_V` in voice.js makes browsers fetch the new files.
 - 2026-10-11: Added Circuit Lab 1 (`lab1-light-it-up`) between Pin Detective and Part 1, so learners handle every wire, LED and resistor before the traffic light. 14 missions on a 3D workbench (`assets/circuit/kit3d.js`, the same breadboard, ESP32, LED, resistor and wires as lesson 1): tap holes and pins to place parts, wrong holes explain why, and a small circuit simulator lights the LED only when the loop really works (backwards LED, missing ground and a resistor that doesn't cross the gap stay dark). New maker words: jumper wire, breadboard, power rail, anode, cathode, polarity, resistor, current, ohm, circuit, debugging. Labs show as "Circuit Lab 1/2" in the course list (`COURSE.name()`), with their own badges. Checked with `tools/check.sh` and a scripted click-through of every mission. Next: Circuit Lab 2, then a lighter Lesson 1 that builds on the labs.
+- 2026-10-11: Added Circuit Lab 2 (`lab2-code-switch`): the Lab 1 circuit (the learner's own holes when saved) with the red wire moved from 3V3 to D25. Plugging in leaves the LED dark (D25 is LOW), then a pretend MicroPython prompt runs `from machine import Pin`, `led = Pin(25, Pin.OUT)` and `led.value(1)` / `led.value(0)`, the circuit simulator lights the LED only while D25 is HIGH, blinking by hand shows why we need a loop, and a blink program with `while True:` and `time.sleep()` runs with line highlighting and ON/OFF sliders. "Try it on my real board" sends the same blink to the learner's ESP32. New maker words: HIGH and LOW, loop. Checked with `tools/check.sh` and a scripted click-through.
