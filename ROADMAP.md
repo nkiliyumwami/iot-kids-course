@@ -6,6 +6,12 @@ One new idea per lesson. Each daily run takes the first unchecked item. See `AGE
 
 - [x] **0. Pin Detective: Meet Your ESP32** (`00-meet-esp32`): no hardware yet. Missions on the 3D board teach its
   parts, the pin groups (power, ground, GPIO, special) and the Pin(25) = D25 trick, with tappable "maker words".
+- [x] **Circuit Lab 1: Light It Up** (`lab1-light-it-up`): no code. Build one LED circuit on the 3D breadboard, part by part:
+  the breadboard's hidden strips, the LED's long and short legs, the resistor (pretend current meter), unplug first, the
+  resistor across the gap in column 7, the LED in i7/i8, black wires to the − rail and GND, the red wire from 3V3 last,
+  then plug in. A fix-it shop of three broken circuits, then the same build on the real board (3V3 lights it with no code).
+- [ ] **Circuit Lab 2: Let Code Switch It** (`lab2-code-switch`): no new hardware. Move the red wire from 3V3 to D25;
+  `Pin(25, Pin.OUT)`, `led.on()` / `led.off()`, then a blink with `time.sleep()`, run on the real board.
 
 ## Part 1: Build the thing
 
@@ -63,3 +69,4 @@ an extra interactive demo, or fixes from the course owner's comments. Add any ne
 - 2026-10-11: Officer Ohm's voice, first step (English, proof of concept): the landing page story has a 🔊 Sound on button that reads each chapter (the story waits for the voice to finish), and Lesson 0 has 🔊 Listen on every step plus "Read every step to me". `assets/voice/voice.js` plays ElevenLabs MP3s from `assets/voice/en/` and falls back to the browser's own voice while a file is missing. `tools/voice/collect.mjs` lists the lines (`assets/voice/lines.json`); `tools/voice/README.md` has the prompt for making the MP3s with the ElevenLabs MCP.
 - 2026-10-11: Officer Ohm now speaks with a real ElevenLabs voice ("Frank – Professional Educator", a warm West African English teacher) on the 6 story chapters and the 12 Lesson 0 steps: 18 MP3s in `assets/voice/en/` (64 kbps mono, 1.5 MB in total). Next: voice Lessons 1–4.
 - 2026-10-11: Narration switched to a clear woman's voice, "Naledi – Clear and Concise" (ElevenLabs), on all 18 lines; `VOICE_V` in voice.js makes browsers fetch the new files.
+- 2026-10-11: Added Circuit Lab 1 (`lab1-light-it-up`) between Pin Detective and Part 1, so learners handle every wire, LED and resistor before the traffic light. 14 missions on a 3D workbench (`assets/circuit/kit3d.js`, the same breadboard, ESP32, LED, resistor and wires as lesson 1): tap holes and pins to place parts, wrong holes explain why, and a small circuit simulator lights the LED only when the loop really works (backwards LED, missing ground and a resistor that doesn't cross the gap stay dark). New maker words: jumper wire, breadboard, power rail, anode, cathode, polarity, resistor, current, ohm, circuit, debugging. Labs show as "Circuit Lab 1/2" in the course list (`COURSE.name()`), with their own badges. Checked with `tools/check.sh` and a scripted click-through of every mission. Next: Circuit Lab 2, then a lighter Lesson 1 that builds on the labs.

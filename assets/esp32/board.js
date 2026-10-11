@@ -44,13 +44,24 @@
     duty: { term: 'Duty cycle', say: 'DYOO-tee SY-kul', kid: 'How much of each ON–OFF cycle the pin spends ON. 50% means ON half the time and OFF half the time. A buzzer is shaken hardest at about half.', pro: 'The duty cycle is 50%.' },
     i2c: { term: 'I²C', say: 'I-squared-C', kid: 'A way to connect sensors and small screens with just two wires, called SDA and SCL.', pro: 'The screen is on I²C: SDA 21, SCL 22.' },
     spi: { term: 'SPI', say: 'S-P-I', kid: 'A fast way to talk to screens and memory cards using four wires.', pro: 'The SD card reader uses SPI.' },
+    jumper: { term: 'Jumper wire', say: 'JUMP-er wire', kid: 'A wire with a plug on each end. It carries electricity from one place to another, like a pipe carries water. Red for power, black for ground.', pro: 'Slide the female end of the jumper wire onto the pin.' },
+    breadboard: { term: 'Breadboard', say: 'BRED-bord', kid: 'A board full of holes for building circuits without soldering. Under the holes, metal strips join them in groups of 5, one group above the middle gap and one below.', pro: 'Try the circuit on a breadboard first.' },
+    rail: { term: 'Power rail', say: 'POW-er rail', kid: 'The long rows along the edges of a breadboard, marked + (red) and − (blue). Every hole in one rail is joined. We use the blue − rail as the road home to GND.', pro: 'Connect every ground to the − rail.' },
+    anode: { term: 'Anode (+)', say: 'AN-ode', kid: 'The LED’s long leg. Electricity goes IN here, so it connects towards the power.', pro: 'The anode goes to the resistor.' },
+    cathode: { term: 'Cathode (−)', say: 'KATH-ode', kid: 'The LED’s short leg, on the side with the flat edge. Electricity comes OUT here and goes home to GND.', pro: 'Connect the cathode to ground.' },
+    polarity: { term: 'Polarity', say: 'po-LAIR-ih-tee', kid: 'Which way round a part must go. An LED has polarity: turned around, it stays dark. A resistor has none: it works either way round.', pro: 'Check the LED’s polarity before you power up.' },
+    resistor: { term: 'Resistor', say: 'ree-ZIS-ter', kid: 'A part that slows down the flow of electricity, like a narrow bit of pipe. It protects the LED from too much current.', pro: 'Put a 330 Ω resistor in series with the LED.' },
+    current: { term: 'Current (amps, mA)', say: 'KUR-ent', kid: 'How much electricity is flowing, like how much water flows through a pipe. It is measured in amps; small currents in milliamps (mA).', pro: 'The LED draws about 4 mA.' },
+    ohm: { term: 'Ohm (Ω)', say: 'ome', kid: 'The unit for how strongly a resistor slows electricity. A bigger number lets less current through. Ours is 330 Ω: orange, orange, brown. (Officer Ohm is named after it!)', pro: 'Use a 330 Ω resistor for the LED.' },
+    circuit: { term: 'Circuit', say: 'SUR-kit', kid: 'A complete loop that electricity can flow around: out of the power pin, through the parts, and back home to GND. Any gap in the loop stops it.', pro: 'The circuit is complete, so the LED lights.' },
+    debug: { term: 'Debugging', say: 'dee-BUG-ing', kid: 'Finding out why something does not work, and fixing it. Every engineer does it every day!', pro: 'I debugged the circuit: the LED was in backwards.' },
     micropython: { term: 'MicroPython', say: 'MY-kro PIE-thon', kid: 'A small version of the Python programming language, made to run on microcontrollers.', pro: 'The ESP32 runs MicroPython firmware.' },
   };
   // Words that are linked automatically when they appear in pin descriptions (first match only).
   const ALIASES = [
     [/\banalog\b/i, 'adc'], [/\bDAC\b/, 'dac'], [/\bSPI\b/, 'spi'], [/I²C/, 'i2c'], [/pull-up resistor/i, 'pullup'],
     [/start-up pin/i, 'boot'], [/short circuit/i, 'short'], [/\btouch\b/i, 'touch'], [/\bprint\(\)/, 'serial'],
-    [/\bGND\b/, 'gnd'], [/\bvolts?\b/i, 'voltage'], [/\bLEDs?\b/, 'led'],
+    [/\bGND\b/, 'gnd'], [/\bvolts?\b/i, 'voltage'], [/\bLEDs?\b/, 'led'], [/\bresistors?\b/i, 'resistor'], [/\bbreadboard\b/i, 'breadboard'],
   ];
 
   /* ---------- pin groups ---------- */

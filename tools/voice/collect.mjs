@@ -21,11 +21,11 @@ const caps = home.slice(home.indexOf('const CAPS = {'), home.indexOf('};', home.
 for (const m of caps.matchAll(/(\w+): \['([^']*)', '([^']*)', '([^']*)'\]/g)) add(`story ${m[1]}`, `${m[3]}. ${m[4]}`);
 
 // 2. lesson steps: "title. text" for every step that has both (lessons with a voice: see VOICED)
-const VOICED = ['00-meet-esp32'];
+const VOICED = ['00-meet-esp32', 'lab1-light-it-up'];
 for (const slug of VOICED) {
   const src = readFileSync(`lessons/${slug}/index.html`, 'utf8');
   const body = src.slice(src.indexOf('const STEPS = ['));
-  for (const m of body.matchAll(/title: '((?:[^'\\]|\\.)*)',\s*text: `([^`]*)`/g)) { const title = m[1].replace(/\\'/g, "'"); add(`${slug} · ${title}`, title + (/[.!?]$/.test(title) ? ' ' : '. ') + m[2]); }
+  for (const m of body.matchAll(/title: '((?:[^'\\]|\\.)*)',(?:\s*\w+: '[^']*',)*\s*text: `([^`]*)`/g)) { const title = m[1].replace(/\\'/g, "'"); add(`${slug} · ${title}`, title + (/[.!?]$/.test(title) ? ' ' : '. ') + m[2]); }
 }
 
 writeFileSync('assets/voice/lines.json', JSON.stringify(lines, null, 2) + '\n');

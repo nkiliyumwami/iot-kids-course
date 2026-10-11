@@ -124,5 +124,103 @@
     "where": "00-meet-esp32 · Detective quiz",
     "text": "Detective quiz. Three quick questions and the Pin Detective badge is yours.",
     "done": true
+  },
+  {
+    "id": "a6e54fb8",
+    "file": "assets/voice/en/a6e54fb8.mp3",
+    "where": "lab1-light-it-up · Your first circuit",
+    "text": "Your first circuit. Today you’ll build a real light with your own hands. No code at all! Everything you need is on the table: a breadboard, a red LED, a resistor and some jumper wires. Your ESP32 will give the power.",
+    "done": false
+  },
+  {
+    "id": "a9478857",
+    "file": "assets/voice/en/a9478857.mp3",
+    "where": "lab1-light-it-up · Secret tunnels",
+    "text": "Secret tunnels. The breadboard hides metal strips under its holes. Holes on the same strip are joined, so electricity can travel between them. Tap some holes to find the hidden strips!",
+    "done": false
+  },
+  {
+    "id": "1c933868",
+    "file": "assets/voice/en/1c933868.mp3",
+    "where": "lab1-light-it-up · Meet the LED",
+    "text": "Meet the LED. An LED is a tiny light. Look closely: one leg is long and one is short. That matters! Electricity can only go through an LED one way: in through the long leg, out through the short leg.",
+    "done": false
+  },
+  {
+    "id": "6fb01e49",
+    "file": "assets/voice/en/6fb01e49.mp3",
+    "where": "lab1-light-it-up · Meet the resistor",
+    "text": "Meet the resistor. A resistor slows electricity down, like a narrow part of a water pipe. Without one, too much electricity rushes through the LED and can break it. The colour bands tell you how strong it is.",
+    "done": false
+  },
+  {
+    "id": "ec2c0c12",
+    "file": "assets/voice/en/ec2c0c12.mp3",
+    "where": "lab1-light-it-up · Safety first: unplug",
+    "text": "Safety first: unplug. Engineers have a golden rule: never change wires while the board has power. One wrong hole could make a short circuit. Your ESP32 is still plugged in from Pin Detective. See its red power light?",
+    "done": false
+  },
+  {
+    "id": "30ba4b35",
+    "file": "assets/voice/en/30ba4b35.mp3",
+    "where": "lab1-light-it-up · Place the resistor",
+    "text": "Place the resistor. Put the resistor across the middle gap, in column 7: one leg above the gap and one leg below. Why across the gap? Then electricity arriving at the top strip can only reach the bottom strip by going through the resistor.",
+    "done": false
+  },
+  {
+    "id": "58308af7",
+    "file": "assets/voice/en/58308af7.mp3",
+    "where": "lab1-light-it-up · Place the LED",
+    "text": "Place the LED. Now the LED. Its long leg goes in the same strip as the resistor’s bottom leg: column 7, below the gap. The short leg goes next door, in column 8.",
+    "done": false
+  },
+  {
+    "id": "34188780",
+    "file": "assets/voice/en/34188780.mp3",
+    "where": "lab1-light-it-up · The road home, part 1",
+    "text": "The road home, part 1. Electricity that leaves the LED’s short leg needs a road home to GND. First, a short black wire from the short leg’s strip to the blue − rail.",
+    "done": false
+  },
+  {
+    "id": "ce0c8b0b",
+    "file": "assets/voice/en/ce0c8b0b.mp3",
+    "where": "lab1-light-it-up · The road home, part 2",
+    "text": "The road home, part 2. The − rail isn’t joined to the ESP32 yet. A long black wire joins the rail to a GND pin, and the road home is complete.",
+    "done": false
+  },
+  {
+    "id": "dc00ce33",
+    "file": "assets/voice/en/dc00ce33.mp3",
+    "where": "lab1-light-it-up · Power goes in last",
+    "text": "Power goes in last. Last wire: the red one brings the power. It goes from 3V3 (3.3 volts, always on) to column 7 above the gap, the resistor’s top strip. We connect power last, so nothing can get power until the whole circuit is ready.",
+    "done": false
+  },
+  {
+    "id": "59631ca7",
+    "file": "assets/voice/en/59631ca7.mp3",
+    "where": "lab1-light-it-up · Check, then plug in",
+    "text": "Check, then plug in. Before power, engineers check every connection. Follow the path with your finger: 3V3, red wire, resistor, LED, black wire, − rail, black wire, GND. All good? Then it’s time to plug in!",
+    "done": false
+  },
+  {
+    "id": "4023c65e",
+    "file": "assets/voice/en/4023c65e.mp3",
+    "where": "lab1-light-it-up · The fix-it shop",
+    "text": "The fix-it shop. Officer Ohm’s friends built the same circuit three times, but each light stays dark. Can you find each problem? Tap the part that’s wrong.",
+    "done": false
+  },
+  {
+    "id": "b802fceb",
+    "file": "assets/voice/en/b802fceb.mp3",
+    "where": "lab1-light-it-up · Build it for real",
+    "text": "Build it for real. Time to build it on your real breadboard, exactly like on the screen. Use the same holes, and ask an adult to check before you plug in.",
+    "done": false
+  },
+  {
+    "id": "feeddb57",
+    "file": "assets/voice/en/feeddb57.mp3",
+    "where": "lab1-light-it-up · Lab quiz",
+    "text": "Lab quiz. Three quick questions and the Circuit Lab 1 badge is yours.",
+    "done": false
   }
 ]

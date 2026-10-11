@@ -459,7 +459,7 @@ led = Pin(2, Pin.OUT)   # pin 2 sends electricity out</pre>
           $('#extraBox').innerHTML = `<div class="done-card" id="quizDone"><h3>🕵️ Mission complete, Pin Detective!</h3>
             <p>You found the brain, the antenna and the USB port, tracked down GND and power, switched on an LED with code, and cracked the name trick.</p>
             <p>You collected <b>${E.book.list().length}</b> maker words. Engineers really use every one of them!</p>
-            <div class="links">${next ? `<a class="btn primary" href="../${next.slug}/index.html">Next: Lesson ${next.n}, ${esc(next.title)} →</a>` : ''}
+            <div class="links">${next ? `<a class="btn primary" href="../${next.slug}/index.html">Next: ${esc(window.COURSE.name(next))}, ${esc(next.title)} →</a>` : ''}
             <button type="button" class="btn" data-wordbook>📖 Review my words</button><a class="btn" href="../../pins.html">🔍 Pin Explorer</a></div></div>`;
           window.COURSE.saveProgress(LESSON_SLUG, { step, steps: STEPS.length, done: true });
           setTimeout(() => { const r = document.querySelector('#quizDone .reward') || $('#quizDone'); r.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, 400);
