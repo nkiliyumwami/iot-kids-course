@@ -61,6 +61,8 @@ h1, h2, h3 { font-family: var(--font-display); line-height: 1.1; margin: 0; }
 .story-cap span.sub { display: block; color: var(--muted); font-size: 14px; margin-top: 2px; }
 .story-cap .bar { height: 4px; border-radius: 99px; background: var(--line); margin-top: 8px; overflow: hidden; }
 .story-cap .bar i { display: block; height: 100%; width: 0; background: var(--accent); }
+.story-sound { position: absolute; top: 12px; right: 118px; border: 1px solid var(--line); background: rgba(255,255,255,.94); border-radius: 999px; padding: 6px 14px; font: inherit; font-weight: 800; font-size: 14px; cursor: pointer; color: var(--ink); }
+.story-sound[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
 .story-pause { position: absolute; top: 12px; right: 12px; border: 1px solid var(--line); background: rgba(255,255,255,.94); border-radius: 999px; padding: 6px 14px; font: inherit; font-weight: 800; font-size: 14px; cursor: pointer; color: var(--ink); }
 .story-end { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; gap: 10px; padding: 16px; background: rgba(243,247,250,.72); backdrop-filter: blur(2px); }
 .story-end h3 { font-size: clamp(28px, 5vw, 44px); }
@@ -85,6 +87,7 @@ h1, h2, h3 { font-family: var(--font-display); line-height: 1.1; margin: 0; }
     <div class="story-stage" id="storyStage">
       <img class="story-poster" src="assets/story/poster.jpg" alt="What you will build: an ESP32 traffic light on a breadboard, next to a model road where cars stop at red and people cross the zebra" width="1280" height="720">
       <div class="story-cap" aria-live="polite"><span class="chip" id="storyChip">Lessons 0–4</span><b id="storyTitle">Watch what you will build</b><span class="sub" id="storySub">A tiny computer, a traffic light, a button and a fair crossing.</span><div class="bar" aria-hidden="true"><i id="storyBar"></i></div></div>
+      <button class="story-sound" id="storySound" type="button" hidden aria-pressed="false">🔈 Sound on</button>
       <button class="story-pause" id="storyPause" type="button" hidden>❚❚ Pause</button>
       <div class="story-end" id="storyEnd" hidden>
         <h3>Your turn!</h3>
@@ -95,7 +98,7 @@ h1, h2, h3 { font-family: var(--font-display); line-height: 1.1; margin: 0; }
     <ol class="story-steps" id="storySteps" aria-label="Jump to a lesson in the story"></ol>
   </section>
 <script>
-window.KK_V = '20261011b';
+window.KK_V = '20261011e';
 window.kkThree = () => window.__kkThree || (window.__kkThree = window.THREE ? Promise.resolve() : new Promise((ok, no) => {
   const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc);
 }));
@@ -117,9 +120,17 @@ window.kkThree = () => window.__kkThree || (window.__kkThree = window.THREE ? Pr
   const steps = document.getElementById('storySteps'), endCard = document.getElementById('storyEnd'), pauseBtn = document.getElementById('storyPause');
   const ids = ['l0', 'l1', 'l2', 'l3', 'l4'];
   steps.innerHTML = ids.map((id, k) => `<li><button type="button" data-k="${k}">${CAPS[id][0].replace('Lesson ', '')} · ${CAPS[id][1]}</button></li>`).join('');
-  let story = null, visible = false, loading = false;
+  let story = null, visible = false, loading = false, sound = false, lastId = null;
+  const soundBtn = document.getElementById('storySound');
+  // Officer Ohm reads each chapter's caption aloud, only after the visitor turns sound on
+  function speak(id) { if (sound && window.KKVoice && CAPS[id]) KKVoice.say(CAPS[id][1] + '. ' + CAPS[id][2], { base: '' }); }
+  soundBtn.addEventListener('click', () => {
+    sound = !sound; soundBtn.setAttribute('aria-pressed', String(sound)); soundBtn.textContent = sound ? '🔊 Sound off' : '🔈 Sound on';
+    if (sound) speak(lastId); else if (window.KKVoice) KKVoice.stop();
+  });
   function setChapter(id, k) {
     const c = CAPS[id];
+    lastId = id; speak(id);
     document.getElementById('storyChip').textContent = c[0];
     document.getElementById('storyTitle').textContent = c[1];
     document.getElementById('storySub').textContent = c[2];
@@ -133,13 +144,13 @@ window.kkThree = () => window.__kkThree || (window.__kkThree = window.THREE ? Pr
     if (loading) return; loading = true;
     try {
       await window.kkThree();
-      const v = '?v=' + window.KK_V; await load('assets/road/model-road.js' + v); await load('assets/road/pedestrians.js' + v); await load('assets/story/story-scene.js' + v);
+      const v = '?v=' + window.KK_V; await load('assets/voice/voice.js' + v); await load('assets/road/model-road.js' + v); await load('assets/road/pedestrians.js' + v); await load('assets/story/story-scene.js' + v);
       const holder = document.createElement('div'); holder.style.cssText = 'position:absolute;inset:0';
       stage.insertBefore(holder, stage.querySelector('.story-cap'));
-      story = window.KKStory.mount({ host: holder, base: '', reduceMotion: reduce, onChapter: setChapter, onTime: (k, f) => { bar.style.width = (f * 100).toFixed(1) + '%'; } });
+      story = window.KKStory.mount({ host: holder, base: '', reduceMotion: reduce, onChapter: setChapter, hold: () => sound && window.KKVoice && KKVoice.speaking, onTime: (k, f) => { bar.style.width = (f * 100).toFixed(1) + '%'; } });
       if (!story) { holder.remove(); return; } // no 3D on this device: the picture stays
       stage.classList.add('live');
-      pauseBtn.hidden = reduce;
+      pauseBtn.hidden = reduce; soundBtn.hidden = !window.KKVoice;
       if (visible) story.start(); else story.render();
     } catch (e) { /* offline or blocked: keep the picture */ }
   }
@@ -149,7 +160,7 @@ window.kkThree = () => window.__kkThree || (window.__kkThree = window.THREE ? Pr
   const io = new IntersectionObserver((es) => {
     visible = es[0].isIntersecting;
     if (visible && !story) boot();
-    if (story) { if (visible && !document.hidden) story.start(); else story.stop(); }
+    if (story) { if (visible && !document.hidden) story.start(); else { story.stop(); if (window.KKVoice) KKVoice.stop(); } }
   }, { rootMargin: '200px 0px' });
   io.observe(stage);
   document.addEventListener('visibilitychange', () => { if (story) { if (!document.hidden && visible) story.start(); else story.stop(); } });

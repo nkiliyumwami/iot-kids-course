@@ -47,6 +47,10 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(330px, 420px)
 .scroll { overflow: auto; padding: 16px; display: grid; gap: 12px; align-content: start; grid-auto-rows: max-content; }
 .guide { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; align-items: start; }
 .guide svg { width: 72px; height: 84px; }
+.voice-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; }
+.listen { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 5px 14px; font: inherit; font-weight: 800; font-size: 14px; cursor: pointer; color: var(--ink); }
+.listen[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.readme { font-size: 14px; font-weight: 700; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 .eyebrow { font-weight: 800; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
 .guide h2 { font-family: var(--font-display); font-size: 25px; line-height: 1.1; margin: 0 0 4px; }
 .guide p { margin: 4px 0; }
@@ -124,7 +128,8 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(330px, 420px)
       <div class="scroll" id="scroll" aria-live="polite">
         <div class="guide">
           <svg viewBox="0 0 72 84" aria-hidden="true"><circle cx="36" cy="30" r="20" fill="#F5C9A0"/><rect x="16" y="50" width="40" height="30" rx="10" fill="#1F3A68"/></svg>
-          <div><div class="eyebrow" id="eyebrow"></div><h2 id="stepTitle"></h2><div id="stepText"></div></div>
+          <div><div class="eyebrow" id="eyebrow"></div><h2 id="stepTitle"></h2><div id="stepText"></div>
+            <div class="voice-row"><button class="listen" id="listenBtn" type="button" aria-pressed="false">🔊 Listen</button><label class="readme"><input type="checkbox" id="readToMe"> Read every step to me</label></div></div>
         </div>
         <div id="taskBox"></div>
         <div id="fbBox"></div>
@@ -144,6 +149,7 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(330px, 420px)
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="../../course.js"></script>
 <script src="../../assets/ohm/ohm.js"></script>
+<script src="../../assets/voice/voice.js"></script>
 <script src="../../assets/rewards.js"></script>
 <script src="../../assets/esp32/board.js"></script>
 <script>
@@ -492,7 +498,17 @@ led = Pin(2, Pin.OUT)   # pin 2 sends electricity out</pre>
     updateNav(); stripWords();
     $('#scroll').scrollTop = 0;
     if (window.COURSE) window.COURSE.saveProgress(LESSON_SLUG, { step, steps: STEPS.length });
+    // Officer Ohm's voice: stop the last step, and read this one if the learner asked for it
+    if (window.KKVoice) { KKVoice.stop(); setListening(false); if (readToMe.checked) listen(); }
   }
+  // the words Officer Ohm says for a step: its title, then its text (tools/voice/collect.mjs reads the same)
+  const readToMe = $('#readToMe'), listenBtn = $('#listenBtn');
+  try { readToMe.checked = localStorage.getItem('kk-read-to-me') === '1'; } catch (e) { /* no storage: off */ }
+  readToMe.addEventListener('change', () => { try { localStorage.setItem('kk-read-to-me', readToMe.checked ? '1' : '0'); } catch (e) { /* fine */ } if (readToMe.checked) listen(); else stopTalking(); });
+  function setListening(on) { listenBtn.setAttribute('aria-pressed', String(on)); listenBtn.textContent = on ? '■ Stop' : '🔊 Listen'; }
+  function stopTalking() { if (window.KKVoice) KKVoice.stop(); setListening(false); }
+  function listen() { if (!window.KKVoice) return; const s = cur(); setListening(true); KKVoice.say(s.title + (/[.!?]$/.test(s.title) ? ' ' : '. ') + s.text, { base: '../../', onend: () => setListening(false) }); }
+  listenBtn.addEventListener('click', () => (listenBtn.getAttribute('aria-pressed') === 'true' ? stopTalking() : listen()));
   // keep each step's original onPin (some steps define it in enter(), which re-runs on every visit)
   STEPS.forEach((s) => { if (s.onPin) s._onPin = s.onPin; });
   $('#prevBtn').addEventListener('click', () => go(step - 1));

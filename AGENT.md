@@ -104,6 +104,11 @@ https://nkiliyumwami.github.io/iot-kids-course/. Read this whole file and `ROADM
   `course.js`; it puts Ohm in the guide panel and changes his pose automatically (wave on step 1, point while
   building, think on "Why?" answers and quizzes, thumbs-up / encourage on quiz answers, celebrate when finished).
   Use `window.OHM.set('<pose>')` only if a step needs a specific pose. Do not redraw or restyle him.
+- Officer Ohm's voice (English, proof of concept on Lesson 0 and the landing story): `assets/voice/voice.js` reads a
+  step aloud only when the learner asks (🔊 Listen, "Read every step to me"), playing `assets/voice/en/<id>.mp3`
+  made with ElevenLabs, or the browser's voice when the file is missing. Spoken text = step title + text. To voice
+  another lesson, add it to `VOICED` in `tools/voice/collect.mjs`, copy Lesson 0's voice-row and listen code, and
+  follow `tools/voice/README.md` to make the MP3s.
 - Badges live in `assets/badges/NN.svg` (one per lesson, already drawn for lessons 1–10) and each lesson in
   `course.js` has 3 `skills` for its certificate. Every lesson also includes `<script src="../../assets/rewards.js"></script>`
   after `ohm.js`: when the quiz is finished it shows the badge and a "Get your certificate" button

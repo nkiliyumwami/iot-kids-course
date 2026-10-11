@@ -1,0 +1,128 @@
+[
+  {
+    "id": "5088044f",
+    "file": "assets/voice/en/5088044f.mp3",
+    "where": "story l0",
+    "text": "Meet the ESP32. A tiny computer you program. Its first job: blink a blue light.",
+    "done": false
+  },
+  {
+    "id": "2bec947a",
+    "file": "assets/voice/en/2bec947a.mp3",
+    "where": "story l1",
+    "text": "Build a traffic light. Three LEDs, three resistors and a few wires. Your code runs red, green and yellow, and the cars obey.",
+    "done": false
+  },
+  {
+    "id": "0946aea3",
+    "file": "assets/voice/en/0946aea3.mp3",
+    "where": "story l2",
+    "text": "Make your own patterns. Change the code, change the lights.",
+    "done": false
+  },
+  {
+    "id": "13d52c10",
+    "file": "assets/voice/en/13d52c10.mp3",
+    "where": "story l3",
+    "text": "Teach it to listen. Add a button. Press it and the cars get red, so the walker can cross.",
+    "done": false
+  },
+  {
+    "id": "9647ea70",
+    "file": "assets/voice/en/9647ea70.mp3",
+    "where": "story l4",
+    "text": "A fair crossing. A tap is remembered: WAIT lights up, the green finishes, then people cross safely.",
+    "done": false
+  },
+  {
+    "id": "279ad705",
+    "file": "assets/voice/en/279ad705.mp3",
+    "where": "story end",
+    "text": "Build it yourself. Every wire, hole and line of code comes with a “why”.",
+    "done": false
+  },
+  {
+    "id": "e4f1582b",
+    "file": "assets/voice/en/e4f1582b.mp3",
+    "where": "00-meet-esp32 · Meet your ESP32",
+    "text": "Meet your ESP32. This little board will be the brain of every project in this course: a traffic light, a buzzer, even something you control from a phone. Today you’re a pin detective. You’ll explore the board, find its secrets, and learn the real words engineers use. Each mission unlocks a maker word.",
+    "done": false
+  },
+  {
+    "id": "6ab5efe5",
+    "file": "assets/voice/en/6ab5efe5.mp3",
+    "where": "00-meet-esp32 · Find the brain",
+    "text": "Find the brain. Every computer has a brain that runs the program. On this board the brain hides under a shiny metal lid.",
+    "done": false
+  },
+  {
+    "id": "1b27c346",
+    "file": "assets/voice/en/1b27c346.mp3",
+    "where": "00-meet-esp32 · How does it reach the internet?",
+    "text": "How does it reach the internet? Your ESP32 can join Wi-Fi without any wires. To do that, it needs something that sends and catches invisible radio waves.",
+    "done": false
+  },
+  {
+    "id": "d6eb465e",
+    "file": "assets/voice/en/d6eb465e.mp3",
+    "where": "00-meet-esp32 · Wake it up",
+    "text": "Wake it up. Right now the board is asleep: it has no power. Where would you plug in a cable to give it power and send it your code?",
+    "done": false
+  },
+  {
+    "id": "c11be62c",
+    "file": "assets/voice/en/c11be62c.mp3",
+    "where": "00-meet-esp32 · Count the legs",
+    "text": "Count the legs. See the two rows of metal legs? They are called pins, and they connect the board to wires, lights and sensors. Each one has a name printed next to it.",
+    "done": false
+  },
+  {
+    "id": "1f621451",
+    "file": "assets/voice/en/1f621451.mp3",
+    "where": "00-meet-esp32 · Find the road home",
+    "text": "Find the road home. Electricity is like a runner on a loop: it leaves the board, does its job (like lighting an LED), and must come back home. No way home, no light! The way home is called ground, and the board prints it as GND.",
+    "done": false
+  },
+  {
+    "id": "fba47b74",
+    "file": "assets/voice/en/fba47b74.mp3",
+    "where": "00-meet-esp32 · Find the power pins",
+    "text": "Find the power pins. Two pins give electricity to other parts. One gives a gentle 3.3 volts, printed 3V3. One brings in about 5 volts from the USB cable, printed VIN. A volt measures how hard electricity pushes, like water pressure in a pipe.",
+    "done": false
+  },
+  {
+    "id": "055332ce",
+    "file": "assets/voice/en/055332ce.mp3",
+    "where": "00-meet-esp32 · Wake up the blue LED",
+    "text": "Wake up the blue LED. There’s a tiny blue light on the board, and it’s wired to pin D2. Your program can switch that pin on and off. That’s what most pins are for!",
+    "done": false
+  },
+  {
+    "id": "4971ef22",
+    "file": "assets/voice/en/4971ef22.mp3",
+    "where": "00-meet-esp32 · The name trick",
+    "text": "The name trick. Here’s a secret that confuses lots of grown-ups. In code we write a GPIO number, like Pin(25). Where is pin 25? Count along the board… or is there a better way?",
+    "done": false
+  },
+  {
+    "id": "441f015a",
+    "file": "assets/voice/en/441f015a.mp3",
+    "where": "00-meet-esp32 · Pins with a special job",
+    "text": "Pins with a special job. A few pins already have a job, like talking to your computer, restarting the board, or only listening. They’re now orange. Good engineers check a pin’s job before they use it.",
+    "done": false
+  },
+  {
+    "id": "f7f5910c",
+    "file": "assets/voice/en/f7f5910c.mp3",
+    "where": "00-meet-esp32 · Pin hunt!",
+    "text": "Pin hunt! Time to prove your detective skills. Officer Ohm calls out a pin and you find it, fast!",
+    "done": false
+  },
+  {
+    "id": "11cebd5c",
+    "file": "assets/voice/en/11cebd5c.mp3",
+    "where": "00-meet-esp32 · Detective quiz",
+    "text": "Detective quiz. Three quick questions and the Pin Detective badge is yours.",
+    "done": false
+  }
+]
