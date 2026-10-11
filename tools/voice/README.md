@@ -17,6 +17,8 @@ nothing breaks while files are missing. Sound only starts when the visitor asks 
 - Files are saved as 64 kbps mono MP3 (about 8 KB per second) so they load quickly on mobile data:
   `ffmpeg -i in.mp3 -map_metadata -1 -ac 1 -ar 44100 -b:a 64k assets/voice/en/<id>.mp3`.
 - Cost: 1 credit per character. The 18 story + Lesson 0 lines use 2,575 credits per voice.
+- Symbols are said as words: for the voice, write “−” as “minus”, “GND” as “ground” and “3V3” as “three-V-three”.
+  The file name still comes from the text on screen, so only the audio changes.
 - When a sentence changes, its fingerprint changes: run the collector again and only the new lines need files.
 
 ## Prompt for Claude Code with the ElevenLabs MCP
