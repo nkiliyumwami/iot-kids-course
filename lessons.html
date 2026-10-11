@@ -224,9 +224,9 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
       let badge = '<span class="badge soon">Coming soon</span>';
       if (ready) badge = done ? '<span class="badge done">Finished ✓</span>' : p.steps ? `<span class="badge going">In progress · ${pct}%</span>` : '<span class="badge open">Ready</span>';
       const li = document.createElement('li');
-      const badgeImg = `<img class="badge-img ${done ? '' : 'locked'}" src="${C.badgeSrc(l)}" alt="${done ? 'Lesson ' + l.n + ' badge earned' : ''}" width="52" height="52">`;
+      const badgeImg = `<img class="badge-img ${done ? '' : 'locked'}" src="${C.badgeSrc(l)}" alt="${done ? C.name(l) + ' badge earned' : ''}" width="52" height="52">`;
       li.innerHTML = `<article class="lesson ${ready ? 'ready' : ''} ${done ? 'done' : ''}">${badgeImg}
-        <div class="num">${done ? '✓' : l.n}</div>
+        <div class="num">${done ? '✓' : C.short(l)}</div>
         <div>${badge}
           <h3>${ready ? `<a href="lessons/${l.slug}/index.html">${esc(l.title)}</a>` : esc(l.title)}</h3>
           <p>${esc(l.idea)}</p>
@@ -242,7 +242,7 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
   const earnedList = C.lessons.filter((l) => (prog[l.slug] || {}).done);
   document.getElementById('badgeRow').innerHTML = C.lessons.map((l) => {
     const got = (prog[l.slug] || {}).done;
-    return `<img class="${got ? '' : 'locked'}" src="${C.badgeSrc(l)}" alt="Lesson ${l.n}: ${esc(l.title)}${got ? ' (earned)' : ' (not yet)'}" title="Lesson ${l.n}: ${esc(l.title)}">`;
+    return `<img class="${got ? '' : 'locked'}" src="${C.badgeSrc(l)}" alt="${C.name(l)}: ${esc(l.title)}${got ? ' (earned)' : ' (not yet)'}" title="${C.name(l)}: ${esc(l.title)}">`;
   }).join('');
   document.getElementById('badgeCount').textContent = `${earnedList.length} of ${C.lessons.length} earned`;
   const cc = document.getElementById('courseCert');
@@ -253,7 +253,7 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
   if (next) {
     btn.href = `lessons/${next.slug}/index.html`;
     const started = Object.keys(prog).length > 0;
-    btn.textContent = `${started ? 'Continue' : 'Start'}: lesson ${next.n} →`;
+    btn.textContent = `${started ? 'Continue' : 'Start'}: ${C.name(next)} →`;
   } else {
     btn.textContent = 'Review lesson 1 →';
     note.textContent = 'You’ve finished every lesson so far. New ones are on the way!';

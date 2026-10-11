@@ -342,7 +342,7 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
   const started = Object.keys(prog).length > 0;
   ['startBtn', 'startBtn2'].forEach((id) => {
     const b = document.getElementById(id); if (!b) return;
-    if (next) { b.href = `lessons/${next.slug}/index.html`; if (started) b.textContent = `Continue: lesson ${next.n} →`; }
+    if (next) { b.href = `lessons/${next.slug}/index.html`; if (started) b.textContent = `Continue: ${window.COURSE.name(next)} →`; }
     else { b.href = 'lessons.html'; b.textContent = 'See all lessons →'; }
   });
 })();

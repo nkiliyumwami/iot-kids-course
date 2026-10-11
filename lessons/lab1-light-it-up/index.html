@@ -1,0 +1,1070 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Circuit Lab 1: Light It Up · KundaKode</title>
+<script src="../../assets/brand.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Circuit Lab 1: build one LED circuit on the 3D breadboard, part by part, before any code. Every placement is checked
+   by a tiny circuit simulator (the LED only lights when the loop really works), and wrong holes explain themselves. */
+:root {
+  --bg: #E3EBF0; --surface: #FFFFFF; --surface-2: #F1F5F8; --ink: #15202A; --muted: #526170; --line: #D2DCE3;
+  --accent: #0A7480; --accent-strong: #075A63; --accent-soft: #DAEEF0; --hl: #F2B705; --good: #2E9E57; --try: #D9821A;
+  --red: #C93131; --ground: #2E3136; --code-bg: #13202A; --code-ink: #E3ECF1;
+  --font-display: 'Baloo 2', 'Trebuchet MS', system-ui, sans-serif;
+  --font-body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --font-code: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--hl); outline-offset: 2px; }
+.app { display: grid; grid-template-rows: auto 1fr; height: 100%; padding: 12px 16px 16px; gap: 10px; }
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.top a.back { font-weight: 800; color: var(--accent-strong); text-decoration: none; font-size: 13px; }
+.top h1 { font-family: var(--font-display); font-weight: 800; font-size: 26px; margin: 0; line-height: 1.05; }
+.top p { margin: 0; color: var(--muted); font-size: 13px; }
+.prog { margin-left: auto; display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 13px; color: var(--muted); }
+.bar { width: 160px; height: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 99px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .4s; }
+.bookbtn { border: 2px solid var(--hl); background: #FFF6D6; border-radius: 999px; padding: 4px 12px; font-weight: 800; font-size: 13px; cursor: pointer; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(330px, 430px); gap: 14px; min-height: 0; }
+.viewport { position: relative; min-height: 0; border-radius: 18px; overflow: hidden; background: #F3F7FA; border: 1px solid var(--line); }
+#scene, #scene canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#scene canvas { touch-action: none; cursor: grab; }
+.fail { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; font-weight: 700; color: var(--muted); }
+.labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.lbl { position: absolute; left: 0; top: 0; width: 0; height: 0; --lift: 10px; will-change: transform; color: var(--ink); }
+.lbl > span { position: absolute; left: 0; bottom: var(--lift); transform: translateX(-50%); white-space: nowrap; background: rgba(255,255,255,.94);
+  border: 1px solid var(--line); border-radius: 8px; padding: 2px 8px; font-weight: 800; font-size: 12.5px; box-shadow: 0 2px 8px rgba(21,32,42,.12); display: inline-flex; align-items: center; gap: 6px; }
+.lbl::after { content: ''; position: absolute; left: -1px; bottom: 0; width: 2px; height: var(--lift); background: rgba(21,32,42,.45); }
+.lbl.pin > span { font-family: var(--font-code); font-size: 11.5px; padding: 1px 6px; }
+.lbl.pin.power > span { background: #FBE3E3; border-color: #E8A0A0; }
+.lbl.callout > span { background: var(--ink); color: #fff; border-color: transparent; font-size: 13px; }
+.lbl.callout::after { background: var(--ink); }
+.lbl.callout.gold > span { background: var(--hl); color: var(--ink); }
+.lbl.callout.blue > span { background: #2F6FDE; }
+.lbl.callout.red > span { background: var(--red); }
+.lbl.callout.ground > span { background: var(--ground); }
+.reset { position: absolute; top: 12px; right: 12px; border: 0; background: var(--accent); color: #fff; border-radius: 999px; padding: 9px 16px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 16px rgba(10,116,128,.3); }
+.vhint { position: absolute; left: 12px; bottom: 10px; margin: 0; font-size: 12px; font-weight: 700; color: var(--muted); pointer-events: none; background: rgba(243,247,250,.85); border-radius: 8px; padding: 2px 6px; }
+.hand { position: absolute; left: 12px; top: 12px; background: var(--surface); border: 2px solid var(--hl); border-radius: 14px; padding: 6px 12px; font-family: var(--font-display); font-weight: 800; font-size: 17px; max-width: calc(100% - 150px); }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; min-height: 0; display: grid; grid-template-rows: 1fr auto; overflow: hidden; }
+.scroll { overflow: auto; padding: 16px; display: grid; gap: 12px; align-content: start; grid-auto-rows: max-content; }
+.guide { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; align-items: start; }
+.guide svg { width: 72px; height: 84px; }
+.voice-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; }
+.listen { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 5px 14px; font: inherit; font-weight: 800; font-size: 14px; cursor: pointer; color: var(--ink); }
+.listen[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.readme { font-size: 14px; font-weight: 700; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.eyebrow { font-weight: 800; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+.guide h2 { font-family: var(--font-display); font-size: 25px; line-height: 1.1; margin: 0 0 4px; }
+.guide p { margin: 4px 0; }
+.task { border: 2px solid var(--accent); background: var(--accent-soft); border-radius: 14px; padding: 10px 12px; }
+.task b.t { display: block; font-family: var(--font-display); font-size: 18px; }
+.task .count { font-weight: 800; color: var(--accent-strong); }
+.task.done { border-color: var(--good); background: #E3F5EA; }
+.task.done b.t::after { content: ' ✓'; color: var(--good); }
+.feedback { border-radius: 12px; padding: 8px 12px; font-weight: 700; animation: fbIn .25s ease-out; }
+.feedback.good { background: #E3F5EA; border-left: 5px solid var(--good); }
+.feedback.try { background: #FFF1DF; border-left: 5px solid var(--try); }
+@keyframes fbIn { from { transform: translateY(6px); opacity: 0 } to { transform: none; opacity: 1 } }
+.unlock { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: #FFF6D6; border: 2px dashed var(--hl); border-radius: 14px; padding: 8px 12px; font-weight: 800; }
+.unlock .w, .words-strip .w { white-space: nowrap; }
+.unlock .w { font-size: 17px; }
+code { font-family: var(--font-code); background: var(--surface-2); border-radius: 6px; padding: 0 5px; font-size: .92em; }
+.why { border-left: 5px solid var(--hl); background: #FFFBEA; border-radius: 12px; padding: 8px 12px; font-size: 15px; }
+.why b:first-child { display: block; font-family: var(--font-display); font-size: 16px; }
+.meter { border: 2px solid var(--line); border-radius: 14px; padding: 10px 12px; display: grid; gap: 8px; }
+.meter .row { display: flex; flex-wrap: wrap; gap: 8px; }
+.gauge { position: relative; height: 18px; border-radius: 99px; background: linear-gradient(90deg, #2E9E57 0 30%, #F2B705 30% 55%, #C93131 55% 100%); }
+.gauge i { position: absolute; top: -5px; bottom: -5px; width: 5px; margin-left: -2px; background: var(--ink); border-radius: 3px; box-shadow: 0 0 0 2px #fff; left: 0; transition: left .6s cubic-bezier(.2,1.4,.4,1); }
+.meter .read { font-weight: 800; }
+.meter .read.bad { color: var(--red); }
+.checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-weight: 700; }
+.checklist li::before { content: '⬜ '; }
+.checklist li.ok::before { content: '✅ '; }
+.checklist li.bad::before { content: '❌ '; }
+.build-steps { margin: 0; padding-left: 22px; display: grid; gap: 4px; }
+.opts { display: grid; gap: 8px; }
+.opt-btn { text-align: left; background: var(--surface-2); border: 2px solid var(--line); border-radius: 10px; padding: 8px 12px; font-weight: 800; cursor: pointer; }
+.opt-btn:hover { border-color: var(--accent); }
+.opt-btn.right { background: #E3F5EA; border-color: var(--good); }
+.opt-btn.wrong { background: #FFF1DF; border-color: var(--try); }
+.done-card { border: 2px solid var(--hl); background: #FFFBEA; border-radius: 16px; padding: 12px 14px; }
+.done-card h3 { font-family: var(--font-display); margin: 0 0 4px; font-size: 22px; }
+.done-card .links, .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 2px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 16px; font-weight: 800; cursor: pointer; text-decoration: none; color: var(--ink); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 6px 16px rgba(10,116,128,.3); }
+.btn.on { outline: 3px solid var(--good); }
+.btn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.nav { display: flex; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--line); background: var(--surface); }
+.nav .btn.primary { margin-left: auto; }
+.words-strip { font-size: 13px; color: var(--muted); }
+.small { font-size: 14px; color: var(--muted); }
+@media (max-width: 860px) {
+  .app { height: auto; min-height: 100%; }
+  main { grid-template-columns: minmax(0, 1fr); }
+  .viewport { height: 58vh; min-height: 380px; }
+  .panel { overflow: visible; }
+  .scroll { overflow: visible; }
+  .nav { position: sticky; bottom: 0; border-radius: 0 0 18px 18px; }
+  .prog { margin-left: 0; }
+  .bar { width: 110px; }
+  .hand { font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) { .feedback { animation: none; } .gauge i { transition: none; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <a class="back" href="../../lessons.html">← All lessons</a>
+      <h1>Light It Up</h1>
+      <p>Circuit Lab 1 · Build your first real circuit. No code needed!</p>
+    </div>
+    <div class="prog"><span id="progressText">Step 1 of 14</span><div class="bar" aria-hidden="true"><i id="barFill"></i></div>
+      <button type="button" class="bookbtn" data-wordbook>📖 My words <span id="wordCount"></span></button></div>
+  </header>
+  <main>
+    <section class="viewport" aria-label="3D workbench with a breadboard and an ESP32">
+      <div id="scene"></div>
+      <div class="labels" id="labels"></div>
+      <div class="hand" id="hand" hidden></div>
+      <button class="reset" id="resetView" type="button">↺ Reset view</button>
+      <p class="vhint" id="vhint">Drag to spin · Pinch or scroll to zoom · Tap holes, pins and parts</p>
+    </section>
+    <aside class="panel">
+      <div class="scroll" id="scroll" aria-live="polite">
+        <div class="guide">
+          <svg viewBox="0 0 72 84" aria-hidden="true"><circle cx="36" cy="30" r="20" fill="#F5C9A0"/><rect x="16" y="50" width="40" height="30" rx="10" fill="#1F3A68"/></svg>
+          <div><div class="eyebrow" id="eyebrow"></div><h2 id="stepTitle"></h2><div id="stepText"></div>
+            <div class="voice-row"><button class="listen" id="listenBtn" type="button" aria-pressed="false">🔊 Listen</button><label class="readme"><input type="checkbox" id="readToMe"> Read every step to me</label></div></div>
+        </div>
+        <div id="taskBox"></div>
+        <div id="fbBox"></div>
+        <div id="extraBox"></div>
+        <p class="words-strip" id="wordsStrip"></p>
+      </div>
+      <div class="nav">
+        <button type="button" class="btn" id="prevBtn">← Back</button>
+        <button type="button" class="btn primary" id="nextBtn">Next →</button>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="../../course.js"></script>
+<script src="../../assets/voice/voice.js?v=naledi1"></script>
+<script src="../../assets/rewards.js"></script>
+<script src="../../assets/esp32/board.js"></script>
+<script src="../../assets/circuit/kit3d.js"></script>
+<script>
+(function () {
+  'use strict';
+  const LESSON_SLUG = 'lab1-light-it-up';
+  const E = window.ESP32, esc = E.esc, chip = E.chip;
+  const $ = (s) => document.querySelector(s);
+  E.initWords();
+  const countWords = () => { $('#wordCount').textContent = `(${E.book.list().length})`; };
+  document.addEventListener('makerword', countWords); countWords();
+
+  let kit;
+  try {
+    if (!window.THREE || !window.THREE.OrbitControls) throw new Error('no three');
+    kit = CircuitKit.create({ host: $('#scene'), layer: $('#labels') });
+  } catch (e) {
+    if (window.console) console.error(e);
+    $('#scene').innerHTML = '<div class="fail">The 3D workbench could not start. Check your internet connection, or try Chrome or Edge, and reload the page.</div>';
+    return;
+  }
+  const { THREE, V, colX, ROWZ, FAR_ROWS, holeAt, railAt, pinAt, SLEEVE, HEADER_TOP } = kit;
+  const RED_WIRE = 0xe0413b, BLACK_WIRE = 0x2b2b2e;
+
+  /* =========================================================
+     The workbench: breadboard, ESP32 with its USB cable, and the loose kit on the table
+     ========================================================= */
+  const breadboard = kit.makeBreadboard(); kit.scene.add(breadboard);
+  const esp = kit.makeESP32([['far', 14], ['near', 13], ['far', 13]]); kit.scene.add(esp);
+  const usb = kit.makeUSB(); kit.scene.add(usb);
+
+  function makeLooseResistor(scale = 1) {
+    const g = new THREE.Group();
+    const lead = kit.mat(0xc9ced4, { metalness: 0.3, roughness: 0.35 });
+    g.add(kit.rod(V(-0.62, 0, 0), V(0.62, 0, 0), 0.016, lead));
+    const bodyMat = kit.mat(0xd8c08e, { roughness: 0.5 });
+    const body = kit.mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.42, 20), bodyMat); body.rotation.z = Math.PI / 2; g.add(body);
+    for (const x of [-0.2, 0.2]) g.add(kit.mesh(new THREE.SphereGeometry(0.1, 16, 12), bodyMat, x, 0, 0));
+    for (const [x, col] of [[-0.17, 0xf08a24], [-0.08, 0xf08a24], [0.01, 0x7a4a22], [0.17, 0xc9a227]]) {
+      const b = kit.mesh(new THREE.CylinderGeometry(0.094, 0.094, 0.045, 20), kit.mat(col, { roughness: 0.4, metalness: col === 0xc9a227 ? 0.6 : 0 }), x, 0, 0);
+      b.rotation.z = Math.PI / 2; g.add(b);
+    }
+    g.scale.setScalar(scale);
+    return g;
+  }
+  // the loose parts lie on the table in front of the breadboard until they are placed
+  const TABLE = -0.39;
+  const looseLed = kit.makeLED(0xff3030); looseLed.rotation.x = Math.PI / 2; looseLed.position.set(-2.4, TABLE + 0.3, 3.55);
+  const looseRes = makeLooseResistor(); looseRes.position.set(-0.9, TABLE + 0.1, 3.7);
+  const looseWire = (x, z, color) => {
+    const w = kit.makeWire([V(x, TABLE + 0.33, z), V(x + 0.5, TABLE + 0.35, z + 0.35), V(x + 1.1, TABLE + 0.34, z + 0.15), V(x + 1.6, TABLE + 0.33, z + 0.4)], color);
+    return w.group;
+  };
+  const looseRed = looseWire(0.4, 3.35, RED_WIRE), looseBlack1 = looseWire(0.6, 3.95, BLACK_WIRE), looseBlack2 = looseWire(2.4, 3.6, BLACK_WIRE);
+  [[looseLed, 'kit-led'], [looseRes, 'kit-res'], [looseRed, 'kit-wire'], [looseBlack1, 'kit-wire'], [looseBlack2, 'kit-wire']].forEach(([o, k]) => { kit.tagPart(o, k); kit.scene.add(o); });
+
+  // big LED and resistor on a display stand, for the "meet the part" missions
+  const stand = new THREE.Group(); stand.position.set(7.2, -0.4, 0.4); stand.rotation.y = -0.35; kit.scene.add(stand);
+  stand.add(kit.mesh(new THREE.CylinderGeometry(1.25, 1.35, 0.2, 40), kit.mat(0xffffff, { roughness: 0.6 }), 0, 0.1, 0));
+  const BIG = 2.6;
+  const bigLed = kit.makeLED(0xff3030, BIG, [0.75, 0.5], 0.7); bigLed.position.set(-0.35, 1.05, -0.2); stand.add(bigLed); kit.tagPart(bigLed, 'bigled');
+  const bigRes = makeLooseResistor(1.9); bigRes.position.set(0, 0.42, 0.85); stand.add(bigRes); kit.tagPart(bigRes, 'bigres');
+  let standOn = 0, standTarget = 0;
+  stand.scale.setScalar(0.001); stand.visible = false;
+  const legPoint = (x, y) => () => { bigLed.updateWorldMatrix(true, false); return bigLed.localToWorld(V(x, y, 0)); };
+
+  /* =========================================================
+     The circuit: what is placed where. Ends are { k: 'hole', c, r } | { k: 'rail', rail, c } | { k: 'pin', id }.
+     ========================================================= */
+  const H = (c, r) => ({ k: 'hole', c, r }), R = (c, rail = 'BN') => ({ k: 'rail', rail, c }), PIN = (id) => ({ k: 'pin', id });
+  const CANON = {
+    res: { a: H(7, 'd'), b: H(7, 'g') },
+    led: { a: H(7, 'i'), k: H(8, 'i') },
+    gw: { a: H(8, 'j'), b: R(8) },
+    gnd: { a: PIN('near:GND'), b: R(30) },
+    pw: { a: PIN('far:3V3'), b: H(7, 'b') },
+  };
+  const WIRES = { pw: RED_WIRE, gw: BLACK_WIRE, gnd: BLACK_WIRE };
+  let B = { usb: true, res: null, led: null, gw: null, gnd: null, pw: null };
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  const half = (r) => (FAR_ROWS.includes(r) ? 'far' : 'near');
+  const netOf = (e) => {
+    if (e.k === 'hole') return (half(e.r) === 'far' ? 'T' : 'B') + e.c;
+    if (e.k === 'rail') return e.rail;
+    const name = kit.pinById(e.id).name;
+    return name === '3V3' ? 'V' : name === 'GND' ? 'G' : 'P:' + name;
+  };
+  const holeName = (e) => (e.k === 'hole' ? `${e.r}${e.c}` : e.k === 'rail' ? railName(e.rail) : kit.pinById(e.id).name);
+  const railName = (rail) => ({ BN: 'the blue − rail', BP: 'the red + rail', TN: 'the far blue − rail', TP: 'the far red + rail' })[rail];
+  const keyOf = (e) => (e.k === 'hole' ? `h${e.c}${e.r}` : e.k === 'rail' ? `r${e.rail}${e.c}` : 'p' + e.id);
+  function used(b = B) {
+    const s = new Set();
+    if (b.res) [b.res.a, b.res.b].forEach((e) => s.add(keyOf(e)));
+    if (b.led) [b.led.a, b.led.k].forEach((e) => s.add(keyOf(e)));
+    ['gw', 'gnd', 'pw'].forEach((w) => { if (b[w]) [b[w].a, b[w].b].forEach((e) => { if (e.k !== 'pin') s.add(keyOf(e)); }); });
+    return s;
+  }
+  const free = (e) => !used().has(keyOf(e));
+
+  /* ---------- a tiny circuit simulator: find the loops from 3V3 to GND ---------- */
+  function analyze(b) {
+    const edges = [];
+    ['pw', 'gw', 'gnd'].forEach((w) => { if (b[w]) edges.push({ id: w, type: 'wire', a: b[w].a, b: b[w].b }); });
+    if (b.res) edges.push({ id: 'res', type: 'res', a: b.res.a, b: b.res.b });
+    if (b.led) edges.push({ id: 'led', type: 'led', a: b.led.a, b: b.led.k });
+    function paths(ledBothWays) {
+      const out = [];
+      const walk = (net, seen, trail) => {
+        if (net === 'G') { out.push(trail.slice()); return; }
+        for (const e of edges) {
+          for (const [from, to, rev] of [[e.a, e.b, false], [e.b, e.a, true]]) {
+            if (e.type === 'led' && rev && !ledBothWays) continue;
+            if (netOf(from) !== net || seen.has(netOf(to)) || trail.some((t) => t.e === e)) continue;
+            seen.add(netOf(to)); trail.push({ e, from, to, rev });
+            walk(netOf(to), seen, trail);
+            trail.pop(); seen.delete(netOf(to));
+          }
+        }
+      };
+      walk('V', new Set(['V']), []);
+      return out;
+    }
+    const all = paths(false);
+    const has = (p, type) => p.some((t) => t.e.type === type);
+    const short = all.find((p) => !has(p, 'led') && !has(p, 'res'));
+    const good = all.find((p) => has(p, 'led') && has(p, 'res'));
+    const noRes = all.find((p) => has(p, 'led') && !has(p, 'res'));
+    const bypass = all.find((p) => !has(p, 'led') && has(p, 'res'));
+    let state = 'open', path = null;
+    if (short) { state = 'short'; path = short; }
+    else if (good) { state = 'lit'; path = good; }
+    else if (noRes) { state = 'tooMuch'; path = noRes; }
+    else if (bypass) { state = 'bypass'; path = bypass; }
+    else if (paths(true).some((p) => has(p, 'led'))) state = 'backwards';
+    return { state: b.usb ? state : 'off', ready: state, path };
+  }
+
+  /* ---------- 3D for the placed parts ---------- */
+  const surf = (e) => (e.k === 'pin' ? pinAt(e.id, HEADER_TOP) : e.k === 'rail' ? railAt(e.c, e.rail, 0.03) : holeAt(e.c, e.r, 0.03));
+  const wireEnd = (e) => (e.k === 'pin' ? pinAt(e.id, HEADER_TOP + SLEEVE) : e.k === 'rail' ? railAt(e.c, e.rail, SLEEVE) : holeAt(e.c, e.r, SLEEVE));
+  const built = {};
+  function makeFor(key, spec) {
+    if (key === 'res') {
+      const o = kit.makeResistor(ROWZ[spec.a.r], ROWZ[spec.b.r]);
+      o.position.x = colX(spec.a.c);
+      kit.tagPart(o, 'resistor');
+      return { obj: o };
+    }
+    if (key === 'led') {
+      const o = kit.makeLED(0xff3030);
+      o.position.set(colX(spec.a.c), 0, ROWZ[spec.a.r]);
+      if (spec.k.c < spec.a.c) o.rotation.y = Math.PI; // turned around: the flat edge faces the other way
+      kit.tagPart(o, 'led');
+      return { obj: o };
+    }
+    const w = kit.makeWire(kit.wirePoints(wireEnd(spec.a), wireEnd(spec.b)), WIRES[key]);
+    kit.tagPart(w.group, 'wire-' + key);
+    return { obj: w.group, wire: w };
+  }
+  let sim = analyze(B);
+  // returns the parts that are new since the last sync, so a mission can animate them in
+  function sync() {
+    const fresh = [];
+    for (const key of ['res', 'led', 'gw', 'gnd', 'pw']) {
+      const spec = B[key], sig = spec ? JSON.stringify(spec) : '';
+      if (built[key] && built[key].sig === sig) continue;
+      if (built[key]) { kit.scene.remove(built[key].obj); kit.dispose(built[key].obj); delete built[key]; }
+      if (spec) { built[key] = Object.assign({ sig }, makeFor(key, spec)); kit.scene.add(built[key].obj); fresh.push(built[key]); }
+    }
+    esp.userData.setPower(B.usb); usb.userData.setPlugged(B.usb);
+    looseLed.visible = !B.led; looseRes.visible = !B.res; looseRed.visible = !B.pw; looseBlack1.visible = !B.gw; looseBlack2.visible = !B.gnd;
+    sim = analyze(B);
+    if (built.led) built.led.obj.userData.setLit(sim.state === 'lit' ? 1 : sim.state === 'tooMuch' ? 1.6 : 0);
+    flow = sim.state === 'lit' || sim.state === 'tooMuch' ? buildFlow(sim.path) : null;
+    return fresh;
+  }
+  async function animateIn(fresh) {
+    for (const f of fresh) { if (f.wire) await kit.drawWire(f.wire, 0.9); else await kit.dropIn(f.obj); }
+  }
+
+  /* ---------- electricity: yellow dots along the loop ---------- */
+  function buildFlow(path) {
+    const pts = [];
+    path.forEach((t, i) => {
+      const a = surf(t.from), b = surf(t.to);
+      if (t.e.type === 'wire') {
+        const cp = built[t.e.id].wire.curve.getPoints(48);
+        pts.push(a, ...(t.rev ? cp.reverse() : cp), b);
+      } else if (t.e.type === 'res') {
+        pts.push(a, V(a.x, 0.3, a.z), V(b.x, 0.3, b.z), b);
+      } else {
+        pts.push(a, V(a.x, 0.45, a.z), V((a.x + b.x) / 2, 0.72, a.z), V(b.x, 0.45, b.z), b);
+      }
+      const next = path[i + 1];
+      if (next) pts.push(surf(next.from));
+    });
+    const cum = [0];
+    for (let k = 1; k < pts.length; k++) cum.push(cum[k - 1] + pts[k].distanceTo(pts[k - 1]));
+    return { pts, cum, len: cum[cum.length - 1] };
+  }
+  const DOTS = 30;
+  const dotMat = new THREE.MeshBasicMaterial({ color: 0xffd23f, depthTest: false, transparent: true, opacity: 0.95 });
+  const dots = [];
+  for (let k = 0; k < DOTS; k++) { const d = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 8), dotMat); d.renderOrder = 10; d.visible = false; kit.scene.add(d); dots.push(d); }
+  let flow = null, flowOffset = 0;
+  function pointAlong(path, s) {
+    const { pts, cum } = path;
+    let lo = 0, hi = cum.length - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (cum[m] < s) lo = m; else hi = m; }
+    const seg = cum[hi] - cum[lo] || 1;
+    return pts[lo].clone().lerp(pts[hi], (s - cum[lo]) / seg);
+  }
+  kit.onFrame((dt, tt) => {
+    const show = !!flow && !kit.reduceMotion;
+    dots.forEach((d) => { d.visible = show; });
+    if (show) {
+      flowOffset = (flowOffset + dt * (sim.state === 'tooMuch' ? 5 : 1.6)) % flow.len;
+      const gap = flow.len / DOTS;
+      dots.forEach((d, k) => d.position.copy(pointAlong(flow, (flowOffset + k * gap) % flow.len)));
+    }
+    // display stand grows in and out
+    standOn += (standTarget - standOn) * Math.min(1, dt * 5);
+    stand.scale.setScalar(Math.max(0.001, standOn)); stand.visible = standOn > 0.02;
+    if (bigLedLevel > 1) {
+      const L = bigLed.userData.led, k = 0.6 + 0.4 * Math.sin(tt * 29);
+      L.light.intensity = 3.5 + 2 * k;
+      L.glow.scale.setScalar(BIG * (2.1 + 0.5 * k));
+      L.body.emissive.setRGB(1, 0.25 + 0.3 * k, 0.15 + 0.2 * k);
+      L.body.emissiveIntensity = 1 + 0.6 * k;
+    }
+  });
+  let bigLedLevel = 0;
+  let warn = null;
+  const setBigLed = (lvl) => {
+    bigLedLevel = lvl; bigLed.userData.setLit(lvl);
+    if (lvl <= 1) bigLed.userData.led.body.emissive.set(0xff3030);
+    if (warn) { kit.removeLabel(warn); warn = null; }
+    if (lvl > 1) warn = kit.addLabel('⚠️ Too much current! (pretend)', () => { bigLed.updateWorldMatrix(true, false); return bigLed.localToWorld(V(0.35, 0.95 * BIG, 0)); }, { kind: 'callout', cls: 'callout red', lift: 30 });
+  };
+
+  /* ---------- labels ---------- */
+  let labelStep = 0;
+  kit.addLabel('ESP32 DevKit', V(-1.2, 0.05, kit.ESP.cz), { obj: esp, lift: 6 });
+  kit.addLabel('Breadboard', V(-3.9, 0.02, 2.62), { obj: breadboard, lift: 6 });
+  kit.addLabel('USB cable', V(kit.ESP.x1 + 1.6, 0.05, kit.ESP.cz), { obj: usb, lift: 8, show: () => labelStep === 4 || labelStep === 10 });
+  kit.addLabel('3V3', pinAt('far:3V3', HEADER_TOP + 0.05), { cls: 'pin power', lift: 14, show: () => labelStep >= 8 });
+  kit.addLabel('GND', pinAt('near:GND', HEADER_TOP + 0.05), { cls: 'pin', lift: 14, show: () => labelStep >= 8 });
+  kit.addLabel('− rail (ground)', railAt(3, 'BN', 0.02), { obj: breadboard, lift: 30, show: () => labelStep >= 7 });
+  kit.addLabel('Long leg', legPoint(0, -0.05 * BIG), { obj: stand, lift: 10, show: () => labelStep === 2 && STEPS[2].found && STEPS[2].found.a });
+  kit.addLabel('Short leg', legPoint(0.7, 0.05 * BIG), { obj: stand, lift: 10, show: () => labelStep === 2 && STEPS[2].found && STEPS[2].found.k });
+  kit.addLabel('330 Ω resistor', () => { bigRes.updateWorldMatrix(true, false); return bigRes.localToWorld(V(0, 0.15, 0)); }, { obj: stand, lift: 16, show: () => labelStep === 3 });
+
+  /* ---------- camera spots ---------- */
+  const CAM = {
+    kit: { p: [0.6, 6.8, 10.6], t: [0.2, -0.3, 2.0] },
+    board: { p: [0, 8.4, 7.2], t: [0, 0, 0.2] },
+    big: { p: [9.4, 4.2, 8.0], t: [7.0, 1.4, 0.4] },
+    usb: { p: [5.6, 4.6, -0.4], t: [2.4, -0.2, -4.4] },
+    build: { p: [-2.0, 5.2, 4.6], t: [-1.7, 0, 0.3] },
+    ledclose: { p: [-4.4, 1.7, 2.4], t: [-2.0, 0.35, 1.1] },
+    gnd: { p: [5.2, 7.4, 6.4], t: [1.0, 0, -1.6] },
+    pw: { p: [2.4, 7.2, 3.4], t: [-0.2, 0, -3.0] },
+    loop: { p: [3.0, 9.6, 9.4], t: [0.0, 0, -1.6] },
+  };
+  const fly = (k, instant) => kit.flyTo(CAM[k], instant);
+
+  /* =========================================================
+     Panel helpers (the same mission style as Pin Detective)
+     ========================================================= */
+  const st = { done: new Set(), words: [] };
+  function say(html, good) { const d = document.createElement('div'); d.className = 'feedback ' + (good ? 'good' : 'try'); d.innerHTML = html; $('#fbBox').replaceChildren(d); }
+  function task(title, body) { $('#taskBox').innerHTML = `<div class="task" id="task"><b class="t">🎯 ${title}</b>${body ? `<div id="taskBody">${body}</div>` : ''}</div>`; }
+  function taskBody(html) { const b = $('#taskBody'); if (b) b.innerHTML = html; }
+  function hand(text) { const h = $('#hand'); h.hidden = !text; h.innerHTML = text || ''; }
+  function complete(wordKeys, msg) {
+    st.done.add(step);
+    const t = $('#task'); if (t) t.classList.add('done');
+    if (msg) say(msg, true);
+    hand(null);
+    (wordKeys || []).forEach((k) => { E.book.add(k); if (!st.words.includes(k)) st.words.push(k); });
+    if (wordKeys && wordKeys.length) {
+      $('#extraBox').insertAdjacentHTML('afterbegin', `<div class="unlock">🔑 New maker word${wordKeys.length > 1 ? 's' : ''}: ${wordKeys.map((k) => chip(k)).join(' ')} <span class="small" style="font-weight:700">tap to read</span></div>`);
+      E.showWord(wordKeys[0]);
+    }
+    updateNav(); stripWords();
+    if (window.COURSE) window.COURSE.saveProgress(LESSON_SLUG, { step, steps: STEPS.length, build: B });
+  }
+  function stripWords() { $('#wordsStrip').innerHTML = st.words.length ? `Words you’ve found today: ${st.words.map((k) => chip(k)).join(' ')}` : ''; }
+  const why = (title, html) => `<div class="why"><b>Why? ${title}</b>${html}</div>`;
+  const ringAt = (e, color) => kit.ring(e.k === 'pin' ? pinAt(e.id, 0.12) : surf(e), color);
+  // make sure the parts an earlier mission placed are there (when a learner comes back to the lab, or jumps ahead)
+  function ensure(...keys) {
+    let changed = false;
+    keys.forEach((k) => { if (k === 'unplug') { if (B.usb && !st.done.has(10)) { B.usb = false; changed = true; } } else if (!B[k]) { B[k] = clone(CANON[k]); changed = true; } });
+    if (changed) sync();
+  }
+  // two-tap placement of a part with two ends; check(e, first) returns '' when fine, or a friendly hint
+  function twoTaps(o) {
+    let first = null;
+    return {
+      onTap(hit) {
+        if (STEPS[step].completedNow) return;
+        const p = hit.point;
+        if (!p) { if (hit.part) say(o.partHint || 'Tap a hole on the breadboard.', false); return; }
+        const e = p.kind === 'hole' ? H(p.c, p.r) : p.kind === 'rail' ? R(p.c, p.rail) : p.kind === 'pin' ? PIN(p.id) : null;
+        if (!e) return;
+        if (e.k !== 'pin' && !free(e)) { say(`Hole <b>${holeName(e)}</b> already has a part in it. One leg per hole!`, false); return; }
+        const hint = first ? o.checkSecond(e, first) : o.checkFirst(e);
+        if (hint) { say(hint, false); return; }
+        if (!first) {
+          first = e; o.onFirst && o.onFirst(e);
+          kit.clearTemps(); o.rings && o.rings(first).forEach((r) => ringAt(r));
+          ringAt(e, 0x2e9e57);
+          say(o.firstOk(e), true);
+          return;
+        }
+        kit.clearTemps();
+        STEPS[step].completedNow = true;
+        o.place(first, e);
+      },
+    };
+  }
+
+  /* =========================================================
+     The missions
+     ========================================================= */
+  let step = 0;
+  const STEPS = [
+    { eyebrow: 'Mission briefing', title: 'Your first circuit', cam: 'kit',
+      text: `<p>Today you’ll build a real light with your own hands. No code at all!</p>
+             <p>Everything you need is on the table: a breadboard, a red LED, a resistor and some jumper wires. Your ESP32 will give the power.</p>`,
+      enter() {
+        kit.kinds = new Set(); kit.skipParts = new Set();
+        const seen = new Set();
+        const INFO = {
+          breadboard: 'The <b>breadboard</b>: a board full of holes. You push parts into it, no soldering needed.',
+          controller: 'Your <b>ESP32</b> from Pin Detective. Today its only job is to give power.',
+          usb: 'The <b>USB cable</b> brings power from the computer to the ESP32.',
+          'kit-led': 'A red <b>LED</b>: a tiny light with one long leg and one short leg.',
+          'kit-res': 'A <b>resistor</b>: the little stripy one. It protects the LED.',
+          'kit-wire': '<b>Jumper wires</b>: red for power, black for ground (the road home).',
+        };
+        const GROUP = { usb: 'controller' };
+        const NEED = ['breadboard', 'controller', 'kit-led', 'kit-res', 'kit-wire'];
+        task('Tap each part of your kit to meet it', `<span class="count">0 of 5</span>`);
+        this.onTap = (hit) => {
+          if (!hit.part) { say('Tap one of the parts: the breadboard, the ESP32, the LED, the resistor or a wire.', false); return; }
+          const k = hit.part.part, g = GROUP[k] || k;
+          if (!INFO[k]) return;
+          if (!st.done.has(step)) { seen.add(g); taskBody(`<span class="count">${seen.size} of 5</span>`); }
+          if (!st.done.has(step) && NEED.every((n) => seen.has(n))) complete(['jumper'], `${INFO[k]} <br>You’ve met your whole kit! Wires that plug in at both ends are called <b>jumper wires</b>.`);
+          else say(INFO[k], true);
+        };
+      },
+      leave() { kit.skipParts = new Set(['breadboard']); } },
+
+    { eyebrow: 'Mission 1', title: 'Secret tunnels', cam: 'board',
+      text: `<p>The breadboard hides metal strips under its holes. Holes on the same strip are joined, so electricity can travel between them.</p>
+             <p>Tap some holes to find the hidden strips!</p>`,
+      enter() {
+        kit.kinds = new Set(['hole', 'rail']);
+        const tapped = new Set();
+        let phase = 'explore';
+        const star = H(12, 'c');
+        task('Tap 3 different holes', '<span class="count">0 of 3</span>');
+        const showStrip = (p) => {
+          kit.clearTemps();
+          if (p.kind === 'hole') {
+            kit.strip(kit.stripHoles(p.c, half(p.r)), 0x2e9e57);
+            kit.callout(`${p.r}${p.c} is joined to ${half(p.r) === 'far' ? 'a' : 'f'}${p.c}–${half(p.r) === 'far' ? 'e' : 'j'}${p.c}`, holeAt(p.c, half(p.r) === 'far' ? 'a' : 'j'), 'gold', 22);
+          } else {
+            kit.strip(kit.railHoles(p.rail), p.rail.endsWith('N') ? 0x2f6fde : 0xd93b3b);
+            kit.callout(`The whole ${p.rail.endsWith('N') ? 'blue −' : 'red +'} rail is joined`, railAt(15, p.rail), p.rail.endsWith('N') ? 'blue' : 'red', 22);
+          }
+        };
+        const challenge = () => {
+          phase = 'find';
+          kit.clearTemps(); kit.ring(holeAt(star.c, star.r), 0xf2b705);
+          kit.callout('⭐ c12', holeAt(star.c, star.r), 'gold', 22);
+          task('Tap a hole that is joined to the ⭐ hole (c12)');
+          say('You found the strips! Now a challenge…', true);
+        };
+        this.onTap = (hit) => {
+          const p = hit.point; if (!p) return;
+          if (phase === 'explore' || st.done.has(step)) {
+            showStrip(p);
+            if (st.done.has(step)) return;
+            tapped.add(p.kind === 'hole' ? `${p.c}${p.r}` : p.rail + p.c);
+            taskBody(`<span class="count">${Math.min(3, tapped.size)} of 3</span>`);
+            say(p.kind === 'hole' ? `Hole <b>${p.r}${p.c}</b> sits on a strip of 5 holes, going ${half(p.r) === 'far' ? 'up' : 'down'} from the middle gap.` : 'That’s a <b>rail</b>: one long strip along the edge of the board.', true);
+            if (tapped.size >= 3) setTimeout(() => { if (step === 1 && phase === 'explore') challenge(); }, 1200);
+            return;
+          }
+          if (p.kind === 'rail') { say('Rails run along the long edge and are only joined to themselves. The ⭐ is in column 12.', false); return; }
+          if (p.c === star.c && p.r === star.r) { say('That’s the ⭐ hole itself. Find a <b>different</b> hole on the same strip.', false); return; }
+          if (p.c === star.c && half(p.r) === 'near') { say(`So close! <b>${p.r}${p.c}</b> is across the middle gap. The gap splits every column into two strips that are <b>not</b> joined.`, false); return; }
+          if (p.c !== star.c) { say(`That’s column ${p.c}. Strips go up and down along one column, so look in column 12.`, false); return; }
+          showStrip(p);
+          complete(['breadboard', 'rail'], `Yes! <b>${p.r}12</b> and <b>c12</b> are on the same strip. Every column has two strips of 5 holes: one above the gap, one below. The long <b>rails</b> along the edges are joined all the way along.`);
+        };
+      } },
+
+    { eyebrow: 'Mission 2', title: 'Meet the LED', cam: 'big',
+      text: `<p>An LED is a tiny light. Look closely: one leg is long and one is short. That matters!</p>
+             <p>Electricity can only go through an LED one way: in through the long leg, out through the short leg.</p>`,
+      enter() {
+        standTarget = 1; setBigLed(0); bigLed.visible = true; bigRes.visible = false;
+        kit.kinds = new Set(['custom']); kit.clearPoints();
+        kit.addPoint('anode', legPoint(0, -0.05 * BIG)); kit.addPoint('anode', legPoint(0, 0.1 * BIG));
+        kit.addPoint('cathode', legPoint(0.7, 0.05 * BIG)); kit.addPoint('cathode', legPoint(0.7, 0.2 * BIG));
+        const found = this.found = { a: st.done.has(step), k: st.done.has(step) };
+        task('Tap the long leg, then the short leg');
+        this.onTap = (hit) => {
+          const id = hit.point && hit.point.id;
+          if (st.done.has(step)) return;
+          if (!id) { say(hit.part && hit.part.part === 'bigled' ? 'That’s the plastic dome. Tap one of the metal legs underneath.' : 'Tap one of the LED’s metal legs.', false); return; }
+          if (id === 'anode') { found.a = true; setBigLed(0); say('Yes! The <b>long leg</b> is the <b>anode (+)</b>. Electricity goes IN here. Now the short leg!', true); }
+          else if (!found.a) { say('That’s the short leg. Find the long one first!', false); return; }
+          else {
+            found.k = true; setBigLed(1);
+            complete(['anode', 'cathode', 'polarity'], 'The <b>short leg</b> is the <b>cathode (−)</b>. Look at the rim of the LED: it has a <b>flat edge</b> on the short-leg side, so you can tell even when the legs are cut. Because an LED only works one way round, we say it has <b>polarity</b>.');
+          }
+        };
+      },
+      leave() { kit.clearPoints(); standTarget = 0; setBigLed(0); } },
+
+    { eyebrow: 'Mission 3', title: 'Meet the resistor', cam: 'big',
+      text: `<p>A resistor slows electricity down, like a narrow part of a water pipe. Without one, too much electricity rushes through the LED and can break it.</p>
+             <p>The colour bands tell you how strong it is.</p>`,
+      enter() {
+        standTarget = 1; bigLed.visible = true; bigRes.visible = true; setBigLed(1);
+        kit.kinds = new Set();
+        const tried = new Set();
+        task('Try the light with and without the resistor');
+        $('#extraBox').innerHTML = `<div class="meter"><b>⚡ Pretend current meter</b>
+          <div class="gauge" aria-hidden="true"><i id="needle" style="left:10%"></i></div>
+          <div class="read" id="meterRead">With the resistor: about <b>4 mA</b>. A happy LED.</div>
+          <div class="row"><button type="button" class="btn on" data-r="1">With resistor</button><button type="button" class="btn" data-r="0">Without resistor (pretend!)</button></div>
+          <p class="small" style="margin:0">This is a pretend demo. Never try it with a real LED: it gets hot and can break.</p></div>`;
+        const set = (withR) => {
+          tried.add(withR);
+          $('#extraBox').querySelectorAll('[data-r]').forEach((b) => b.classList.toggle('on', b.dataset.r === (withR ? '1' : '0')));
+          $('#needle').style.left = withR ? '10%' : '94%';
+          const rd = $('#meterRead');
+          rd.className = 'read' + (withR ? '' : ' bad');
+          rd.innerHTML = withR ? 'With the resistor: about <b>4 mA</b>. A happy LED.' : 'Without it: <b>over 100 mA</b>! Far too much. A real LED would get hot and could burn out.';
+          setBigLed(withR ? 1 : 1.7);
+          if (tried.size === 2 && !st.done.has(step)) {
+            setTimeout(() => {
+              if (step !== 3) return;
+              set(true);
+              complete(['resistor', 'current', 'ohm'], `The flow of electricity is called <b>current</b>, measured in milliamps (mA). The bands orange, orange, brown mean <b>330 Ω</b> (ohms): just right for our LED. A resistor works either way round, so it has no polarity.`);
+            }, 1400);
+          }
+        };
+        $('#extraBox').querySelectorAll('[data-r]').forEach((b) => b.addEventListener('click', () => set(b.dataset.r === '1')));
+        this.onTap = (hit) => {
+          if (hit.part && hit.part.part === 'bigres') say('Those bands are a colour code: <b>orange (3), orange (3), brown (× 10)</b> = 330 Ω. The gold band means “within 5%”.', true);
+          else if (hit.part && hit.part.part === 'bigled') say('Use the buttons in the meter to try the LED with and without its resistor.', false);
+        };
+      },
+      leave() { standTarget = 0; setBigLed(0); } },
+
+    { eyebrow: 'Mission 4', title: 'Safety first: unplug', cam: 'usb',
+      text: `<p>Engineers have a golden rule: never change wires while the board has power. One wrong hole could make a short circuit.</p>
+             <p>Your ESP32 is still plugged in from Pin Detective. See its red power light?</p>`,
+      enter() {
+        kit.kinds = new Set();
+        if (st.done.has(step) && B.usb && !st.done.has(10)) { B.usb = false; sync(); }
+        task('Unplug the USB cable');
+        this.onTap = (hit) => {
+          if (st.done.has(step)) return;
+          if (hit.part && hit.part.part === 'usb') {
+            B.usb = false; sync();
+            complete(['short'], 'Click! The red power light is off. Now it’s safe to build. You’ll plug it back in only when every wire is checked.');
+          } else say('Tap the USB cable, at the end of the ESP32 board.', false);
+        };
+      } },
+
+    { eyebrow: 'Mission 5', title: 'Place the resistor', cam: 'build',
+      text: `<p>Put the resistor across the middle gap, in column 7: one leg above the gap and one leg below.</p>
+             <p>Why across the gap? Then electricity arriving at the top strip can only reach the bottom strip by going through the resistor.</p>`,
+      enter() {
+        ensure('unplug');
+        kit.kinds = new Set(['hole', 'rail']);
+        if (B.res) { task('Place the resistor across the gap'); return; }
+        hand('🖐 Holding: the 330 Ω resistor');
+        ringAt(H(7, 'd')); ringAt(H(7, 'g'));
+        kit.callout('column 7', holeAt(7, 'a'), 'gold', 22);
+        task('Tap a hole for the first leg (column 7)');
+        const placer = twoTaps({
+          checkFirst: (e) => {
+            if (e.k === 'rail') return 'That’s a rail along the edge. The resistor goes in the middle area, in column 7.';
+            if (e.c !== 7) return `That’s hole <b>${holeName(e)}</b>, in column ${e.c}. Look along the numbers on the edge of the board for <b>7</b> (the gold rings).`;
+            return '';
+          },
+          firstOk: (e) => `First leg in <b>${holeName(e)}</b>. Now put the other leg in column 7 on the <b>${half(e.r) === 'far' ? 'bottom' : 'top'}</b> side of the gap.`,
+          rings: (first) => [half(first.r) === 'far' ? H(7, 'g') : H(7, 'd')],
+          checkSecond: (e, first) => {
+            if (e.k === 'rail') return 'That’s a rail. Keep both legs in column 7.';
+            if (e.c !== 7) return `Keep the resistor straight: the other leg goes in column 7 too (you tapped ${holeName(e)}).`;
+            if (half(e.r) === half(first.r)) return `Both legs in the same strip would join each other, and electricity would skip the resistor! Put this leg <b>across the gap</b>.`;
+            return '';
+          },
+          place: async (a, b) => {
+            const [top, bottom] = half(a.r) === 'far' ? [a, b] : [b, a];
+            B.res = { a: top, b: bottom };
+            await animateIn(sync());
+            complete([], `Bridge built! The resistor stands in <b>${holeName(top)}</b> and <b>${holeName(bottom)}</b>. The top and bottom strips of column 7 are now joined only through the resistor.`);
+            $('#extraBox').insertAdjacentHTML('beforeend', why('Which way round?', 'A resistor has no polarity: it works either way round, so you don’t need to check its colours this time.'));
+          },
+        });
+        this.onTap = placer.onTap;
+      } },
+
+    { eyebrow: 'Mission 6', title: 'Place the LED', cam: 'build',
+      text: `<p>Now the LED. Its long leg goes in the same strip as the resistor’s bottom leg: column 7, below the gap. The short leg goes next door, in column 8.</p>`,
+      enter() {
+        ensure('unplug', 'res');
+        kit.kinds = new Set(['hole', 'rail']);
+        if (B.led) { task('Place the LED'); return; }
+        hand('🖐 Holding: the red LED (long leg on the left)');
+        const sugg = ['i', 'h', 'j', 'f'].find((r) => free(H(7, r)));
+        ringAt(H(7, sugg));
+        kit.strip(kit.stripHoles(7, 'near'), 0x2e9e57);
+        task('Tap the hole for the LED’s long leg');
+        this.onTap = async (hit) => {
+          if (B.led || this.busy) return;
+          const p = hit.point;
+          if (!p || p.kind === 'pin') { say('Tap a hole on the breadboard: column 7, below the gap.', false); return; }
+          if (p.kind === 'rail') { say('That’s a rail. The LED’s long leg must share a strip with the resistor’s bottom leg: column 7, below the gap.', false); return; }
+          const e = H(p.c, p.r);
+          if (!free(e)) { say(`Hole <b>${holeName(e)}</b> already has the resistor’s leg in it. Pick another hole in the same strip.`, false); return; }
+          if (p.c === 7 && half(p.r) === 'far') { say(`<b>${holeName(e)}</b> is above the gap, on the resistor’s <b>top</b> strip. Then electricity would skip the resistor! Use column 7 <b>below</b> the gap.`, false); return; }
+          if (p.c === 8 && half(p.r) === 'near') { say('Close! That’s where the <b>short</b> leg will go. The long leg goes one hole to the left, in column 7.', false); return; }
+          if (p.c !== 7) { say(`That’s column ${p.c}. The long leg must be in the same strip as the resistor’s bottom leg: column 7, below the gap.`, false); return; }
+          if (!free(H(8, p.r))) { say(`The short leg would land in ${p.r}8, but that hole is busy. Try another row.`, false); return; }
+          this.busy = true; kit.clearTemps();
+          B.led = { a: e, k: H(8, p.r) };
+          await animateIn(sync());
+          this.busy = false;
+          complete([], `The long leg (anode) is in <b>${holeName(e)}</b>, sharing a strip with the resistor, so electricity can flow resistor → LED. The short leg (cathode) is in <b>${p.r}8</b>: a strip of its own, waiting for the road home.`);
+          $('#extraBox').insertAdjacentHTML('beforeend', why('Why next door, in column 8?', 'If both legs were in the same strip, they would be joined, and electricity would go around the LED instead of through it.'));
+        };
+      } },
+
+    { eyebrow: 'Mission 7', title: 'The road home, part 1', cam: 'build',
+      text: `<p>Electricity that leaves the LED’s short leg needs a road home to GND. First, a short black wire from the short leg’s strip to the blue − rail.</p>`,
+      enter() {
+        ensure('unplug', 'res', 'led');
+        kit.kinds = new Set(['hole', 'rail']);
+        if (B.gw) { task('Connect the short leg to the − rail'); return; }
+        const kc = B.led.k.c;
+        hand('🖐 Holding: a black jumper wire');
+        kit.strip(kit.stripHoles(kc, 'near'), 0x2e9e57);
+        kit.strip(kit.railHoles('BN'), 0x2f6fde);
+        task(`Tap a free hole in column ${kc} (below the gap), then a hole on the blue − rail`);
+        const placer = twoTaps({
+          checkFirst: (e) => {
+            if (e.k === 'rail') return `First the end near the LED: tap a free hole in column ${kc}, below the gap.`;
+            if (e.c === B.led.a.c && half(e.r) === 'near') return 'That strip is joined to the LED’s <b>long</b> leg. The road home starts from the <b>short</b> leg’s strip.';
+            if (e.c !== kc || half(e.r) !== 'near') return `Hole ${holeName(e)} isn’t joined to the short leg. Use column ${kc}, below the gap (the green strip).`;
+            return '';
+          },
+          firstOk: (e) => `Black wire in <b>${holeName(e)}</b>. Now tap a hole on the <b>blue − rail</b>, along the bottom edge.`,
+          checkSecond: (e) => {
+            if (e.k !== 'rail') return 'The other end goes on the blue − rail, along the bottom edge of the board.';
+            if (e.rail === 'BP') return 'That’s the red <b>+</b> rail. Ground goes on the blue <b>−</b> rail: the road home.';
+            if (e.rail !== 'BN') return 'That rail is on the far side and isn’t joined to this one. Use the blue − rail nearest your LED.';
+            return '';
+          },
+          place: async (a, b) => {
+            B.gw = { a, b };
+            await animateIn(sync());
+            complete([], 'Now the short leg is joined to the <b>whole</b> − rail. Next, the rail needs to reach GND on the ESP32.');
+          },
+        });
+        this.onTap = placer.onTap;
+      } },
+
+    { eyebrow: 'Mission 8', title: 'The road home, part 2', cam: 'gnd',
+      text: `<p>The − rail isn’t joined to the ESP32 yet. A long black wire joins the rail to a GND pin, and the road home is complete.</p>`,
+      enter() {
+        ensure('unplug', 'res', 'led', 'gw');
+        kit.kinds = new Set(['pin', 'rail', 'hole']);
+        if (B.gnd) { task('Connect the − rail to GND'); return; }
+        hand('🖐 Holding: a long black jumper wire');
+        ringAt(PIN('near:GND')); ringAt(PIN('far:GND'));
+        task('Tap a GND pin on the ESP32, then a hole on the blue − rail');
+        const placer = twoTaps({
+          partHint: 'Tap a GND pin: the pin labelled GND on the ESP32.',
+          checkFirst: (e) => {
+            if (e.k !== 'pin') return 'Start at the ESP32: tap a pin labelled <b>GND</b> (the gold rings).';
+            const n = kit.pinById(e.id).name;
+            if (n === '3V3' || n === 'VIN') return `That’s <b>${n}</b>, a power pin. Never join a power pin to the − rail: that’s a short circuit! Find GND.`;
+            if (n !== 'GND') return `That’s <b>${n}</b>. Look for <b>GND</b>: there’s one next to D13, and one at the back.`;
+            return '';
+          },
+          firstOk: () => 'Wire on GND. Its female end slides onto the pin. Now tap a hole on the blue − rail.',
+          checkSecond: (e) => {
+            if (e.k === 'pin') return 'The other end goes on the breadboard: the blue − rail.';
+            if (e.k !== 'rail') return 'The other end goes on the blue − rail, along the bottom edge, where your short black wire is.';
+            if (e.rail !== 'BN') return e.rail.endsWith('P') ? 'That’s a red <b>+</b> rail. GND goes on the blue <b>−</b> rail.' : 'That’s a different − rail, not joined to your short black wire. Use the bottom blue − rail.';
+            return '';
+          },
+          place: async (a, b) => {
+            B.gnd = { a, b };
+            await animateIn(sync());
+            complete([], 'The road home is ready: short leg → black wire → − rail → black wire → GND. Both GND pins are joined inside the ESP32, so either one works.');
+          },
+        });
+        this.onTap = placer.onTap;
+      } },
+
+    { eyebrow: 'Mission 9', title: 'Power goes in last', cam: 'pw',
+      text: `<p>Last wire: the red one brings the power. It goes from 3V3 (3.3 volts, always on) to column 7 above the gap, the resistor’s top strip.</p>
+             <p>We connect power last, so nothing can get power until the whole circuit is ready.</p>`,
+      enter() {
+        ensure('unplug', 'res', 'led', 'gw', 'gnd');
+        kit.kinds = new Set(['pin', 'hole', 'rail']);
+        if (B.pw) { task('Connect 3V3 to the resistor'); return; }
+        hand('🖐 Holding: a red jumper wire');
+        ringAt(PIN('far:3V3'));
+        kit.strip(kit.stripHoles(B.res.a.c, 'far'), 0xd93b3b);
+        task('Tap the 3V3 pin, then a free hole in column 7 above the gap');
+        const placer = twoTaps({
+          partHint: 'Tap the 3V3 pin on the ESP32 (the gold ring).',
+          checkFirst: (e) => {
+            if (e.k !== 'pin') return 'Start at the ESP32: tap the pin labelled <b>3V3</b>.';
+            const n = kit.pinById(e.id).name;
+            if (n === 'VIN') return '<b>VIN</b> brings about 5 volts from USB: more push than we need. Use <b>3V3</b>.';
+            if (n === 'GND') return 'That’s GND, the road home. Power comes from <b>3V3</b>.';
+            if (n !== '3V3') return `That’s <b>${n}</b>, a GPIO pin that code switches on and off. Today we want power that is always on: <b>3V3</b>.`;
+            return '';
+          },
+          firstOk: () => 'Red wire on 3V3. Now tap a free hole in column 7, <b>above</b> the gap (the red strip).',
+          checkSecond: (e) => {
+            if (e.k === 'pin') return 'The other end goes on the breadboard: column 7, above the gap.';
+            if (e.k === 'rail') return 'Not a rail this time. The red wire goes into the resistor’s top strip: column 7, above the gap.';
+            if (e.c === B.led.a.c && half(e.r) === 'near') return 'Careful! Below the gap is the LED’s strip. Power there would skip the resistor. Go <b>above</b> the gap.';
+            if (e.c === B.led.k.c && half(e.r) === 'near') return 'That’s the short leg’s strip: the road home. Power goes in column 7, above the gap.';
+            if (e.c !== B.res.a.c || half(e.r) !== 'far') return `Hole ${holeName(e)} isn’t joined to the resistor. Use column 7, above the gap (the red strip).`;
+            return '';
+          },
+          place: async (a, b) => {
+            B.pw = { a, b };
+            await animateIn(sync());
+            complete([], 'Every part is in place! The circuit is ready, but the board is still unplugged, so nothing is on yet.');
+          },
+        });
+        this.onTap = placer.onTap;
+      } },
+
+    { eyebrow: 'Mission 10', title: 'Check, then plug in', cam: 'loop',
+      text: `<p>Before power, engineers check every connection. Follow the path with your finger: 3V3, red wire, resistor, LED, black wire, − rail, black wire, GND.</p>
+             <p>All good? Then it’s time to plug in!</p>`,
+      enter() {
+        ensure('res', 'led', 'gw', 'gnd', 'pw');
+        kit.kinds = new Set();
+        const ok = analyze(Object.assign({}, B, { usb: true })).state === 'lit';
+        const items = ['3V3 → red wire → column 7, above the gap', 'Resistor across the gap', 'LED: long leg on the resistor’s strip, short leg next door', 'Short leg → black wire → − rail', '− rail → black wire → GND'];
+        $('#extraBox').innerHTML = `<div><b>✅ Pre-flight check</b><ul class="checklist">${items.map((t) => `<li class="${ok ? 'ok' : ''}">${t}</li>`).join('')}</ul></div>`;
+        task('Plug the USB cable back in');
+        this.onTap = (hit) => {
+          if (hit.part && hit.part.part === 'usb') {
+            if (B.usb) { say('It’s already plugged in. Look at your LED!', true); return; }
+            B.usb = true; sync();
+            if (sim.state === 'lit') complete(['circuit'], '💡 <b>It lights up!</b> Electricity flows out of 3V3, through the resistor and the LED, and home to GND. A complete loop like this is called a <b>circuit</b>. Watch the yellow dots go round!');
+            else say('Hmm, the LED is still dark. Go back and check each wire.', false);
+          } else say('Tap the USB cable to plug it back in.', false);
+        };
+      } },
+
+    { eyebrow: 'Mission 11', title: 'The fix-it shop', cam: 'build',
+      text: `<p>Officer Ohm’s friends built the same circuit three times, but each light stays dark. Can you find each problem?</p>
+             <p>Tap the part that’s wrong.</p>`,
+      enter() {
+        ensure('res', 'led', 'gw', 'gnd', 'pw');
+        const mine = clone(B);
+        kit.kinds = new Set(['pin', 'rail']);
+        const base = () => Object.assign(clone(CANON), { usb: true });
+        const PUZ = [
+          { make: () => Object.assign(base(), { led: { a: H(8, 'i'), k: H(7, 'i') } }), part: 'led', cam: 'ledclose',
+            hint: 'Look closely at the LED. Which way is its flat edge facing? Which leg is long?',
+            fix: (b) => { b.led = clone(CANON.led); },
+            msg: 'The LED was in <b>backwards</b>! Its long leg must face the power. Turned around, the one-way LED blocks the flow.' },
+          { make: () => Object.assign(base(), { gnd: null }), point: (p) => (p.kind === 'pin' && p.name === 'GND') || (p.kind === 'rail' && p.rail === 'BN'), cam: 'gnd',
+            hint: 'Follow the road home from the short leg: black wire, − rail, and then…?',
+            fix: (b) => { b.gnd = clone(CANON.gnd); },
+            msg: 'The road home was <b>missing</b>! The − rail wasn’t joined to GND, so electricity had nowhere to go.' },
+          { make: () => Object.assign(base(), { res: { a: H(7, 'a'), b: H(7, 'e') } }), part: 'resistor', cam: 'build',
+            hint: 'Check the resistor. Does it cross the middle gap?',
+            fix: (b) => { b.res = clone(CANON.res); },
+            msg: 'Both resistor legs were in the <b>same strip</b>, above the gap, so nothing reached the LED’s strip below. A resistor must bridge the gap.' },
+        ];
+        let i = 0, misses = 0, busy = false;
+        const show = () => {
+          kit.clearTemps(); misses = 0;
+          B = PUZ[i].make(); sync(); fly(PUZ[i].cam);
+          task(`Circuit ${i + 1} of 3: why is the LED dark?`, '<span class="count">Tap the part that’s wrong</span>');
+        };
+        this.restore = () => { B = mine; sync(); };
+        if (st.done.has(step)) { task('The fix-it shop'); say('All three circuits are fixed. Great debugging!', true); return; }
+        show();
+        this.onTap = async (hit) => {
+          if (busy || st.done.has(step)) return;
+          const z = PUZ[i];
+          const right = z.part ? hit.part && hit.part.part === z.part : hit.point && z.point(hit.point);
+          if (!right) {
+            misses++;
+            say(misses >= 2 ? `${z.hint} <b>Hint:</b> look for the gold ring.` : z.hint, false);
+            if (misses === 2) { kit.clearTemps(); kit.ring(z.part === 'led' ? holeAt(7, 'i') : z.part === 'resistor' ? holeAt(7, 'c') : railAt(28, 'BN'), 0xf2b705, 0.3); }
+            return;
+          }
+          busy = true; kit.clearTemps();
+          z.fix(B); await animateIn(sync());
+          say(`✓ ${z.msg} Now it lights up!`, true);
+          await kit.wait(2.2);
+          busy = false;
+          if (step !== 11) return;
+          i++;
+          if (i < PUZ.length) show();
+          else { this.restore(); fly('loop'); complete(['debug'], 'Three for three! Finding and fixing problems is called <b>debugging</b>, and engineers do it every day.'); }
+        };
+      },
+      leave() { if (this.restore) this.restore(); } },
+
+    { eyebrow: 'Mission 12', title: 'Build it for real', cam: 'loop',
+      text: `<p>Time to build it on your real breadboard, exactly like on the screen. Use the same holes, and ask an adult to check before you plug in.</p>`,
+      enter() {
+        ensure('res', 'led', 'gw', 'gnd', 'pw');
+        kit.kinds = new Set();
+        const n = (e) => holeName(e);
+        $('#extraBox').innerHTML = `<div><b>🔧 Your build, step by step</b>
+          <ol class="build-steps">
+            <li>Unplug the ESP32 from the computer.</li>
+            <li>Resistor across the gap: <b>${n(B.res.a)}</b> and <b>${n(B.res.b)}</b>.</li>
+            <li>LED: long leg in <b>${n(B.led.a)}</b>, short leg in <b>${n(B.led.k)}</b> (flat edge towards column ${B.led.k.c}).</li>
+            <li>Black wire: <b>${n(B.gw.a)}</b> to the blue <b>−</b> rail.</li>
+            <li>Black wire: the − rail to a <b>GND</b> pin. The female end slides onto the pin.</li>
+            <li>Red wire: <b>3V3</b> to <b>${n(B.pw.b)}</b>.</li>
+            <li>Check every connection, then plug in. The LED lights straight away: no code needed!</li>
+          </ol>
+          <div class="btn-row"><button type="button" class="btn" id="replay">▶ Replay the build</button></div></div>
+          <div id="realBox"></div>`;
+        $('#replay').addEventListener('click', async () => {
+          const keep = clone(B), t = kit.token;
+          B = { usb: false, res: null, led: null, gw: null, gnd: null, pw: null }; sync(); fly('build');
+          for (const k of ['res', 'led', 'gw', 'gnd', 'pw']) {
+            if (kit.token !== t) return;
+            B[k] = keep[k]; await animateIn(sync());
+            if (k === 'gw') fly('gnd'); if (k === 'gnd') fly('pw');
+          }
+          if (kit.token !== t) return;
+          fly('loop'); await kit.wait(0.6); B.usb = true; sync();
+        });
+        task('Did your real LED light up?', `<div class="btn-row"><button type="button" class="btn primary" data-real="yes">💡 Yes, it lights up!</button><button type="button" class="btn" data-real="no">🤔 It doesn’t light</button><button type="button" class="btn" data-real="later">⏭ I’ll build it later</button></div>`);
+        const onReal = (ev) => {
+          const b = ev.target.closest('[data-real]'); if (!b) return;
+          if (b.dataset.real === 'no') {
+            $('#realBox').innerHTML = `<div class="why"><b>Debugging checklist</b><ul style="margin:4px 0;padding-left:20px">
+              <li>Is the red power light on the ESP32 on? If not, try another USB cable (some only charge).</li>
+              <li>Is the LED the right way round? Long leg towards the resistor, flat edge towards the black wire.</li>
+              <li>Are the legs pushed all the way into the holes, in the right rows and columns?</li>
+              <li>Is the resistor really across the middle gap?</li>
+              <li>Is the black wire on the blue <b>−</b> rail, not the red + rail?</li></ul>
+              Unplug before you change anything! <button type="button" class="btn" data-real="fixed">✅ Fixed it!</button></div>`;
+            say('No problem: real engineers debug too. Work through the checklist, one thing at a time.', false);
+            return;
+          }
+          if (!st.done.has(step)) complete([], b.dataset.real === 'later' ? 'That’s fine! Your build steps are saved here, so come back when you have your kit.' : '🎉 You built a real circuit with your own hands! That’s exactly what engineers do.');
+        };
+        // the buttons live in the task card and in the debugging checklist; both boxes are rebuilt on every visit
+        $('#task').addEventListener('click', onReal);
+        $('#realBox').addEventListener('click', onReal);
+      } },
+
+    { eyebrow: 'Final check', title: 'Lab quiz', cam: 'loop',
+      text: `<p>Three quick questions and the Circuit Lab 1 badge is yours.</p>`,
+      enter() {
+        ensure('res', 'led', 'gw', 'gnd', 'pw');
+        kit.kinds = new Set();
+        const QS = [
+          ['Which leg of the LED goes towards the power?', ['The short leg (cathode)', 'The long leg (anode)', 'It doesn’t matter'], 1,
+            'Electricity goes in through the long leg (anode) and out of the short leg (cathode).'],
+          ['Why does the resistor stand across the middle gap?', ['So electricity has to go through it to reach the LED', 'To keep it cool', 'Because it’s too long for one strip'], 0,
+            'The gap splits the column into two strips. The resistor is the only bridge between them.'],
+          ['When should you move wires?', ['While the board is plugged in, so you can see the light', 'Only while the board is unplugged', 'Any time you like'], 1,
+            'Unplug first, then check, then plug in. That keeps your parts (and you) safe.'],
+        ];
+        let q = 0;
+        const render = () => {
+          const [text, opts] = QS[q];
+          task(`Question ${q + 1} of ${QS.length}`, `<p style="margin:4px 0 8px">${text}</p><div class="opts">${opts.map((o, i) => `<button type="button" class="opt-btn" data-o="${i}">${o}</button>`).join('')}</div>`);
+          $('#taskBox').querySelectorAll('[data-o]').forEach((b) => b.addEventListener('click', () => {
+            const [, , right, w] = QS[q];
+            if (+b.dataset.o === right) {
+              b.classList.add('right'); say(`✓ Right! ${w}`, true);
+              setTimeout(() => { if (step !== STEPS.length - 1) return; q++; if (q < QS.length) render(); else finish(); }, 1300);
+            } else { b.classList.add('wrong'); say('Not quite. Have another look and try again!', false); }
+          }));
+        };
+        const finish = () => {
+          complete([], null);
+          const C = window.COURSE, next = C.nextLesson(LESSON_SLUG);
+          $('#taskBox').innerHTML = '';
+          $('#extraBox').innerHTML = `<div class="done-card" id="quizDone"><h3>🔧 Lab complete: you built a circuit!</h3>
+            <p>You found the breadboard’s secret strips, met the LED and the resistor, built a complete loop in the right order, and debugged three broken circuits.</p>
+            <p>Next, you’ll let your <b>code</b> switch this same light on and off.</p>
+            <div class="links">${next ? `<a class="btn primary" href="../${next.slug}/index.html">Next: ${esc(C.name(next))}, ${esc(next.title)} →</a>` : ''}
+            <button type="button" class="btn" data-wordbook>📖 Review my words</button></div></div>`;
+          C.saveProgress(LESSON_SLUG, { step, steps: STEPS.length, done: true, build: B });
+          setTimeout(() => { const r = document.querySelector('#quizDone .reward') || $('#quizDone'); r.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, 400);
+        };
+        render();
+      } },
+  ];
+  const cur = () => STEPS[step];
+
+  /* ---------- navigation ---------- */
+  function updateNav() {
+    $('#prevBtn').disabled = step === 0;
+    const last = step === STEPS.length - 1;
+    $('#nextBtn').hidden = last;
+    const ok = st.done.has(step);
+    $('#nextBtn').disabled = !ok;
+    $('#nextBtn').textContent = ok ? 'Next mission →' : 'Do the mission first';
+  }
+  function go(i, instant) {
+    const old = cur();
+    if (old && old.leave) old.leave.call(old);
+    kit.cancelAnimations(); kit.clearTemps(); kit.clearPoints(); hand(null);
+    step = Math.max(0, Math.min(STEPS.length - 1, i));
+    labelStep = step;
+    const s = cur();
+    s.completedNow = false; s.busy = false; delete s.onTap; s.restore = null;
+    $('#eyebrow').textContent = s.eyebrow;
+    $('#stepTitle').textContent = s.title;
+    $('#stepText').innerHTML = s.text;
+    $('#taskBox').innerHTML = ''; $('#fbBox').innerHTML = ''; $('#extraBox').innerHTML = '';
+    $('#progressText').textContent = `Step ${step + 1} of ${STEPS.length}`;
+    $('#barFill').style.width = ((step + 1) / STEPS.length * 100) + '%';
+    if (s.cam) fly(s.cam, instant);
+    s.enter && s.enter.call(s);
+    if (st.done.has(step) && step !== STEPS.length - 1) { const t = $('#task'); if (t) t.classList.add('done'); hand(null); }
+    updateNav(); stripWords();
+    $('#scroll').scrollTop = 0;
+    if (window.COURSE) window.COURSE.saveProgress(LESSON_SLUG, { step, steps: STEPS.length, build: B });
+    if (window.KKVoice) { KKVoice.stop(); setListening(false); if (readToMe.checked) listen(); }
+  }
+  kit.onTap = (hit) => { const s = cur(); if (s.onTap) s.onTap.call(s, hit); };
+  kit.onHover = (t) => {
+    const hint = $('#vhint');
+    if (!t || t.kind === 'custom') hint.textContent = 'Drag to spin · Pinch or scroll to zoom · Tap holes, pins and parts';
+    else hint.textContent = t.kind === 'hole' ? `Hole ${t.r}${t.c} · column ${t.c}, ${half(t.r) === 'far' ? 'above' : 'below'} the gap` : t.kind === 'rail' ? `${railName(t.rail)[0].toUpperCase()}${railName(t.rail).slice(1)}` : `Pin ${t.name}`;
+  };
+
+  // read aloud: the step's title, then its text (tools/voice/collect.mjs reads the same)
+  const readToMe = $('#readToMe'), listenBtn = $('#listenBtn');
+  try { readToMe.checked = localStorage.getItem('kk-read-to-me') === '1'; } catch (e) { /* no storage: off */ }
+  readToMe.addEventListener('change', () => { try { localStorage.setItem('kk-read-to-me', readToMe.checked ? '1' : '0'); } catch (e) { /* fine */ } if (readToMe.checked) listen(); else stopTalking(); });
+  function setListening(on) { listenBtn.setAttribute('aria-pressed', String(on)); listenBtn.textContent = on ? '■ Stop' : '🔊 Listen'; }
+  function stopTalking() { if (window.KKVoice) KKVoice.stop(); setListening(false); }
+  function listen() { if (!window.KKVoice) return; const s = cur(); setListening(true); KKVoice.say(s.title + (/[.!?]$/.test(s.title) ? ' ' : '. ') + s.text, { base: '../../', onend: () => setListening(false) }); }
+  listenBtn.addEventListener('click', () => (listenBtn.getAttribute('aria-pressed') === 'true' ? stopTalking() : listen()));
+  $('#prevBtn').addEventListener('click', () => go(step - 1));
+  $('#nextBtn').addEventListener('click', () => go(step + 1));
+  $('#resetView').addEventListener('click', () => { const s = cur(); if (s.cam) fly(s.cam); });
+
+  // returning learners keep their finished build; everyone starts from the briefing
+  const prog = (window.COURSE && window.COURSE.readProgress()[LESSON_SLUG]) || {};
+  if (prog.done) {
+    STEPS.forEach((_, i) => { if (i < STEPS.length - 1) st.done.add(i); });
+    const b = prog.build && prog.build.res && prog.build.led && prog.build.gw && prog.build.gnd && prog.build.pw ? prog.build : Object.assign(clone(CANON), { usb: true });
+    B = Object.assign(b, { usb: true });
+  }
+  sync();
+  if (window.innerWidth < 600) kit.labelsOn = true;
+  go(0, true);
+  // for automated tests: where a hole, pin, rail hole or part is on screen
+  function screenOf(q) {
+    let v = null;
+    if (q.hole) v = holeAt(q.hole[0], q.hole[1], 0.01);
+    else if (q.rail) v = railAt(q.rail[1], q.rail[0], 0.01);
+    else if (q.pin) v = pinAt(q.pin, 0.12);
+    else if (q.leg) v = legPoint(q.leg === 'anode' ? 0 : 0.7, q.leg === 'anode' ? 0.1 * BIG : 0.2 * BIG)();
+    else if (q.part) {
+      let o = null;
+      kit.scene.traverse((x) => { if (!o && x.userData.part === q.part && x.visible) o = x; });
+      if (!o) return null;
+      v = o.userData.wire ? o.userData.wire.curve.getPoint(0.5) : new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3());
+    }
+    const r = kit.renderer.domElement.getBoundingClientRect();
+    v.project(kit.camera);
+    return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
+  }
+  window.__lesson = { screenOf, goTo: (i) => go(i, true), get step() { return step; }, STEPS, kit, get B() { return B; }, set B(v) { B = v; sync(); }, sim: () => sim, done: (i) => { st.done.add(i); updateNav(); }, analyze, CANON };
+})();
+</script>
+</body>
+</html>

@@ -13,8 +13,8 @@
     const box = document.createElement('div');
     box.className = 'reward';
     box.innerHTML =
-      `<img src="${window.COURSE.badgeSrc(lesson, '../../')}" alt="Lesson ${lesson.n} badge" width="96" height="96">` +
-      `<div><b>You earned the Lesson ${lesson.n} badge!</b>` +
+      `<img src="${window.COURSE.badgeSrc(lesson, '../../')}" alt="${window.COURSE.name(lesson)} badge" width="96" height="96">` +
+      `<div><b>You earned the ${window.COURSE.name(lesson)} badge!</b>` +
       `<p>It’s saved on the course home page.</p>` +
       `<a class="btn primary" href="../../certificate.html?lesson=${encodeURIComponent(slug)}">🎓 Get your certificate</a></div>`;
     done.appendChild(box);

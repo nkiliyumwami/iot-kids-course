@@ -33,6 +33,16 @@ https://nkiliyumwami.github.io/iot-kids-course/. Read this whole file and `ROADM
 - Identify lights by text as well as colour. Labels must stay readable while the camera moves.
 - The animation is an educational visualisation, never a safety test. Say so where it matters and suggest an adult check real circuits.
 
+## Circuit Labs (Start here)
+
+- Between Pin Detective and Part 1, the Circuit Labs (`lessons/lab1-…`, `lessons/lab2-…`) let learners build the first
+  LED circuit by hand before any traffic light. They use `assets/circuit/kit3d.js`: the same 3D breadboard, ESP32, LED,
+  330 Ω resistor and jumper wires as lesson 1, plus tapping holes/pins/parts, labels, rings, strips and camera moves.
+- The lab layout is lesson 1's red channel: resistor d7–g7 across the gap, LED long leg i7 and short leg i8, black wire
+  j8 → − rail, − rail → GND, power wire into b7 (3V3 in Lab 1, D25 in Lab 2). Lesson 1 then adds yellow and green the same way.
+- Labs appear in `course.js` with `label` ('Circuit Lab 1'), `short` ('L1') and `badge` ('lab1'); use `COURSE.name(l)`
+  instead of writing "Lesson " + n.
+
 ## Hardware and code (keep consistent across lessons)
 
 - Board: **ESP32 DevKit V1, 30 pins**, pins pointing up, female-to-male jumper wires. Its 3D model in lesson 1

@@ -7,6 +7,14 @@
       idea: 'Explore the board before you build: what each part and pin is for, and the real words engineers use.',
       hardware: 'Nothing yet: it all happens on the 3D board',
       code: 'Pin(2, Pin.OUT), led.value(1)' },
+    { n: null, label: 'Circuit Lab 1', short: 'L1', badge: 'lab1', slug: 'lab1-light-it-up', skills: ['Found the hidden strips inside a breadboard', 'Placed an LED the right way round with a resistor', 'Built and debugged a complete circuit'], title: 'Light It Up', unit: 0, status: 'ready', minutes: 30,
+      idea: 'Your first real circuit: one LED, one resistor and three wires. Build it on the 3D breadboard, then for real. No code yet!',
+      hardware: 'Breadboard, 1 red LED, 1 × 330 Ω resistor, 3 jumper wires',
+      code: 'No code: 3V3 powers the LED' },
+    { n: null, label: 'Circuit Lab 2', short: 'L2', badge: 'lab2', slug: 'lab2-code-switch', skills: ['Moved the power wire to a GPIO pin', 'Switched an LED on and off with code', 'Made an LED blink on a real ESP32'], title: 'Let Code Switch It', unit: 0, status: 'planned', minutes: 30,
+      idea: 'Move one wire from 3V3 to D25, and your code becomes the switch.',
+      hardware: 'Nothing new',
+      code: 'Pin(25, Pin.OUT), led.on(), led.off(), a blink' },
     { n: 1, slug: '01-traffic-light', skills: ['Wired three LEDs to an ESP32 on a breadboard', 'Used 330 Ω resistors to protect each LED', 'Wrote a MicroPython loop that runs a traffic light'], title: 'My First Traffic Light', unit: 1, status: 'ready', minutes: 45,
       idea: 'Outputs: the ESP32 switches pins on and off to light three LEDs.',
       hardware: 'ESP32 DevKit, breadboard, 3 LEDs, 3 × 330 Ω resistors, jumper wires',
@@ -49,7 +57,7 @@
       code: 'handling requests, keeping the crossing safe' },
   ];
   const units = {
-    0: { name: 'Start here', blurb: 'Meet your board first. Become a pin detective and collect your first maker words.' },
+    0: { name: 'Start here', blurb: 'Meet your board, then build your first circuits by hand. You’ll know every wire, LED and resistor before Part 1.' },
     1: { name: 'Build the thing', blurb: 'Lights, buttons, sound and sensors: a traffic light that works on its own.' },
     2: { name: 'Connect it', blurb: 'Put your traffic light on Wi-Fi and talk to it from a phone. This is the “Internet” in Internet of Things.' },
   };
@@ -64,11 +72,15 @@
       localStorage.setItem(KEY, JSON.stringify(all));
     } catch (e) { /* storage unavailable: progress simply isn't remembered */ }
   }
+  // the next lesson that is ready to open
   function nextLesson(slug) {
     const i = lessons.findIndex((l) => l.slug === slug);
-    return i >= 0 ? lessons[i + 1] || null : null;
+    return i >= 0 ? lessons.slice(i + 1).find((l) => l.status === 'ready') || null : null;
   }
+  // "Lesson 3" or "Circuit Lab 1", and the short form for the little number circle
+  const name = (l) => l.label || 'Lesson ' + l.n;
+  const short = (l) => l.short || String(l.n);
   function lessonBySlug(slug) { return lessons.find((l) => l.slug === slug) || null; }
-  function badgeSrc(lesson, prefix) { return (prefix || '') + 'assets/badges/' + String(lesson.n).padStart(2, '0') + '.svg'; }
-  window.COURSE = { title: 'IoT for Young Makers', lessons, units, readProgress, saveProgress, nextLesson, lessonBySlug, badgeSrc };
+  function badgeSrc(lesson, prefix) { return (prefix || '') + 'assets/badges/' + (lesson.badge || String(lesson.n).padStart(2, '0')) + '.svg'; }
+  window.COURSE = { title: 'IoT for Young Makers', lessons, units, readProgress, saveProgress, nextLesson, lessonBySlug, badgeSrc, name, short };
 })();

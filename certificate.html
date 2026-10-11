@@ -143,9 +143,9 @@ h1 { font-family: var(--font-display); font-size: 54px; line-height: 1; margin: 
     document.querySelector('.hint').hidden = true;
     const box = $('locked'); box.hidden = false;
     if (lesson) {
-      box.innerHTML = `<img src="${C.badgeSrc(lesson)}" alt=""><h2>Finish Lesson ${lesson.n} to unlock this certificate</h2>
+      box.innerHTML = `<img src="${C.badgeSrc(lesson)}" alt=""><h2>Finish ${C.name(lesson)} to unlock this certificate</h2>
         <p>Complete the lesson and its quiz, then come back here.</p>
-        <a class="btn" href="lessons/${lesson.slug}/index.html">Go to Lesson ${lesson.n} →</a>`;
+        <a class="btn" href="lessons/${lesson.slug}/index.html">Go to ${C.name(lesson)} →</a>`;
     } else {
       const left = allLessons.filter((l) => !earned(l)).length;
       box.innerHTML = `<img src="assets/ohm/celebrate.svg" alt="" style="filter:none;opacity:1"><h2>The course certificate unlocks after all ${allLessons.length} lessons</h2>
@@ -155,18 +155,18 @@ h1 { font-family: var(--font-display); font-size: 54px; line-height: 1; margin: 
   }
 
   if (lesson) {
-    $('certWhat').innerHTML = `has completed <b>Lesson ${lesson.n}: ${esc(lesson.title)}</b>`;
+    $('certWhat').innerHTML = `has completed <b>${C.name(lesson)}: ${esc(lesson.title)}</b>`;
     $('certSkills').innerHTML = lesson.skills.map((s) => `<li>${esc(s)}</li>`).join('');
     $('certSeal').src = C.badgeSrc(lesson);
-    $('certSeal').alt = `Lesson ${lesson.n} badge`;
-    document.title = `Lesson ${lesson.n} certificate · KundaKode`;
+    $('certSeal').alt = `${C.name(lesson)} badge`;
+    document.title = `${C.name(lesson)} certificate · KundaKode`;
   } else {
     $('certTitle').textContent = 'Course Completion Certificate';
     $('certWhat').innerHTML = `has completed <b>all ${allLessons.length} lessons of IoT for Young Makers</b>`;
     $('certSkills').innerHTML = ['Built and coded circuits with an ESP32', 'Read buttons and sensors', 'Controlled a traffic light from a phone over Wi-Fi']
       .map((s) => `<li>${esc(s)}</li>`).join('');
     const row = $('certBadges'); row.hidden = false;
-    row.innerHTML = allLessons.map((l) => `<img src="${C.badgeSrc(l)}" alt="Lesson ${l.n} badge">`).join('');
+    row.innerHTML = allLessons.map((l) => `<img src="${C.badgeSrc(l)}" alt="${C.name(l)} badge">`).join('');
     $('certSeal').src = 'assets/ohm/celebrate.svg'; $('certSeal').alt = '';
     document.querySelector('.cert .ohm').hidden = true;
   }
