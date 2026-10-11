@@ -914,6 +914,12 @@ function getGlowTexture() {
   glowTexture = new THREE.CanvasTexture(c);
   return glowTexture;
 }
+// LED colours: OFF is dark tinted plastic and ON is the pure colour with a coloured halo, so nobody can mix them up
+function ledColours(hex) {
+  const hsl = {}; new THREE.Color(hex).getHSL(hsl);
+  const c = (s, l) => new THREE.Color().setHSL(hsl.h, s, l);
+  return { base: c(1, 0.32), hot: c(1, 0.5), halo: c(1, 0.55), dim: c(hsl.s * 0.55, 0.13) };
+}
 function makeLED(hex, scale = 1, legs = [0.5, 0.5], spread = P) {
   const g = new THREE.Group();
   const s = scale;
@@ -922,7 +928,7 @@ function makeLED(hex, scale = 1, legs = [0.5, 0.5], spread = P) {
   const anode = rod(V(0, legTop - legs[0] * s, 0), V(0, legTop, 0), 0.018 * s, leg);
   const cathode = rod(V(spread, legTop - legs[1] * s, 0), V(spread, legTop, 0), 0.018 * s, leg);
   g.add(anode, cathode);
-  const body = mat(hex, { transparent: true, opacity: 0.8, roughness: 0.22, emissive: hex, emissiveIntensity: 0.06 });
+  const body = mat(hex, { transparent: true, opacity: 0.93, roughness: 0.25, emissive: hex, emissiveIntensity: 0 });
   const cx = spread / 2;
   const flange = mesh(flangeGeometry(0.29 * s, 0.06 * s), body, cx, legTop, 0);
   const barrel = mesh(new THREE.CylinderGeometry(0.25 * s, 0.25 * s, 0.32 * s, 28), body, cx, legTop + 0.06 * s + 0.16 * s, 0);
@@ -931,11 +937,12 @@ function makeLED(hex, scale = 1, legs = [0.5, 0.5], spread = P) {
   const light = new THREE.PointLight(hex, 0, 4.5 * s, 2);
   light.position.set(cx, legTop + 0.4 * s, 0);
   g.add(light);
-  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: getGlowTexture(), color: hex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: getGlowTexture(), color: hex, transparent: true, opacity: 0, depthWrite: false }));
   glow.scale.set(1.7 * s, 1.7 * s, 1);
   glow.position.set(cx, legTop + 0.35 * s, 0);
   g.add(glow);
-  g.userData.led = { body, light, glow, base: new THREE.Color(hex), dim: new THREE.Color(hex).lerp(new THREE.Color(0x6b7280), 0.55) };
+  g.userData.led = Object.assign({ body, light, glow }, ledColours(hex));
+  glow.material.color.copy(g.userData.led.halo); body.emissive.copy(g.userData.led.hot);
   body.color.copy(g.userData.led.dim);
   return g;
 }
@@ -1164,10 +1171,10 @@ function setLights(idx) {
     const on = i === idx;
     const L = led.userData.led;
     L.body.color.copy(on ? L.base : L.dim);
-    L.body.emissiveIntensity = on ? 1.2 : 0;
-    L.body.opacity = on ? 0.98 : 0.7;
+    L.body.emissiveIntensity = on ? 0.9 : 0;
+    L.body.opacity = on ? 0.97 : 0.93;
     L.light.intensity = on ? 2.4 : 0;
-    L.glow.material.opacity = on ? 0.95 : 0;
+    L.glow.material.opacity = on ? 0.7 : 0;
   });  setRoadLamps(idx);
 }
 
