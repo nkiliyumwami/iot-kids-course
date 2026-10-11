@@ -402,7 +402,7 @@ code { font-family: var(--font-code); background: var(--surface-2); border-radiu
   let warn = null;
   const setBigLed = (lvl) => {
     bigLedLevel = lvl; bigLed.userData.setLit(lvl);
-    if (lvl <= 1) bigLed.userData.led.body.emissive.set(0xff3030);
+    if (lvl <= 1) bigLed.userData.led.body.emissive.copy(bigLed.userData.led.hot);
     if (warn) { kit.removeLabel(warn); warn = null; }
     if (lvl > 1) warn = kit.addLabel('⚠️ Too much current! (pretend)', () => { bigLed.updateWorldMatrix(true, false); return bigLed.localToWorld(V(0.35, 0.95 * BIG, 0)); }, { kind: 'callout', cls: 'callout red', lift: 30 });
   };

@@ -286,6 +286,12 @@
       glowTexture = new THREE.CanvasTexture(c);
       return glowTexture;
     }
+    // LED colours: OFF is dark tinted plastic and ON is the pure colour with a coloured halo, so nobody can mix them up
+    function ledColours(hex) {
+      const hsl = {}; new THREE.Color(hex).getHSL(hsl);
+      const c = (s, l) => new THREE.Color().setHSL(hsl.h, s, l);
+      return { base: c(1, 0.32), hot: c(1, 0.5), halo: c(1, 0.55), dim: c(hsl.s * 0.55, 0.13) };
+    }
     function makeLED(hex, scale = 1, legs = [0.5, 0.5], spread = P) {
       const g = new THREE.Group();
       const s = scale;
@@ -293,25 +299,26 @@
       const legTop = 0.45 * s;
       g.add(rod(V(0, legTop - legs[0] * s, 0), V(0, legTop, 0), 0.018 * s, leg));
       g.add(rod(V(spread, legTop - legs[1] * s, 0), V(spread, legTop, 0), 0.018 * s, leg));
-      const body = mat(hex, { transparent: true, opacity: 0.8, roughness: 0.22, emissive: hex, emissiveIntensity: 0.06 });
+      const body = mat(hex, { transparent: true, opacity: 0.93, roughness: 0.25, emissive: hex, emissiveIntensity: 0 });
       const cx = spread / 2;
       g.add(mesh(flangeGeometry(0.29 * s, 0.06 * s), body, cx, legTop, 0));
       g.add(mesh(new THREE.CylinderGeometry(0.25 * s, 0.25 * s, 0.32 * s, 28), body, cx, legTop + 0.22 * s, 0));
       g.add(mesh(new THREE.SphereGeometry(0.25 * s, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2), body, cx, legTop + 0.38 * s, 0));
       const light = new THREE.PointLight(hex, 0, 4.5 * s, 2);
       light.position.set(cx, legTop + 0.4 * s, 0); g.add(light);
-      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: getGlowTexture(), color: hex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: getGlowTexture(), color: hex, transparent: true, opacity: 0, depthWrite: false }));
       glow.scale.set(1.7 * s, 1.7 * s, 1); glow.position.set(cx, legTop + 0.35 * s, 0); g.add(glow);
-      const L = { body, light, glow, scale: s, base: new THREE.Color(hex), dim: new THREE.Color(hex).lerp(new THREE.Color(0x6b7280), 0.55) };
+      const L = Object.assign({ body, light, glow, scale: s }, ledColours(hex));
+      glow.material.color.copy(L.halo); body.emissive.copy(L.hot);
       g.userData.led = L;
       // level: 0 off, 1 on, >1 too bright (the pretend "no resistor" demo)
       g.userData.setLit = (level) => {
         const on = level > 0;
         L.body.color.copy(on ? L.base : L.dim);
-        L.body.emissiveIntensity = on ? 1.2 * Math.min(level, 1.6) : 0;
-        L.body.opacity = on ? 0.98 : 0.7;
+        L.body.emissiveIntensity = on ? 0.9 * Math.min(level, 1.6) : 0;
+        L.body.opacity = on ? 0.97 : 0.93;
         L.light.intensity = on ? 2.4 * level : 0;
-        L.glow.material.opacity = on ? 0.95 : 0;
+        L.glow.material.opacity = on ? 0.7 : 0;
         L.glow.scale.setScalar(1.7 * s * (level > 1 ? 1.9 : 1));
       };
       g.userData.setLit(0);
