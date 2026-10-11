@@ -7,7 +7,8 @@
    so the home page shows exactly what learners build. The road and people come from assets/road/.
    Needs three.js r128, assets/road/model-road.js and assets/road/pedestrians.js loaded first.
 
-   Usage: const s = KKStory.mount({ host, base: '', reduceMotion, onChapter(id, k) {} }); s.start(); s.stop(); */
+   Usage: const s = KKStory.mount({ host, base: '', reduceMotion, onChapter(id, k) {}, hold() {} }); s.start(); s.stop();
+   hold() returning true keeps the story at the end of a chapter (for example while Officer Ohm is still talking). */
 (function () {
 'use strict';
 function mount(o) {
@@ -692,7 +693,7 @@ function frame(now) {
   const dt = Math.min(0.05, (now - (last || now)) / 1000); last = now;
   if (!paused && !reduceMotion) {
     ct += dt;
-    if (ct >= CHAPTERS[chapter].len) go((chapter + 1) % CHAPTERS.length);
+    if (ct >= CHAPTERS[chapter].len) { if (o.hold && o.hold()) ct = CHAPTERS[chapter].len; else go((chapter + 1) % CHAPTERS.length); } // the narrator finishes first
   }
   play(paused ? 0 : dt);
   if (!paused) roadApi.update(dt), walkers.update(dt);
