@@ -15,10 +15,10 @@ function id(text) {
 const lines = [];
 const add = (where, text) => { const t = clean(text), k = id(t), file = `assets/voice/en/${k}.mp3`; if (!lines.some((l) => l.id === k)) lines.push({ id: k, file, where, text: t, done: existsSync(file) }); };
 
-// 1. the landing page story: each chapter's title and line (the CAPS table in index.html)
+// 1. the landing page story: what the narrator says in each chapter (the NARR table in index.html)
 const home = readFileSync('index.html', 'utf8');
-const caps = home.slice(home.indexOf('const CAPS = {'), home.indexOf('};', home.indexOf('const CAPS = {')));
-for (const m of caps.matchAll(/(\w+): \['([^']*)', '([^']*)', '([^']*)'\]/g)) add(`story ${m[1]}`, `${m[3]}. ${m[4]}`);
+const narr = home.slice(home.indexOf('const NARR = {'), home.indexOf('};', home.indexOf('const NARR = {')));
+for (const m of narr.matchAll(/(\w+): '([^']*)'/g)) add(`story ${m[1]}`, m[2]);
 
 // 2. lesson steps: "title. text" for every step that has both (lessons with a voice: see VOICED)
 const VOICED = ['00-meet-esp32', 'lab1-light-it-up', 'lab2-code-switch'];

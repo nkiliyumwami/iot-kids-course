@@ -350,7 +350,7 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
 <script>
 // three.js is loaded once, only when a 3D part of the page is about to be seen
 // bump this when the 3D scripts change, so browsers fetch the new copies instead of old saved ones
-window.KK_V = '20261011g';
+window.KK_V = '20261011h';
 window.kkThree = () => window.__kkThree || (window.__kkThree = window.THREE ? Promise.resolve() : new Promise((ok, no) => {
   const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc);
 }));
@@ -385,6 +385,15 @@ window.kkThree = () => window.__kkThree || (window.__kkThree = window.THREE ? Pr
     l4: ['Lesson 4', 'A fair crossing', 'A tap is remembered: WAIT lights up, the green finishes, then people cross safely.'],
     end: ['Your turn', 'Build it yourself', 'Every wire, hole and line of code comes with a “why”.'],
   };
+  // What the narrator says (🔊 Sound on). Not a walkthrough of the picture: why this matters, for parents and for kids.
+  const NARR = {
+    l0: 'The world our children are growing up in runs on smart machines: robots, smart homes, self-driving cars. Someone has to invent and build them. Why not your child? It all starts with a tiny computer like this one.',
+    l1: 'At KundaKode, kids don’t just watch videos. They wire real circuits with their own hands, write real code, and watch their own traffic light come to life. That’s the moment a child thinks: I built this!',
+    l2: 'Then they make it their own. Change the code, try a new idea, test it, fix it. That’s how engineers think, and it’s a skill for life, whatever your child becomes.',
+    l3: 'Next, the machine learns to listen. A button, a sensor, a signal: the same ideas behind robots, drones and smart devices. For a curious kid, it feels like a superpower.',
+    l4: 'And it’s all about people. Our young makers solve real problems from their own homes and communities: safer road crossings, gardens that water themselves, homes that save power.',
+    end: 'No experience needed, just curiosity. From age ten, step by step, your child goes from using technology to creating it. Start the free course today, and build the future with KundaKode.',
+  };
   const steps = document.getElementById('storySteps'), endCard = document.getElementById('storyEnd'), pauseBtn = document.getElementById('storyPause');
   const ids = ['l0', 'l1', 'l2', 'l3', 'l4'];
   steps.innerHTML = ids.map((id, k) => `<li><button type="button" data-k="${k}">${CAPS[id][0].replace('Lesson ', '')} · ${CAPS[id][1]}</button></li>`).join('');
@@ -393,8 +402,8 @@ window.kkThree = () => window.__kkThree || (window.__kkThree = window.THREE ? Pr
   if (main && go) { go.href = main.href; go.textContent = main.textContent; }
   let story = null, visible = false, loading = false, sound = false, lastId = null;
   const soundBtn = document.getElementById('storySound');
-  // Officer Ohm reads each chapter's caption aloud, only after the visitor turns sound on
-  function speak(id) { if (sound && window.KKVoice && CAPS[id]) KKVoice.say(CAPS[id][1] + '. ' + CAPS[id][2], { base: '' }); }
+  // the narrator speaks each chapter's message (NARR), only after the visitor turns sound on
+  function speak(id) { if (sound && window.KKVoice && NARR[id]) KKVoice.say(NARR[id], { base: '' }); }
   soundBtn.addEventListener('click', () => {
     sound = !sound; soundBtn.setAttribute('aria-pressed', String(sound)); soundBtn.textContent = sound ? '🔊 Sound off' : '🔈 Sound on';
     if (sound) speak(lastId); else if (window.KKVoice) KKVoice.stop();
