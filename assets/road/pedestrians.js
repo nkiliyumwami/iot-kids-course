@@ -5,7 +5,8 @@
    Usage (after ModelRoad.create):
      const walkers = Pedestrians.create({ THREE, road: roadApi, reduceMotion,
        walkWindow: () => seconds people may still start crossing (0 = not now, Infinity = while it lasts),
-       minWindow: 2,                // don't start crossing with less time than this
+       minWindow: 2,                // don't start crossing with less time than this (people also never start
+                                    // unless the time left covers looking both ways and the whole crossing)
        signals: true,               // show the pedestrian lights (red standing / green walking figure)
        getPressed: () => bool,      // the learner is pressing the button: a walker presses the pole button
        getWaiting: () => bool });   // optional: the program remembers a press, so the WAIT light is on
@@ -19,7 +20,10 @@
     const ROAD_Z = R.ROAD_Z, ROAD_W = R.ROAD_W, STOP_S = R.STOP_S;
     const NEAR_WAIT = ROAD_Z + ROAD_W / 2 + 0.22, FAR_WAIT = ROAD_Z - ROAD_W / 2 - 0.22;   // just behind each kerb
     const NEAR_WALK = ROAD_Z + ROAD_W / 2 + 0.5, FAR_WALK = ROAD_Z - ROAD_W / 2 - 0.5;    // along each pavement
-    const PAVE_Y = 0.12, EDGE_X = 11.5, WALK_V = 0.85, STROLL_V = 0.6;
+    const PAVE_Y = 0.12, EDGE_X = 11.5, WALK_V = 1.05, STROLL_V = 0.6;
+    // how long a crossing takes, kerb to kerb, and the time spent looking left and right first
+    const LOOK_T = 0.9, CROSS_T = (NEAR_WAIT - FAR_WAIT) / WALK_V, SAFETY_T = 0.4;
+    const START_T = Math.max(o.minWindow || 0, LOOK_T + CROSS_T + SAFETY_T);
     const std = (color, p = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.75, envMap: R.envMap || null, envMapIntensity: 0.3 }, p));
     function mesh(geo, m, x = 0, y = 0, z = 0) {
       const k = new THREE.Mesh(geo, m); k.position.set(x, y, z); k.castShadow = true; k.receiveShadow = true; return k;
@@ -151,11 +155,11 @@
       return true;
     }
 
-    let wasPressed = false;
+    let wasPressed = false, showingWalk = false;
     function update(dt) {
       if (!root.visible) return;
       const win = o.walkWindow ? o.walkWindow() : 0;
-      const walkOK = win > 0;
+      const walkOK = win > 0; showingWalk = walkOK;
       lights.forEach((l) => { l.walk.emissiveIntensity = walkOK ? 1.6 : 0; l.walk.color.setHex(walkOK ? 0xffffff : 0x262626); l.stop.emissiveIntensity = walkOK ? 0 : 1.4; l.stop.color.setHex(walkOK ? 0x262626 : 0xffffff); });
       const waiting = o.getWaiting ? !!o.getWaiting() : false;
       waitPanels.forEach((m) => { m.emissiveIntensity = waiting ? 1.5 : 0; m.color.setHex(waiting ? 0xffffff : 0x444444); });
@@ -196,15 +200,16 @@
           if (p.slot === 'pole' && p.press === 0 && (walkOK || (o.getWaiting && waiting))) {
             const x = freeSlot(p.side);
             if (x != null) { taken.delete(p.side + ':pole'); taken.add(p.side + ':' + x); p.slot = x; p.tx = x; p.tz = p.side > 0 ? NEAR_WAIT : FAR_WAIT; p.state = 'approach'; p.speed = STROLL_V; }
-          } else if (p.slot !== 'pole' && p.t <= 0 && !o.reduceMotion && win >= (o.minWindow || 0) && roadClear()) {
-            p.state = 'look'; p.t = 0.9;
+          } else if (p.slot !== 'pole' && p.t <= 0 && !o.reduceMotion && win >= START_T && roadClear()) {
+            p.state = 'look'; p.t = LOOK_T;
           }
         } else if (p.state === 'look') {
           // look left, look right, then go only if it is still clear
-          ud.head.rotation.y = Math.sin((0.9 - p.t) / 0.9 * Math.PI * 2) * 0.7;
+          ud.head.rotation.y = Math.sin((LOOK_T - p.t) / LOOK_T * Math.PI * 2) * 0.7;
           if (p.t <= 0) {
             ud.head.rotation.y = 0;
-            if (walkOK && roadClear()) { p.state = 'cross'; taken.delete(p.side + ':' + p.slot); p.tz = p.side > 0 ? FAR_WAIT : NEAR_WAIT; }
+            // still enough green-man time to reach the other kerb before it turns red?
+            if (win >= CROSS_T + SAFETY_T && roadClear()) { p.state = 'cross'; taken.delete(p.side + ':' + p.slot); p.tz = p.side > 0 ? FAR_WAIT : NEAR_WAIT; }
             else { p.state = 'wait'; p.t = 0.4; }
           }
         } else if (p.state === 'cross') {
@@ -236,7 +241,7 @@
       }
     }
     people.forEach((p) => { if (p.state === 'wait') { setOpacity(p, 1); p.g.position.set(p.x, PAVE_Y, p.z); p.g.rotation.y = p.side > 0 ? Math.PI : 0; } else setOpacity(p, 0); });
-    return { update, people, crossing };
+    return { update, people, crossing, walkShown: () => showingWalk };
   }
   window.Pedestrians = { create };
 })();

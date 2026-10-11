@@ -643,9 +643,9 @@ function play(dt) {
     showTraffic(Math.min(1, t / 3.5));
     if (t < 3.8) setLights(-1);
     else {
-      // red 3.5 s, green 2.5 s, yellow 1.5 s (a quicker cycle than the lesson)
-      const k = (t - 3.8) % 7.5;
-      if (k < 3.5) { setLights(0); walkWin = 3.5 - k; } else if (k < 6) setLights(2); else setLights(1);
+      // red 5.5 s (long enough to cross), green 2.5 s, yellow 1.5 s
+      const k = (t - 3.8) % 9.5;
+      if (k < 5.5) { setLights(0); walkWin = 5.5 - k; } else if (k < 8) setLights(2); else setLights(1);
       if (t > 4.6 && c.shot === 'build' && camTo.p.z < 9) shot('road');
     }
   } else if (c.id === 'l2') {
@@ -655,9 +655,9 @@ function play(dt) {
     roadLit = 0; roadApi.setLamps(0); walkWin = 0;
   } else if (c.id === 'l3') {
     showTraffic(1); showButton(Math.min(1, t / 1.4));
-    // hold the button from 2.5 s to 6.5 s: red while it is held, green otherwise
-    pressed = t > 2.5 && t < 6.5;
-    setLights(pressed ? 0 : 2); walkWin = pressed ? Infinity : 0;
+    // hold the button from 2 s to 7.5 s: red while it is held, green otherwise
+    pressed = t > 2 && t < 7.5;
+    setLights(pressed ? 0 : 2); walkWin = pressed ? 7.5 - t : 0;
     cap = pressed ? 1 : 0;
   } else if (c.id === 'l4') {
     showTraffic(1); showButton(1);
@@ -668,8 +668,10 @@ function play(dt) {
     else { setLights(0); waitingNote = t < 9.5; walkWin = 10 - t; }
   } else {
     showTraffic(1); showButton(1);
-    const k = t % 7.5; if (k < 3.5) { setLights(0); walkWin = 3.5 - k; } else if (k < 6) setLights(2); else setLights(1);
+    const k = t % 9.5; if (k < 5.5) { setLights(0); walkWin = 5.5 - k; } else if (k < 8) setLights(2); else setLights(1);
   }
+  // nobody starts a crossing they could not finish before this chapter ends
+  walkWin = Math.min(walkWin, c.len - t);
   btnCapDown += (cap - btnCapDown) * Math.min(1, dt * 18);
   btnCap.position.y = -0.07 * btnCapDown;
 }
