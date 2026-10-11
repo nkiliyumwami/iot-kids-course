@@ -1549,7 +1549,7 @@ function setGreen(sec) {
    ========================================================= */
 const STAGES = [
   { letter: 'A', name: 'See it' },
-  { letter: 'B', name: 'Meet the parts' },
+  { letter: 'B', name: 'Quick recap' },
   { letter: 'C', name: 'Build it' },
   { letter: 'D', name: 'Code it' },
   { letter: 'E', name: 'Experiment' },
@@ -1566,19 +1566,19 @@ const PLAN = [
 
 const STEPS = [
   { stage: 0, title: 'See what we are building', cam: 'hero', seq: true, extra: 'A',
-    text: 'We will teach a small computer to turn three lights on and off in a repeating pattern. Red stays on for 5 seconds, green for 5 seconds, then yellow for 2 seconds, and it repeats. Watch the model road behind the board: the cars obey the same lights.' },
-  { stage: 1, title: 'Meet the parts', cam: 'overview', extra: 'B1',
-    text: 'Click each part on the table to highlight it and learn its job. Can you find all five?' },
+    text: 'Last time, in the Circuit Labs, you built one LED circuit and made your code blink it. Today: three LEDs, wired the same way, and your code turns them into a traffic light! Red stays on for 5 seconds, green for 5 seconds, then yellow for 2 seconds, and it repeats. Watch the model road behind the board: the cars obey the same lights.' },
+  { stage: 1, title: 'Your parts: a quick recap', cam: 'overview', extra: 'B1',
+    text: 'You already met every part in Circuit Lab 1! Click each one to remind yourself of its job, or skip straight to building if you feel ready.' },
   { stage: 1, title: 'Look closely at an LED', cam: 'led', bigLed: true, extra: 'B2', play: playB2,
-    text: `An LED is a light that lets electricity flow in only one direction, so its two legs are different. The longer leg of a new, untrimmed LED is usually the ${T('anode', 'the + leg, where current goes in')} (+), and the flat edge on the rim marks the ${T('cathode', 'the − leg, where current comes out')} (−).` },
+    text: `Remember from Circuit Lab 1: an LED is a light that lets electricity flow in only one direction, so its two legs are different. The longer leg of a new, untrimmed LED is usually the ${T('anode', 'the + leg, where current goes in')} (+), and the flat edge on the rim marks the ${T('cathode', 'the − leg, where current comes out')} (−).` },
   { stage: 1, title: 'How electricity flows', cam: 'loop', seq: true, flow: true, pinStates: true, extra: 'B3',
-    text: `Electricity only flows around a complete loop, called a ${T('circuit', 'a complete loop that electricity can flow around')}. It leaves an ESP32 pin, travels through the parts, and comes back into the ESP32's GND pin. The yellow dots show the trip.` },
+    text: `Just like your circuit in the labs, electricity only flows around a complete loop, called a ${T('circuit', 'a complete loop that electricity can flow around')}. It leaves an ESP32 pin, travels through the parts, and comes back into the ESP32's GND pin. The yellow dots show the trip.` },
   { stage: 1, title: 'Why do we need a resistor?', cam: 'redlook', seq: true, hold: true, flow: true, pinStates: true, extra: 'B4',
-    text: `${T('Current', 'how much electricity flows through a wire each second')} is how much electricity flows each second. An LED can't limit its own current, so we add a resistor to keep the flow small and safe.` },
+    text: `${T('Current', 'how much electricity flows through a wire each second')} is how much electricity flows each second. Remember the pretend current meter? An LED can't limit its own current, so every LED gets its own resistor to keep the flow small and safe.` },
   { stage: 2, title: 'How a breadboard connects', cam: 'board', build: [], extra: 'C1', play: playC1, why: () => WHY.board,
-    text: 'Under the plastic, metal clips join some holes together. The 5 holes in each short row are connected, and the long ground rail is connected all the way along.' },
+    text: 'Remember the secret tunnels? Under the plastic, metal clips join some holes together. The 5 holes in each short row are connected, and the long ground rail is connected all the way along.' },
   { stage: 2, title: 'Red: D25 → resistor → LED', cam: 'red', build: [], plan: 0, play: (t) => buildChain(0, t), why: () => WHY.chain[0],
-    text: 'A wire joins pin D25 to row 7, and a 330 Ω resistor carries the signal across the middle gap to the red LED’s long leg (anode). The short leg (cathode) goes in row 8, a separate row.' },
+    text: 'This is exactly your Circuit Lab 2 circuit! A wire joins pin D25 to row 7, and a 330 Ω resistor carries the signal across the middle gap to the red LED’s long leg (anode). The short leg (cathode) goes in row 8, a separate row.' },
   { stage: 2, title: 'Yellow: D26 → resistor → LED', cam: 'yellow', build: chain(0), plan: 1, play: (t) => buildChain(1, t), why: () => WHY.chain[1],
     text: 'Same pattern: pin D26 goes to row 15, through its own 330 Ω resistor, to the yellow LED’s anode. Every LED gets its own resistor.' },
   { stage: 2, title: 'Green: D27 → resistor → LED', cam: 'green', build: chain(0, 1), plan: 2, play: (t) => buildChain(2, t), why: () => WHY.chain[2],
@@ -1590,9 +1590,9 @@ const STEPS = [
   { stage: 2, title: 'The loop is complete', cam: 'loop', seq: true, flow: true, plan: 5, extra: 'C7',
     text: `Electricity flows out of a pin, through the resistor and the LED, and back to GND. A complete loop like this is called a ${T('circuit', 'a complete loop that electricity can flow around')}.` },
   { stage: 3, title: 'Get the pins ready', cam: 'setup', code: true, pinStates: true, play: playD1, why: () => WHY.setup,
-    text: `This MicroPython program runs on the ESP32. The first lines run once: Pin(25, Pin.OUT) makes pin 25 an ${T('output', 'a pin that sends electricity out')}, so it can send electricity out to a light, and pins 26 and 27 are set up the same way.` },
+    text: `Like your blink program in Circuit Lab 2, the first lines run once: Pin(25, Pin.OUT) makes pin 25 an ${T('output', 'a pin that sends electricity out')}, so it can send electricity out to a light, and pins 26 and 27 are set up the same way.` },
   { stage: 3, title: 'while True: the code runs the lights', cam: 'code', seq: true, code: true, stepper: true, pinStates: true, why: () => WHY.loop,
-    text: 'while True: repeats its lines forever. value(1) means HIGH and turns this output on; value(0) means LOW and turns it off. time.sleep() tells the program how many seconds to wait.' },
+    text: 'You know these from your blink! while True: repeats its lines forever. value(1) means HIGH and turns this output on; value(0) means LOW and turns it off. time.sleep() tells the program how many seconds to wait. Now three pins take turns.' },
   { stage: 4, title: 'Experiment: a longer green light', cam: 'hero', seq: true, code: true, stepper: true, extra: 'E1', pinStates: true,
     text: 'Drag the slider to change how long the green light stays on, from 2 to 10 seconds. The light, the countdown and the code all change together. Watch the road: a longer green lets more cars cross.' },
   { stage: 4, title: 'Quick quiz', cam: 'hero', seq: true, extra: 'E2',
@@ -1989,7 +1989,9 @@ function renderExtra(s) {
   if (s.extra === 'B1') {
     const items = CORE_PARTS.map((p) => `<li class="part-item ${partsFound.has(p) ? 'done' : ''}" data-part="${p}" tabindex="0" role="button"><span class="check">✓</span><span><b>${PART_INFO[p].name}</b></span></li>`).join('');
     const card = el(`<div class="card"><h4>Parts found: <span id="foundCount">${partsFound.size}</span> of 5</h4><ul class="list" id="partList">${items}</ul>
-      <p class="note" style="margin-top:8px">Tip: click a part in the 3D scene, or pick one from this list.</p></div>`);
+      <p class="note" style="margin-top:8px">Tip: click a part in the 3D scene, or pick one from this list.</p>
+      <button class="btn" id="skipRecap" type="button" style="margin-top:8px">I know these from the labs: skip to building →</button></div>`);
+    card.querySelector('#skipRecap').addEventListener('click', () => goTo(STEPS.findIndex((x) => x.stage === 2)));
     card.querySelectorAll('[data-part]').forEach((li) => {
       const go = () => selectPart(li.dataset.part, null);
       li.addEventListener('click', go);
