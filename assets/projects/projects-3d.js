@@ -1,7 +1,8 @@
 /* 3D loops for the "Real problems your child can solve" cards on the landing page.
-   Real-size rooms (1 unit = 1 metre) with real 3D models: a potted plant, a velvet sofa, a lamp, an armchair,
-   flowers, a sports car and a walking figure (see assets/projects/CREDITS.md), lit by a studio environment with soft
-   shadows. One WebGL renderer draws every scene and copies the picture into each card's own canvas, so six cards cost
+   Real-size scenes (1 unit = 1 metre) from everyday life in Rwanda: a compound gate, a Cash Power meter, a solar
+   security light, a rain tank and pump, a charcoal kitchen, a bean garden, a school football pitch and a street bin,
+   with a velvet sofa and a walking figure from real 3D models (see assets/projects/CREDITS.md), lit by a studio
+   environment with soft shadows. One WebGL renderer draws every scene and copies the picture into each card's own canvas, so six cards cost
    about as much as one. A scene is built (and its models downloaded) only when its card comes near the screen, and
    only cards on screen are drawn, at about 30 frames a second. Needs three.js r128 loaded first.
 
@@ -36,8 +37,9 @@
     const gltf = new THREE.GLTFLoader();
     const draco = new THREE.DRACOLoader(); draco.setDecoderPath(LIB + 'libs/draco/gltf/'); gltf.setDRACOLoader(draco);
     const modelP = {};
-    // a fresh copy of a model each time (the walking figure is only used once, so its skeleton is never cloned)
-    function model(name) {
+    // a copy of a model for each scene; fresh = load it again (the walking figure needs its own skeleton every time)
+    function model(name, fresh) {
+      if (fresh) return gltf.loadAsync(BASE + 'models/' + name + '.glb').then((g) => { g.scene.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); return { root: g.scene, animations: g.animations }; });
       if (!modelP[name]) modelP[name] = gltf.loadAsync(BASE + 'models/' + name + '.glb');
       return modelP[name].then((g) => {
         const root = g.used ? g.scene.clone(true) : g.scene; g.used = true;
@@ -161,7 +163,7 @@
       add(s, new THREE.BoxGeometry(0.015, 0.08, D), skirt, -left + 0.0075, 0.04, D / 2 - back, false);
       return { s, hemi, key };
     }
-    function camera(pos, look, fov = 38) { const c = new THREE.PerspectiveCamera(fov, 1.6, 0.05, 40); c.position.set(...pos); c.lookAt(...look); return c; }
+    function camera(pos, look, fov = 38) { const c = new THREE.PerspectiveCamera(fov, 1.6, 0.05, 120); c.position.set(...pos); c.lookAt(...look); return c; }
 
     // the "brain": an ESP32 DevKit (52 × 28 mm) with header pins, the metal module and a status light.
     // Shown at the given scale so it reads in a room.
@@ -222,300 +224,516 @@
     // a thin cable that follows a path
     const cable = (s, pts, hex = 0x1b1d20, r = 0.0035) => add(s, new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map((p) => V(...p))), 60, r, 8, false), mat(hex, { roughness: 0.6 }));
 
-    /* ---------- 1. self-watering plant ---------- */
-    function plant() {
-      const R = room({ bg: 0xf1eee9, wall: 0xebe5dc, window: [-0.55, 1.55, 1.1, 1.2], keyPos: [-1.5, 3.6, -3.5], key: 2.2, back: 0.9 }), s = R.s;
-      R.key.target.position.set(0, 0.8, 0);
-      const cam = camera([0.42, 1.18, 0.55], [-0.1, 0.96, -0.64], 40);
-      // a white sideboard with a wooden top under the window
-      const topY = 0.82;
-      rbox(s, 1.7, 0.78, 0.46, 0.02, mat(0xf4f3f0, { roughness: 0.5 }), -0.2, 0.41, -0.62);
-      for (const x of [-0.62, -0.2, 0.22]) rbox(s, 0.4, 0.66, 0.02, 0.006, mat(0xf7f6f3, { roughness: 0.45 }), x, 0.42, -0.385);
-      for (const x of [-0.62, -0.2, 0.22]) cyl(s, 0.006, 0.006, 0.12, mat(0xb08d57, { metalness: 0.9, roughness: 0.3 }), x + 0.15, 0.5, -0.37, 10);
-      rbox(s, 1.76, 0.04, 0.5, 0.01, woodTop(), -0.2, topY - 0.02, -0.62);
-      // water tank (glass) with water and a small pump on its lid
-      const tank = new THREE.Group(); tank.position.set(-0.5, topY, -0.66); s.add(tank);
-      rbox(tank, 0.16, 0.24, 0.13, 0.012, phys(0xeaf6fb, { transparent: true, opacity: 0.25, roughness: 0.04, clearcoat: 1 }), 0, 0.12, 0);
-      const water = rbox(tank, 0.145, 0.2, 0.115, 0.008, phys(0x3d9fe0, { transparent: true, opacity: 0.7, roughness: 0.05 }), 0, 0.105, 0);
-      rbox(tank, 0.17, 0.015, 0.14, 0.005, mat(0x2b2f35, { roughness: 0.5 }), 0, 0.245, 0);
-      rbox(tank, 0.06, 0.04, 0.05, 0.008, mat(0x1f2328, { roughness: 0.45 }), 0.02, 0.27, 0);
-      const pot = new THREE.Group(); pot.position.set(-0.12, topY, -0.64); s.add(pot);
-      const drops = []; for (let i = 0; i < 8; i++) drops.push(sph(s, 0.006, phys(0x2f8fd0, { roughness: 0.05 }), 0, 0, 0, false));
-      const b = esp32(s, 0.34, topY, -0.52, 1.6); b.g.rotation.y = -0.4;
-      let leafM = null, plantG = null, curve = null;
-      const ready = model('plant').then(({ root }) => {
-        place(root, 0, 0, 0, 0.6, 0.62); pot.add(root); plantG = root;
-        root.traverse((o) => { if (o.isMesh && o.material.name === 'leaves') { leafM = o.material; leafM.userData.base = leafM.color.clone(); } });
-        const bb = sizeOf(root), rim = bb.min.y + (bb.max.y - bb.min.y) * 0.4;
-        // the tube from the pump to the soil, and the soil sensor next to the stem
-        curve = new THREE.CatmullRomCurve3([V(-0.48, topY + 0.29, -0.66), V(-0.42, topY + 0.45, -0.66), V(-0.25, topY + 0.47, -0.64), V(-0.17, rim + 0.05, -0.62)]);
-        add(s, new THREE.TubeGeometry(curve, 60, 0.005, 8, false), phys(0xcfeaf7, { transparent: true, opacity: 0.6, roughness: 0.05 }));
-        const probe = rbox(s, 0.022, 0.09, 0.004, 0.003, mat(0x1d5aa8, { roughness: 0.45 }), -0.04, rim + 0.01, -0.57); probe.rotation.z = -0.12;
-        cable(s, [[-0.04, rim + 0.055, -0.57], [0.05, rim + 0.08, -0.55], [0.22, topY + 0.04, -0.52], [0.3, topY + 0.01, -0.52]], 0xc93131, 0.0022);
-        cable(s, [[-0.03, rim + 0.055, -0.57], [0.06, rim + 0.06, -0.56], [0.22, topY + 0.03, -0.53], [0.3, topY + 0.008, -0.53]], 0x1b1d20, 0.0022);
-        cable(s, [[-0.44, topY + 0.27, -0.66], [-0.2, topY + 0.03, -0.55], [0.1, topY + 0.006, -0.5], [0.3, topY + 0.006, -0.5]], 0x1b1d20, 0.0022);
+    /* =================================================================================================
+       Rwandan homes, yards, kitchens and gardens. Outdoor scenes share a sky over green hills
+       ("the land of a thousand hills"), red soil, banana trees, plastered walls and tin roofs.
+       Alerts appear on a phone in the corner of the picture, the way a family would see them.
+       ================================================================================================= */
+    const hillsTex = (dusk) => canvasTex(1024, 512, (g, w, h) => {
+      const sky = g.createLinearGradient(0, 0, 0, h * 0.7);
+      sky.addColorStop(0, dusk ? '#1d2f57' : '#7fb8e6'); sky.addColorStop(1, dusk ? '#e9a46b' : '#e6f2fa');
+      g.fillStyle = sky; g.fillRect(0, 0, w, h);
+      // layers of hills, far (hazy blue-green) to near (deep green), each with terraced fields
+      const layers = dusk ? ['#5b6f78', '#465d55', '#33493c', '#263a2b'] : ['#a9c6b8', '#7fae86', '#5d9562', '#467d48'];
+      layers.forEach((col, i) => {
+        const base = h * (0.42 + i * 0.1), amp = h * (0.07 - i * 0.008), f1 = 0.006 + i * 0.003, ph = i * 1.7;
+        g.fillStyle = col; g.beginPath(); g.moveTo(0, h);
+        for (let x = 0; x <= w; x += 8) g.lineTo(x, base - amp * (Math.sin(x * f1 + ph) * 0.6 + Math.sin(x * f1 * 2.3 + ph * 2) * 0.4));
+        g.lineTo(w, h); g.fill();
+        if (i >= 2) { g.strokeStyle = 'rgba(255,255,255,.05)'; g.lineWidth = 2; for (let y = base; y < h; y += 9) { g.beginPath(); g.moveTo(0, y); for (let x = 0; x <= w; x += 16) g.lineTo(x, y + Math.sin(x * 0.02 + y) * 3); g.stroke(); } }
       });
-      const thirsty = C(0xc8b47a);
-      return { s, cam, period: 9, ready, update(t) {
-        const m = t < 3.5 ? 1 - t / 3.5 : clamp01((t - 3.8) / 2.4);  // soil moisture
-        const pumping = t > 3.6 && t < 6.2;
-        if (leafM) leafM.color.copy(thirsty).lerp(leafM.userData.base, ease(m));
-        if (plantG) { plantG.scale.y = 0.62 * lerp(0.94, 1, ease(m)); plantG.rotation.z = lerp(0.04, 0, ease(m)); }
-        water.scale.y = lerp(1, 0.7, clamp01((t - 3.6) / 2.6)); water.position.y = 0.005 + 0.1 * water.scale.y;
-        drops.forEach((d, i) => { d.visible = pumping && !!curve; if (d.visible) d.position.copy(curve.getPoint(((t * 0.9) + i / drops.length) % 1)); });
-        setLed(b, m < 0.35 ? 0xff3b30 : pumping ? 0x2a9dff : 0x34c759, true);
-      } };
-    }
+    });
+    const soilTex = canvasTex(512, 512, (g, w, h) => {
+      g.fillStyle = '#a5512b'; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 16000; i++) { const v = rnd(); g.fillStyle = v < 0.5 ? `rgba(120,50,20,${0.15 + rnd() * 0.2})` : `rgba(200,110,60,${0.1 + rnd() * 0.15})`; g.fillRect(rnd() * w, rnd() * h, 2 + rnd() * 3, 2 + rnd() * 3); }
+      for (let i = 0; i < 40; i++) { const x = rnd() * w, y = rnd() * h, r = 10 + rnd() * 40, gr = g.createRadialGradient(x, y, 1, x, y, r); gr.addColorStop(0, 'rgba(90,120,50,.35)'); gr.addColorStop(1, 'rgba(90,120,50,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, 2 * r, 2 * r); }
+    }, [8, 8]);
+    const plasterTex = (base) => canvasTex(256, 256, (g, w, h) => {
+      g.fillStyle = base; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 3000; i++) { g.fillStyle = `rgba(${rnd() < 0.5 ? '255,255,255' : '90,70,50'},${rnd() * 0.06})`; g.fillRect(rnd() * w, rnd() * h, 3, 3); }
+    }, [3, 2]);
+    const tinTex = (hex) => canvasTex(256, 64, (g, w, h) => {
+      g.fillStyle = hex; g.fillRect(0, 0, w, h);
+      for (let x = 0; x < w; x += 16) { const gr = g.createLinearGradient(x, 0, x + 16, 0); gr.addColorStop(0, 'rgba(255,255,255,.25)'); gr.addColorStop(0.5, 'rgba(0,0,0,.25)'); gr.addColorStop(1, 'rgba(255,255,255,.25)'); g.fillStyle = gr; g.fillRect(x, 0, 16, h); }
+    }, [6, 1]);
+    const glowDot = (parent, hex, size, x, y, z) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDot, color: hex, transparent: true, opacity: 0, depthWrite: false, toneMapped: false })); sp.position.set(x, y, z); sp.scale.setScalar(size); parent.add(sp); return sp; };
 
-    /* ---------- 2. lights that save energy ---------- */
-    function lights() {
-      const R = room({ bg: 0x1c2430, wall: 0xd6dbe0, window: [-1.2, 1.5, 0.9, 1.2], sky: skyTex('#0e1a33', '#2b3f66', '#14202c'), hemi: 0.12, key: 0.25, keyPos: [-2, 3, -3] }), s = R.s;
-      const cam = camera([0.9, 1.45, 3.4], [0.15, 0.85, -0.5], 42);
-      add(s, new THREE.PlaneGeometry(2.4, 1.6), mat(0xffffff, { map: rugTex, roughness: 1 }), -0.3, 0.004, 0.15, false).rotation.x = -Math.PI / 2;
-      // side table with the lamp, and the lamp's light
-      const tbl = new THREE.Group(); tbl.position.set(1.05, 0, -0.95); s.add(tbl);
-      cyl(tbl, 0.28, 0.28, 0.035, woodTop(0xe8d6c0), 0, 0.56, 0, 40); cyl(tbl, 0.03, 0.03, 0.54, mat(0x222428, { metalness: 0.6, roughness: 0.35 }), 0, 0.28, 0, 12); cyl(tbl, 0.18, 0.2, 0.02, mat(0x222428, { metalness: 0.6, roughness: 0.35 }), 0, 0.01, 0, 32);
-      const bulb = new THREE.PointLight(0xffc98a, 0, 7, 2); bulb.position.set(1.05, 1.0, -0.95); bulb.castShadow = true; bulb.shadow.mapSize.set(1024, 1024); bulb.shadow.radius = 6; bulb.shadow.bias = -0.002; s.add(bulb);
-      const ceiling = new THREE.PointLight(0xffe2b8, 0, 9, 2); ceiling.position.set(-0.2, 2.5, 0.2); s.add(ceiling);
-      let shadeM = null;
-      // motion sensor (PIR) on the wall, with the ESP32 in a small box under it
-      const pirG = new THREE.Group(); pirG.position.set(1.75, 1.95, -1.4); s.add(pirG);
-      rbox(pirG, 0.11, 0.11, 0.04, 0.012, mat(0xf4f5f6), 0, 0, 0.02);
-      const dome = sph(pirG, 0.04, phys(0xfafafa, { roughness: 0.25, transparent: true, opacity: 0.95 }), 0, 0, 0.045); dome.scale.z = 0.7;
-      const pir = glow(0xff3b30); sph(pirG, 0.007, pir, 0.035, -0.035, 0.045, false);
-      rbox(s, 0.16, 0.1, 0.05, 0.01, mat(0xf4f5f6), 1.75, 1.72, -1.375);
-      const pirHalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDot, color: 0xff3b30, transparent: true, opacity: 0, depthWrite: false, toneMapped: false })); pirHalo.position.set(0.035, -0.035, 0.07); pirHalo.scale.setScalar(0.08); pirG.add(pirHalo);
-      let mixer = null, walk = null, idle = null, who = null;
-      const ready = Promise.all([
-        model('sofa').then(({ root }) => place(root, -0.45, 0, -0.85, 0, 1) && s.add(root)),
-        model('lamp').then(({ root }) => {
-          place(root, 0, 0.578, 0, 0, 1.15); tbl.add(root);
-          root.traverse((o) => { if (o.isMesh && o.material.name === 'IridescenceLamp') { shadeM = o.material; } });
-        }),
-        model('chair').then(({ root }) => place(root, -1.85, 0, -0.1, 1.0, 1) && s.add(root)),
-        model('person').then(({ root, animations }) => {
-          who = root; s.add(root);
-          root.traverse((o) => { if (o.isMesh) { o.frustumCulled = false; o.material = mat(/joint/i.test(o.material.name) ? 0x2b3038 : 0x9fb3c4, { roughness: /joint/i.test(o.material.name) ? 0.4 : 0.55, skinning: true }); } });
-          mixer = new THREE.AnimationMixer(root);
-          const clip = (n) => animations.find((a) => a.name === n);
-          walk = mixer.clipAction(clip('walk')); idle = mixer.clipAction(clip('idle')); walk.play(); idle.play();
-        }),
-      ]);
-      return { s, cam, period: 10, ready, update(t) {
-        // walk in (0–2.6 s), stand and look around (2.6–5 s), walk out (5–7.4 s); the light waits 1.5 s, then goes off
-        const x = t < 2.6 ? lerp(3.2, 0.35, t / 2.6) : t < 5 ? 0.35 : lerp(0.35, 3.4, (t - 5) / 2.6);
-        const walking = t < 2.6 || (t > 5 && t < 7.6);
-        if (who) {
-          who.position.set(x, 0, 0.05);
-          who.rotation.y = t < 2.6 ? -Math.PI / 2 : t < 4.4 ? lerp(-Math.PI / 2, 0, ease((t - 2.6) / 0.6)) : t < 5 ? lerp(0, Math.PI / 2, ease((t - 4.4) / 0.6)) : Math.PI / 2;
-          const wW = walking ? 1 : 0; walk.setEffectiveWeight(wW); idle.setEffectiveWeight(1 - wW); mixer.setTime(t);
-        }
-        // the sensor sees the person from x < 2.3 (0.85 s to 6.7 s); the light stays on 1.5 s after that
-        const inRoom = x < 2.3;
-        const k2 = clamp01((t - 0.85) / 0.25) * clamp01(1 - (t - 8.2) / 0.3);
-        bulb.intensity = 3.2 * k2; ceiling.intensity = 1.6 * k2; R.hemi.intensity = 0.12 + 0.35 * k2; R.key.intensity = 0.25 + 0.3 * k2;
-        if (shadeM) { shadeM.emissive = shadeM.emissive || new THREE.Color(); shadeM.emissive.setRGB(0.9, 0.6, 0.3); shadeM.emissiveIntensity = 0.5 * k2; }
-        s.background.copy(C(0x1c2430)).lerp(C(0x9aa3ad), k2 * 0.6);
-        if (Math.abs((s.userData.k ?? -1) - k2) > 0.01) { s.userData.k = k2; envScale(s, 0.06 + 0.55 * k2); }
-        pir.emissiveIntensity = inRoom ? 4 : 0; pirHalo.material.opacity = inRoom ? 0.8 : 0;
-      } };
+    // an outdoor scene: sky and hills far behind, red soil, warm sun with soft shadows
+    function yard(o = {}) {
+      const s = new THREE.Scene();
+      s.background = C(o.dusk ? 0x1d2f57 : 0x9cc8ea); s.environment = env;
+      const hemi = new THREE.HemisphereLight(0xdcefff, 0x8a5a3a, o.hemi == null ? 0.5 : o.hemi); s.add(hemi);
+      const sun = new THREE.DirectionalLight(0xfff0d6, o.sun == null ? 1.9 : o.sun);
+      sun.position.set(...(o.sunPos || [6, 9, 5])); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+      Object.assign(sun.shadow.camera, { left: -7, right: 7, top: 7, bottom: -7, near: 1, far: 40 }); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03; sun.shadow.radius = 4;
+      s.add(sun); s.add(sun.target);
+      const hillMap = o.hills || hillsTex(false); hillMap.wrapS = THREE.RepeatWrapping; hillMap.repeat.x = 3;
+      const sky = add(s, new THREE.PlaneGeometry(360, 45), new THREE.MeshBasicMaterial({ map: hillMap, toneMapped: false, fog: false }), 0, 12, -40, false);
+      const ground = add(s, new THREE.PlaneGeometry(90, 90), mat(0xffffff, { map: soilTex, roughness: 0.95 }), 0, 0, -10, false); ground.rotation.x = -Math.PI / 2;
+      s.fog = new THREE.Fog(o.dusk ? 0x2b3a5c : 0xcfe2ee, 18, 55);
+      return { s, hemi, sun, sky };
     }
-
-    /* ---------- 3. door and window alarm ---------- */
-    function door() {
-      const R = room({ bg: 0xeef0f2, wall: 0xe4e0d8, keyPos: [3, 4, 3], back: 1.3, noBack: true }), s = R.s;
-      const cam = camera([1.25, 1.4, 2.0], [0.2, 0.95, -1.05], 42);
-      const back = -1.3;
-      // the doorway: white frame, the outside (garden and sky) seen through it
-      const frameM = mat(0xf8f8f6, { roughness: 0.4 });
-      const dw = 0.92, dh = 2.05, dx = -0.55;
-      // the back wall around the doorway
-      const wallM = mat(0xe4e0d8, { roughness: 0.92 });
-      add(s, new THREE.BoxGeometry(3 - dw / 2 + dx, 2.7, 0.1), wallM, -3 + (3 - dw / 2 + dx) / 2, 1.35, back - 0.05, false);
-      add(s, new THREE.BoxGeometry(3 - dw / 2 - dx, 2.7, 0.1), wallM, dx + dw / 2 + (3 - dw / 2 - dx) / 2, 1.35, back - 0.05, false);
-      add(s, new THREE.BoxGeometry(dw, 2.7 - dh, 0.1), wallM, dx, dh + (2.7 - dh) / 2, back - 0.05, false);
-      add(s, new THREE.PlaneGeometry(4, 3), new THREE.MeshBasicMaterial({ map: skyTex('#8cc4ec', '#e8f4fb', '#7fb069'), toneMapped: false }), dx, 1.3, back - 1.2, false);
-      add(s, new THREE.BoxGeometry(2, 0.02, 1.2), mat(0x9b9a95, { roughness: 0.9 }), dx, -0.01, back - 0.6, false); // the step outside
-      rbox(s, 0.07, dh + 0.07, 0.14, 0.01, frameM, dx - dw / 2 - 0.035, (dh + 0.07) / 2, back + 0.01); rbox(s, 0.07, dh + 0.07, 0.14, 0.01, frameM, dx + dw / 2 + 0.035, (dh + 0.07) / 2, back + 0.01);
-      rbox(s, dw + 0.14, 0.07, 0.14, 0.01, frameM, dx, dh + 0.035, back + 0.01);
-      // the door: painted, with raised panels and a brass handle, hinged on the left
-      const hinge = new THREE.Group(); hinge.position.set(dx - dw / 2, 0, back + 0.02); s.add(hinge);
-      const paint = phys(0x2f5d62, { roughness: 0.4, clearcoat: 0.4 });
-      rbox(hinge, dw - 0.01, dh - 0.01, 0.045, 0.006, paint, dw / 2, dh / 2, 0);
-      for (const [px, py, pw, ph] of [[0.25, 1.45, 0.3, 0.75], [0.67, 1.45, 0.3, 0.75], [0.25, 0.5, 0.3, 0.7], [0.67, 0.5, 0.3, 0.7]]) rbox(hinge, pw, ph, 0.012, 0.01, paint, px, py, 0.026);
-      const brass = mat(0xc9a35a, { metalness: 0.95, roughness: 0.25 });
-      sph(hinge, 0.03, brass, dw - 0.09, 1.0, 0.06); cyl(hinge, 0.012, 0.012, 0.04, brass, dw - 0.09, 1.0, 0.035, 12).rotation.x = Math.PI / 2;
-      // the magnet sensor: one half on the frame, one on the door
-      rbox(s, 0.025, 0.07, 0.02, 0.004, mat(0xffffff), dx + dw / 2 + 0.035, 1.9, back + 0.09);
-      rbox(hinge, 0.025, 0.07, 0.02, 0.004, mat(0xffffff), dw - 0.03, 1.9, 0.04);
-      // console table with the ESP32, the buzzer and the phone
-      const top = 0.8, cx = 0.75;
-      rbox(s, 1.0, 0.035, 0.34, 0.008, woodTop(0xd9c4a8), cx, top - 0.017, back + 0.2);
-      for (const x of [-0.46, 0.46]) for (const z of [-0.14, 0.14]) cyl(s, 0.015, 0.012, top - 0.035, mat(0x23262a, { metalness: 0.6, roughness: 0.35 }), cx + x, (top - 0.035) / 2, back + 0.2 + z, 10);
-      const b = esp32(s, cx + 0.05, top, back + 0.24, 1.7); b.g.rotation.y = -0.2;
-      const buzz = new THREE.Group(); buzz.position.set(cx + 0.24, top, back + 0.22); s.add(buzz);
-      cyl(buzz, 0.028, 0.028, 0.03, mat(0x15181b, { roughness: 0.6 }), 0, 0.015, 0, 28); cyl(buzz, 0.006, 0.006, 0.032, mat(0x333333), 0, 0.016, 0, 10);
-      const rings = [0, 1, 2].map(() => add(s, new THREE.TorusGeometry(0.05, 0.003, 8, 40), new THREE.MeshBasicMaterial({ color: 0xff5a4f, transparent: true, opacity: 0, toneMapped: false }), cx + 0.24, top + 0.05, back + 0.22, false));
-      rings.forEach((r) => { r.rotation.x = -Math.PI / 2; });
-      cable(s, [[dx + dw / 2 + 0.05, 1.9, back + 0.1], [dx + dw / 2 + 0.08, 1.4, back + 0.06], [cx - 0.1, top + 0.01, back + 0.12], [cx + 0.0, top + 0.006, back + 0.22]], 0xf2f2f2, 0.003);
-      const ph = phone(s, cx + 0.38, top, back + 0.27, -0.5, -0.28, 0.27);
-      const ready = Promise.all([
-        model('flowers').then(({ root }) => place(root, cx - 0.32, top, back + 0.18, 0.3, 1.6) && s.add(root)),
-        model('chair').then(({ root }) => place(root, -1.65, 0, -0.55, 0.9, 1) && s.add(root)),
-      ]);
-      return { s, cam, period: 8, ready, update(t) {
-        const open = t < 1 ? 0 : t < 2.4 ? ease((t - 1) / 1.4) : t < 6 ? 1 : 1 - ease((t - 6) / 1.4);
-        hinge.rotation.y = 1.25 * open;
-        const alarm = open > 0.05 && t < 7;
-        rings.forEach((r, i) => { const f = ((t * 1.6) + i / 3) % 1; r.scale.setScalar(1 + f * 2.5); r.position.y = top + 0.04 + f * 0.04; r.material.opacity = alarm ? 0.85 * (1 - f) : 0; });
-        setLed(b, alarm ? 0xff3b30 : 0x34c759, alarm ? Math.floor(t * 6) % 2 === 0 : true);
-        ph.show(alarm && t > 1.6 ? ['Front door opened', 'Nobody is home', '#c93131'] : null);
-      } };
-    }
-
-    /* ---------- 4. water-leak warning ---------- */
-    function leak() {
-      const R = room({ bg: 0xeef2f4, floor: mat(0xffffff, { map: tiles, roughness: 0.3 }), wallM: mat(0xffffff, { map: canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#b9c3c9'; g.fillRect(0, 0, w, h); for (let i = 0; i < 4; i++) for (let j = 0; j < 8; j++) { g.fillStyle = '#f3f5f6'; g.fillRect(i * 64 + 2 + (j % 2) * 32, j * 32 + 2, 60, 28); } }, [6, 4]), roughness: 0.25 }), back: 1.1, keyPos: [2.5, 4, 3] }), s = R.s;
-      const cam = camera([0.75, 1.12, 1.3], [-0.3, 0.52, -0.72], 44);
-      // a sink cabinet in sage green with its doors open, a stone worktop and the steel sink
-      const cab = mat(0x8fa79a, { roughness: 0.5 }), inside = mat(0xf2f2ee, { roughness: 0.6 }), z0 = -0.8;
-      rbox(s, 1.2, 0.03, 0.56, 0.005, inside, -0.4, 0.1, z0); rbox(s, 0.03, 0.82, 0.56, 0.005, cab, -1.0, 0.5, z0); rbox(s, 0.03, 0.82, 0.56, 0.005, cab, 0.2, 0.5, z0);
-      rbox(s, 1.2, 0.82, 0.02, 0.005, inside, -0.4, 0.5, z0 - 0.27); box(s, 1.2, 0.08, 0.5, mat(0x2b2f33), -0.4, 0.04, z0 + 0.02);
-      rbox(s, 1.28, 0.04, 0.62, 0.008, phys(0x40464c, { roughness: 0.2, clearcoat: 0.8 }), -0.4, 0.93, z0 + 0.02);
-      rbox(s, 0.5, 0.012, 0.4, 0.01, mat(0xd8dde0, { metalness: 0.95, roughness: 0.2 }), -0.4, 0.955, z0);
-      const tap = new THREE.CatmullRomCurve3([V(-0.4, 0.95, z0 - 0.22), V(-0.4, 1.22, z0 - 0.22), V(-0.4, 1.26, z0 - 0.12), V(-0.4, 1.18, z0 - 0.04)]);
-      add(s, new THREE.TubeGeometry(tap, 30, 0.014, 12, false), mat(0xe6e9ec, { metalness: 1, roughness: 0.15 }));
-      const brass = mat(0xc9a35a, { metalness: 0.95, roughness: 0.25 });
-      for (const [x, a] of [[-1.0, 1.95], [0.2, -1.95]]) {
-        const d = new THREE.Group(); d.position.set(x, 0.1, z0 + 0.28); d.rotation.y = a; s.add(d);
-        const sx = x < 0 ? 1 : -1; rbox(d, 0.59, 0.8, 0.02, 0.006, cab, sx * 0.295, 0.4, 0);
-        rbox(d, 0.48, 0.66, 0.008, 0.006, mat(0x9db3a7, { roughness: 0.5 }), sx * 0.295, 0.4, 0.012);
-        box(d, 0.012, 0.16, 0.02, brass, sx * 0.53, 0.55, 0.03);
+    // a banana tree: a trunk and big drooping leaves
+    const leafM = mat(0x4f8f3a, { roughness: 0.65, side: THREE.DoubleSide });
+    function leafGeo(len, wid, droop) {
+      const g = new THREE.PlaneGeometry(len, wid, 14, 2), p = g.attributes.position;
+      for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i) + len / 2, f = x / len, y = p.getY(i);
+        p.setXYZ(i, x, -droop * f * f * len + Math.abs(y) * 0.25, y * Math.sin(Math.PI * Math.min(1, f * 1.15 + 0.05)));
       }
-      // the waste pipe with a P-trap and a dripping joint
-      const pipeM = mat(0xdfe3e6, { metalness: 0.9, roughness: 0.22 });
-      const trap = new THREE.CatmullRomCurve3([V(-0.4, 0.95, z0), V(-0.4, 0.6, z0), V(-0.34, 0.47, z0), V(-0.24, 0.52, z0), V(-0.2, 0.64, z0 - 0.04), V(-0.2, 0.66, z0 - 0.26)]);
-      add(s, new THREE.TubeGeometry(trap, 60, 0.022, 14, false), pipeM);
-      cyl(s, 0.03, 0.03, 0.04, mat(0xb9bec2, { metalness: 0.9, roughness: 0.3 }), -0.4, 0.62, z0, 20);
-      const drops = [0, 1, 2].map(() => sph(s, 0.008, phys(0x3a9bd8, { roughness: 0.05 }), -0.4, 0.58, z0, false));
-      // the puddle spreads out of the cabinet onto the tiles
-      const blob = new THREE.Shape(); for (let i = 0; i <= 32; i++) { const a = i / 32 * Math.PI * 2, r = 1 + 0.16 * Math.sin(a * 3) + 0.09 * Math.cos(a * 5); const px = Math.cos(a) * r, py = Math.sin(a) * r; if (i === 0) blob.moveTo(px, py); else blob.lineTo(px, py); }
-      const puddle = add(s, new THREE.ShapeGeometry(blob, 32), phys(0x4f9fdc, { transparent: true, opacity: 0.7, roughness: 0.0, clearcoat: 1, metalness: 0.2 }), -0.4, 0.124, z0 + 0.0, false);
-      puddle.rotation.x = -Math.PI / 2;
-      const floorPuddle = add(s, new THREE.ShapeGeometry(blob, 32), phys(0x4f9fdc, { transparent: true, opacity: 0.7, roughness: 0.0, clearcoat: 1, metalness: 0.2 }), -0.35, 0.003, z0 + 0.45, false);
-      floorPuddle.rotation.x = -Math.PI / 2;
-      // the leak sensor: a small pad with two gold strips on the cabinet floor, wired to the ESP32
-      rbox(s, 0.08, 0.012, 0.05, 0.004, mat(0x15181b), -0.15, 0.122, z0 + 0.05);
-      for (const dx of [-0.012, 0.012]) box(s, 0.005, 0.004, 0.04, mat(0xd9b44a, { metalness: 0.9, roughness: 0.25 }), -0.15 + dx, 0.13, z0 + 0.05);
-      const b = esp32(s, 0.06, 0.12, z0 - 0.08, 1.6); b.g.rotation.y = -0.3;
-      cable(s, [[-0.11, 0.125, z0 + 0.05], [-0.05, 0.13, z0], [0.0, 0.125, z0 - 0.07]], 0xc93131, 0.002);
-      // the phone on the worktop shows the alert
-      const ph = phone(s, 0.0, 0.95, z0 + 0.12, -0.4, -0.25, 0.28);
-      const ready = model('flowers').then(({ root }) => place(root, -0.85, 0.95, z0 - 0.1, 0, 1.5) && s.add(root));
-      return { s, cam, period: 8, ready, update(t) {
-        const r1 = t < 0.6 ? 0.001 : t < 3.6 ? lerp(0.03, 0.22, (t - 0.6) / 3) : t < 6.8 ? 0.22 : lerp(0.22, 0.001, (t - 6.8) / 1.2);
-        const r2 = t < 2.6 ? 0.001 : t < 5 ? lerp(0.02, 0.2, (t - 2.6) / 2.4) : t < 6.8 ? 0.2 : lerp(0.2, 0.001, (t - 6.8) / 1.2);
-        puddle.scale.set(Math.max(0.001, r1 * 1.4), Math.max(0.001, r1), 1);
-        floorPuddle.scale.set(Math.max(0.001, r2 * 1.6), Math.max(0.001, r2), 1);
-        drops.forEach((d, i) => { const k = ((t * 1.4) + i / 3) % 1; d.position.y = 0.58 - k * 0.46; d.visible = t < 6.6; });
-        const wet = r1 > 0.12;
-        setLed(b, wet ? 0xff3b30 : 0x34c759, wet ? Math.floor(t * 6) % 2 === 0 : true);
-        ph.show(wet ? ['Water leak!', 'Under the kitchen sink', '#2a7fd0'] : null);
-      } };
+      g.rotateX(-Math.PI / 2); g.computeVertexNormals(); return g;
     }
-
-    /* ---------- 5. classroom air checker ---------- */
-    function air() {
-      const R = room({ bg: 0xeef2f5, wall: 0xe7ebee, window: [-0.75, 1.55, 1.1, 1.1], keyPos: [-1.2, 3.8, -3.6], key: 1.8, back: 1.2 }), s = R.s;
-      R.key.target.position.set(0, 0.6, 0);
-      const cam = camera([0.85, 1.38, 2.15], [0.0, 0.95, -0.75], 40);
-      // a desk with a wooden top and steel legs, and a whiteboard
-      const steel = mat(0x4d5660, { metalness: 0.7, roughness: 0.35 });
-      rbox(s, 1.4, 0.035, 0.7, 0.008, woodTop(), 0.1, 0.74, -0.75);
-      for (const [x, z] of [[-0.55, -1.05], [0.75, -1.05], [-0.55, -0.45], [0.75, -0.45]]) box(s, 0.035, 0.72, 0.035, steel, x, 0.36, z);
-      rbox(s, 1.0, 0.62, 0.025, 0.01, mat(0xfcfcfc, { roughness: 0.15 }), 0.95, 1.6, -1.19);
-      rbox(s, 1.04, 0.66, 0.02, 0.012, mat(0xb9c0c6, { metalness: 0.7, roughness: 0.3 }), 0.95, 1.6, -1.195);
-      // an opening window sash
-      const sash = new THREE.Group(); sash.position.set(-1.3, 1.55, -1.18); s.add(sash);
-      const sashM = mat(0xfafafa, { roughness: 0.35 });
-      rbox(sash, 0.53, 0.04, 0.04, 0.006, sashM, 0.265, 0.51, 0); rbox(sash, 0.53, 0.04, 0.04, 0.006, sashM, 0.265, -0.51, 0);
-      rbox(sash, 0.04, 1.06, 0.04, 0.006, sashM, 0.02, 0, 0); rbox(sash, 0.04, 1.06, 0.04, 0.006, sashM, 0.51, 0, 0);
-      rbox(sash, 0.47, 1.0, 0.012, 0.004, phys(0xe9f6fc, { transparent: true, opacity: 0.25, roughness: 0.02, clearcoat: 1 }), 0.265, 0, 0.01);
-      // the air checker: a white case with a CO₂ display and a traffic light
-      const dev = new THREE.Group(); dev.position.set(0.42, 0.758, -0.72); dev.rotation.y = -0.3; s.add(dev);
-      rbox(dev, 0.16, 0.19, 0.06, 0.018, phys(0xf8f9fa, { roughness: 0.35 }), 0, 0.095, 0);
-      const sig = signal(dev, -0.04, 0.1, 0.03, 0.45);
-      let co2 = 0;
-      const lcd = canvasTex(128, 96, (g, w, h) => { g.fillStyle = '#0f1a24'; g.fillRect(0, 0, w, h); g.fillStyle = '#9fe7c4'; g.font = '700 30px monospace'; g.textAlign = 'center'; g.fillText(String(co2), w / 2, 48); g.font = '600 16px monospace'; g.fillStyle = '#7fa8c9'; g.fillText('CO2 ppm', w / 2, 76); });
-      const lcdM = new THREE.Mesh(new THREE.PlaneGeometry(0.066, 0.05), new THREE.MeshBasicMaterial({ map: lcd, toneMapped: false })); lcdM.position.set(0.035, 0.11, 0.0305); dev.add(lcdM);
-      // books and a laptop make it a real study desk
-      const bk = [0x2c6e9e, 0xc0533a, 0xe0b23c]; bk.forEach((c, i) => rbox(s, 0.22, 0.035, 0.16, 0.004, mat(c, { roughness: 0.7 }), -0.38, 0.775 + i * 0.036, -0.85 + i * 0.01));
-      const lap = new THREE.Group(); lap.position.set(0.0, 0.758, -0.7); lap.rotation.y = 0.15; s.add(lap);
-      rbox(lap, 0.34, 0.012, 0.23, 0.008, mat(0xc7cbd0, { metalness: 0.8, roughness: 0.3 }), 0, 0.006, 0);
-      const scr = new THREE.Group(); scr.position.set(0, 0.012, -0.11); scr.rotation.x = -0.25; lap.add(scr);
-      rbox(scr, 0.34, 0.22, 0.008, 0.008, mat(0xc7cbd0, { metalness: 0.8, roughness: 0.3 }), 0, 0.11, 0);
-      box(scr, 0.31, 0.19, 0.002, new THREE.MeshBasicMaterial({ color: 0x2b4a6a }), 0, 0.11, 0.0045, false);
-      // stale air: faint puffs that build up and drift out when the window opens
-      const puffs = []; for (let i = 0; i < 16; i++) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDot, color: 0x8a96a2, transparent: true, opacity: 0, depthWrite: false })); sp.userData = { x: -1.2 + rnd() * 2.4, z: -1.0 + rnd() * 1.4, y: 1.0 + rnd() * 1.1, sp: 0.06 + rnd() * 0.06, o: rnd() * 6, k: rnd() }; s.add(sp); puffs.push(sp); }
-      const ready = Promise.all([
-        model('chair').then(({ root }) => place(root, 0.1, 0, -0.05, Math.PI + 0.15, 0.95) && s.add(root)),
-        model('plant').then(({ root }) => place(root, 1.7, 0, -0.85, 0.4, 1.0) && s.add(root)),
-      ]);
-      return { s, cam, period: 10, ready, update(t) {
-        const level = t < 4.5 ? t / 4.5 : t < 5.2 ? 1 : clamp01(1 - (t - 5.2) / 3.5);
-        const open = t < 4.6 ? 0 : t < 5.4 ? ease((t - 4.6) / 0.8) : t < 9 ? 1 : 1 - ease((t - 9) / 0.8);
-        sash.rotation.y = -1.1 * open;
-        sig.set(level < 0.4 ? 2 : level < 0.75 ? 1 : 0);
-        const ppm = Math.round(450 + level * 1250); if (Math.abs(ppm - co2) > 15) { co2 = ppm; lcd.redraw(); }
-        puffs.forEach((p) => { const u = p.userData; p.position.set(u.x + Math.sin(t * 0.6 + u.o) * 0.12 - (open > 0.5 ? (t - 5) * 0.3 : 0), u.y + Math.sin(t * u.sp * 6 + u.o) * 0.08, u.z); p.scale.setScalar(0.12 + u.k * 0.1); p.material.opacity = (u.k < level ? 0.22 : 0); });
-      } };
+    function banana(s, x, z, h = 2.4, seed0 = 0) {
+      const g = new THREE.Group(); g.position.set(x, 0, z); s.add(g);
+      cyl(g, 0.11, 0.16, h, mat(0x7a8a4a, { roughness: 0.8 }), 0, h / 2, 0, 12);
+      for (let i = 0; i < 7; i++) {
+        const a = i / 7 * Math.PI * 2 + seed0, l = new THREE.Mesh(leafGeo(1.4 + (i % 3) * 0.2, 0.42, 0.45 + (i % 2) * 0.2), leafM);
+        l.castShadow = true; l.position.y = h - 0.05; l.rotation.set(0, a, 0.5 + (i % 3) * 0.12); g.add(l);
+      }
+      return g;
     }
-
-    /* ---------- 6. parking helper ---------- */
-    function parking() {
-      const R = room({ bg: 0xe2e5e8, w: 9, d: 11, h: 3, back: 2.6, left: 3.2, floor: mat(0xffffff, { map: concrete, roughness: 0.75 }),
-        wallM: mat(0xffffff, { map: tex('brick.jpg', [3, 1.2]), roughnessMap: tex('brick_rough.jpg', [3, 1.2], false), roughness: 1 }), sideM: mat(0xd9dcde, { roughness: 0.9 }),
-        keyPos: [3, 6, 4], key: 1.6, shadowBox: 5 }), s = R.s;
-      const cam = camera([3.9, 2.3, 3.6], [0.0, 0.7, -1.2], 40);
-      const back = -2.6;
-      const line = mat(0xf2c200, { roughness: 0.6 });
-      box(s, 0.1, 0.004, 6, line, -1.3, 0.002, 0.4, false); box(s, 0.1, 0.004, 6, line, 1.3, 0.002, 0.4, false);
-      rbox(s, 1.6, 0.1, 0.16, 0.03, mat(0xf2c200, { roughness: 0.5 }), 0, 0.05, back + 0.35); // wheel stop
-      // the distance sensor (HC-SR04: blue board, two silver "eyes") in a box on the wall, and a big traffic light
-      const sens = new THREE.Group(); sens.position.set(0, 1.05, back); sens.scale.setScalar(1.7); s.add(sens);
-      rbox(sens, 0.26, 0.14, 0.05, 0.012, mat(0xf2f3f4, { roughness: 0.4 }), 0, 0, 0.025);
-      rbox(sens, 0.2, 0.09, 0.01, 0.004, mat(0x1d5aa8, { roughness: 0.45 }), 0, 0, 0.055);
-      for (const x of [-0.05, 0.05]) { const e = cyl(sens, 0.032, 0.032, 0.05, mat(0xd7dbdf, { metalness: 0.9, roughness: 0.3 }), x, 0, 0.08, 28); e.rotation.x = Math.PI / 2; const m = cyl(sens, 0.024, 0.024, 0.052, mat(0x2b2f35, { roughness: 0.9 }), x, 0, 0.081, 20); m.rotation.x = Math.PI / 2; }
-      const sig = signal(s, 0, 1.75, back, 2.2, true);
-      cable(s, [[0.13, 1.05, back + 0.02], [0.3, 1.3, back + 0.02], [0.25, 1.62, back + 0.02]], 0x30343a, 0.006);
-      const waves = [0, 1, 2].map(() => add(s, new THREE.TorusGeometry(0.08, 0.004, 8, 40, Math.PI), new THREE.MeshBasicMaterial({ color: 0x3d9bff, transparent: true, opacity: 0, toneMapped: false }), 0, 1.05, back + 0.12, false));
-      // shelves with boxes on the side wall make it a real garage
-      for (const y of [0.9, 1.6]) rbox(s, 0.4, 0.03, 1.6, 0.005, mat(0x7a7f85, { metalness: 0.5, roughness: 0.5 }), -3.0, y, -1.2);
-      [[0.9, -1.6, 0xc9a77c], [0.9, -1.1, 0xb48f63], [1.6, -1.5, 0x5a7fa6], [1.6, -0.8, 0xc9a77c]].forEach(([y, z, c]) => rbox(s, 0.34, 0.26, 0.4, 0.01, mat(c, { roughness: 0.85 }), -3.0, y + 0.145, z));
-      const car = new THREE.Group(); s.add(car);
-      const wheels = [];
-      const shadow = add(car, new THREE.PlaneGeometry(0.655 * 4, 1.3 * 4), new THREE.MeshBasicMaterial({ map: tex('car_shadow.png'), blending: THREE.MultiplyBlending, toneMapped: false, transparent: true, depthWrite: false }), 0, 0.006, 0, false);
-      shadow.rotation.x = -Math.PI / 2; shadow.renderOrder = 2;
-      const ready = model('car').then(({ root }) => {
-        root.rotation.y = Math.PI; car.add(root); // nose towards the wall (−z)
-        const body = root.getObjectByName('body'); if (body) body.material = new THREE.MeshPhysicalMaterial({ color: C(0x1f5fbf), metalness: 0.9, roughness: 0.45, clearcoat: 1, clearcoatRoughness: 0.03 });
-        const glass = root.getObjectByName('glass'); if (glass) glass.material = new THREE.MeshPhysicalMaterial({ color: 0x223040, metalness: 0.3, roughness: 0, transparent: true, opacity: 0.45 });
-        ['wheel_fl', 'wheel_fr', 'wheel_rl', 'wheel_rr'].forEach((n) => { const w = root.getObjectByName(n); if (w) wheels.push(w); });
+    // a plastered house wall with a tin roof edge above it
+    function house(s, o) {
+      const g = new THREE.Group(); g.position.set(o.x || 0, 0, o.z || 0); g.rotation.y = o.ry || 0; s.add(g);
+      const W = o.w || 6, H = o.h || 2.8;
+      add(g, new THREE.BoxGeometry(W, H, 0.25), mat(0xffffff, { map: plasterTex(o.wall || '#e9dcc4'), roughness: 0.9 }), 0, H / 2, 0);
+      add(g, new THREE.BoxGeometry(W + 0.02, 0.7, 0.27), mat(o.band || 0x8c4a2f, { roughness: 0.85 }), 0, 0.35, 0, false); // the darker painted band
+      const roof = add(g, new THREE.BoxGeometry(W + 0.8, 0.04, 1.6), mat(0xffffff, { map: tinTex(o.roof || '#7b2f2a'), roughness: 0.45, metalness: 0.5 }), 0, H + 0.35, -0.35);
+      roof.rotation.x = 0.35;
+      return g;
+    }
+    // a yellow 20-litre jerrycan
+    function jerrycan(s, x, y, z, ry = 0) {
+      const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; s.add(g);
+      const yel = mat(0xf2c200, { roughness: 0.5 });
+      rbox(g, 0.26, 0.36, 0.17, 0.03, yel, 0, 0.18, 0);
+      rbox(g, 0.14, 0.035, 0.03, 0.012, yel, -0.03, 0.4, 0); cyl(g, 0.025, 0.025, 0.05, mat(0x2a6fd6, { roughness: 0.4 }), 0.08, 0.385, 0, 14);
+      return g;
+    }
+    // the figure from the "walking" model, loaded fresh each time so every scene has its own skeleton
+    function walker(s) {
+      const w = { root: null, set() {} };
+      w.ready = model('person', true).then(({ root, animations }) => {
+        s.add(root); w.root = root;
+        root.traverse((o) => { if (o.isMesh) { o.frustumCulled = false; o.material = mat(/joint/i.test(o.material.name) ? 0x2b3038 : 0x9fb3c4, { roughness: /joint/i.test(o.material.name) ? 0.4 : 0.55, skinning: true }); } });
+        const mixer = new THREE.AnimationMixer(root), clip = (n) => animations.find((a) => a.name === n);
+        const walk = mixer.clipAction(clip('walk')), idle = mixer.clipAction(clip('idle')); walk.play(); idle.play();
+        w.set = (x, z, ry, walking, t, visible = true) => { root.visible = visible; root.position.set(x, 0, z); root.rotation.y = ry; walk.setEffectiveWeight(walking ? 1 : 0); idle.setEffectiveWeight(walking ? 0 : 1); mixer.setTime(t); };
       });
-      const L = 4.53, stopZ = back + 0.45 + L / 2; // the nose stops 0.45 m from the wall
-      return { s, cam, period: 8, ready, update(t) {
-        const z = t < 3.6 ? lerp(stopZ + 6, stopZ, ease(t / 3.6)) : t < 5.6 ? stopZ : lerp(stopZ, stopZ + 6, ease((t - 5.6) / 2.4));
-        const dz = z - (car.userData.z == null ? z : car.userData.z); car.userData.z = z;
-        car.position.set(0, 0, z);
-        wheels.forEach((w) => { w.rotation.x += dz / 0.33; });
-        const gap = z - L / 2 - back; // nose to wall
-        sig.set(gap > 2.2 ? 2 : gap > 1.0 ? 1 : 0);
-        waves.forEach((w, i) => { const f = ((t * 1.5) + i / 3) % 1; w.position.z = back + 0.12 + f * Math.max(0.3, Math.min(gap, 3) - 0.1); w.scale.setScalar(1 + f * 3); w.material.opacity = 0.75 * (1 - f); });
+      return w;
+    }
+    // a phone held up in the corner of the picture: it slides in when there is news
+    function hudPhone(s, cam, draw) {
+      s.add(cam);
+      const g = new THREE.Group(); cam.add(g);
+      const body = rbox(g, 0.3, 0.6, 0.03, 0.045, phys(0x1c1f24, { roughness: 0.25, metalness: 0.4 }), 0, 0.3, 0, false);
+      let state = null;
+      const t = canvasTex(240, 480, (c, w, h) => draw(c, w, h, state));
+      const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.27, 0.56), new THREE.MeshBasicMaterial({ map: t, toneMapped: false })); scr.position.set(0, 0.3, 0.0155); g.add(scr);
+      [body, scr].forEach((m) => { m.renderOrder = 10; m.material.depthTest = false; });
+      let k = 0;
+      return {
+        set(st) { const key = JSON.stringify(st); if (key !== g.userData.k) { g.userData.k = key; state = st; t.redraw(); } },
+        update(show, dt = 1 / 30) {
+          k += ((show ? 1 : 0) - k) * Math.min(1, dt * 7);
+          const d = 0.9, hh = Math.tan(cam.fov * Math.PI / 360) * d, ww = hh * cam.aspect, sc = hh * 0.95 / 0.6;
+          g.scale.setScalar(sc); g.position.set(ww - 0.17 * sc - hh * 0.06, -hh - 0.62 * sc + k * (0.62 * sc + hh * 0.06), -d); g.visible = k > 0.01;
+        },
+      };
+    }
+    // the usual lock screen with one alert card on it
+    function alertScreen(c, w, h, a) {
+      const gr = c.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#22344a'); gr.addColorStop(1, '#0d1a26'); c.fillStyle = gr; c.fillRect(0, 0, w, h);
+      c.fillStyle = 'rgba(255,255,255,.92)'; c.font = '600 54px Nunito, sans-serif'; c.textAlign = 'center'; c.fillText(a && a.time || '18:45', w / 2, 110);
+      c.font = '600 18px Nunito, sans-serif'; c.fillStyle = 'rgba(255,255,255,.7)'; c.fillText('Saturday', w / 2, 140);
+      if (!a) return;
+      const x0 = 12, y0 = 176, ww = w - 24, hh = 118;
+      c.fillStyle = 'rgba(255,255,255,.97)'; c.beginPath(); if (c.roundRect) c.roundRect(x0, y0, ww, hh, 20); else c.rect(x0, y0, ww, hh); c.fill();
+      c.fillStyle = a.color || '#c93131'; c.beginPath(); if (c.roundRect) c.roundRect(x0 + 12, y0 + 14, 30, 30, 8); else c.rect(x0 + 12, y0 + 14, 30, 30); c.fill();
+      c.textAlign = 'left'; c.fillStyle = '#526170'; c.font = '700 15px Nunito, sans-serif'; c.fillText((a.app || 'HOME') + ' · now', x0 + 52, y0 + 34);
+      const fit = (txt, weight, size, y) => { let px = size; do { c.font = `${weight} ${px}px Nunito, sans-serif`; px -= 1; } while (c.measureText(txt).width > ww - 26 && px > 10); c.fillText(txt, x0 + 14, y); };
+      c.fillStyle = '#15202a'; fit(a.title, 800, 21, y0 + 72);
+      c.fillStyle = '#334452'; fit(a.text, 600, 16, y0 + 96);
+      if (a.text2) fit(a.text2, 600, 16, y0 + 114);
+    }
+    // a small grey box on a wall that holds the ESP32 (lid open so the board shows)
+    function espBox(s, x, y, z, ry = 0, sc = 2.2) {
+      const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; s.add(g);
+      rbox(g, 0.16, 0.12, 0.05, 0.01, mat(0xd9dcdf, { roughness: 0.5 }), 0, 0, 0.025);
+      const b = esp32(g, 0, -0.012, 0.055, sc); b.g.rotation.x = Math.PI / 2; b.g.rotation.z = 0;
+      return b;
+    }
+    const steel = mat(0x5b636b, { metalness: 0.8, roughness: 0.35 });
+
+    /* ---------- 1. gate doorbell ---------- */
+    function gate() {
+      const R = yard({ sunPos: [5, 8, 6] }), s = R.s;
+      const cam = camera([2.9, 1.6, 4.4], [0.3, 1.2, -0.6], 42);
+      // the compound wall (plastered, with a terracotta cap) and a blue metal gate
+      const wallM = mat(0xffffff, { map: plasterTex('#efe2c9'), roughness: 0.9 }), cap = mat(0xb4562e, { roughness: 0.8 });
+      for (const [x0, x1] of [[-6, -1.1], [1.1, 6]]) { add(s, new THREE.BoxGeometry(x1 - x0, 2.2, 0.22), wallM, (x0 + x1) / 2, 1.1, -1); add(s, new THREE.BoxGeometry(x1 - x0 + 0.04, 0.08, 0.3), cap, (x0 + x1) / 2, 2.24, -1); }
+      for (const x of [-1.2, 1.2]) { rbox(s, 0.3, 2.5, 0.32, 0.02, wallM, x, 1.25, -1); rbox(s, 0.36, 0.08, 0.38, 0.01, cap, x, 2.54, -1); }
+      const gateM = mat(0x1f4e79, { metalness: 0.6, roughness: 0.4 });
+      for (const sx of [-1, 1]) {
+        const leaf = new THREE.Group(); leaf.position.set(sx * 0.525, 0, -1); s.add(leaf);
+        box(leaf, 1.03, 2.1, 0.04, gateM, 0, 1.12, 0);
+        for (let i = 0; i < 7; i++) box(leaf, 0.035, 2.0, 0.03, mat(0x2a649a, { metalness: 0.6, roughness: 0.35 }), -0.45 + i * 0.15, 1.12, 0.03);
+        box(leaf, 1.03, 0.06, 0.05, mat(0x2a649a, { metalness: 0.6, roughness: 0.35 }), 0, 1.6, 0.035);
+      }
+      // the house roof and banana trees behind the wall
+      const hs = house(s, { x: -0.5, z: -5, w: 8, h: 3.0 }); void hs;
+      banana(s, -3.2, -2.6, 2.6, 0.3); banana(s, 3.6, -2.4, 2.3, 1.1); banana(s, 5.2, -3.2, 2.8, 2.0);
+      // the doorbell button and the ESP32 box beside the gate, the light on the pillar
+      const btn = new THREE.Group(); btn.position.set(1.45, 1.3, -0.88); s.add(btn);
+      rbox(btn, 0.09, 0.13, 0.03, 0.01, mat(0x2b2f35, { roughness: 0.5 }), 0, 0, 0.015);
+      const ring = glow(0x3fa9ff); cyl(btn, 0.024, 0.024, 0.02, ring, 0, 0.01, 0.035, 20).rotation.x = Math.PI / 2;
+      const ringHalo = glowDot(btn, 0x3fa9ff, 0.12, 0, 0.01, 0.06);
+      const b = espBox(s, 1.48, 0.95, -0.89); setLed(b, 0x34c759, true);
+      cable(s, [[1.45, 1.22, -0.87], [1.47, 1.05, -0.87]], 0x30343a, 0.004);
+      const lampM = glow(0xffe2a8); const lamp = new THREE.Group(); lamp.position.set(1.2, 2.62, -0.95); s.add(lamp);
+      rbox(lamp, 0.16, 0.12, 0.16, 0.02, steel, 0, 0.06, 0); sph(lamp, 0.06, lampM, 0, 0, 0, false);
+      const lampHalo = glowDot(lamp, 0xffd27a, 0.7, 0, 0, 0.05);
+      const spot = new THREE.PointLight(0xffd9a0, 0, 5, 2); spot.position.set(1.2, 2.5, -0.7); s.add(spot);
+      const visitor = walker(s);
+      const ph = hudPhone(s, cam, alertScreen);
+      return { s, cam, period: 9, ready: visitor.ready, update(t) {
+        // the visitor walks up (0–2.6 s), presses the bell (3 s) and waits; the house knows at once
+        const x = t < 2.6 ? lerp(5.5, 1.5, t / 2.6) : 1.5;
+        visitor.set(x, 0.05, t < 2.6 ? -Math.PI / 2 : lerp(-Math.PI / 2, Math.PI, ease((t - 2.6) / 0.5)), t < 2.6, t);
+        const rang = t > 3.0 && t < 8.6;
+        ring.emissiveIntensity = rang ? 3 : 0.6; ringHalo.material.opacity = rang ? 0.9 : 0.2;
+        lampM.emissiveIntensity = rang ? 3 : 0; lampHalo.material.opacity = rang ? 0.85 : 0; spot.intensity = rang ? 2.2 : 0;
+        setLed(b, rang ? 0x2a9dff : 0x34c759, rang ? Math.floor(t * 4) % 2 === 0 : true);
+        ph.set(rang ? { title: 'Someone is at the gate', text: 'The gate light is on.', app: 'GATE', color: '#2a7fd0' } : null);
+        ph.update(rang && t > 3.3);
       } };
     }
+
+    /* ---------- 2. Cash Power watcher ---------- */
+    function power() {
+      const R = room({ bg: 0x27303a, wall: 0xe8e1d4, hemi: 0.3, key: 0.7, keyPos: [-2, 3.5, 3] }), s = R.s;
+      const cam = camera([0.95, 1.42, 0.55], [0.12, 1.22, -1.38], 44);
+      // the prepaid electricity meter on the wall: a keypad, a screen and a red light that blinks with every bit of energy used
+      const meter = new THREE.Group(); meter.position.set(0.15, 1.35, -1.38); s.add(meter);
+      rbox(meter, 0.2, 0.3, 0.08, 0.015, mat(0xdfe6ea, { roughness: 0.4 }), 0, 0, 0.04);
+      rbox(meter, 0.19, 0.11, 0.01, 0.01, mat(0x1d5aa8, { roughness: 0.4 }), 0, 0.085, 0.082);
+      let units = 0;
+      const lcd = canvasTex(160, 64, (g, w, h) => { g.fillStyle = units < 5 ? '#c9d48a' : '#a9d8a4'; g.fillRect(0, 0, w, h); g.fillStyle = '#18240f'; g.font = '700 30px monospace'; g.textAlign = 'right'; g.fillText(units.toFixed(1), w - 52, 42); g.font = '700 18px monospace'; g.fillText('kWh', w - 6, 42); });
+      const lcdM = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.06), new THREE.MeshBasicMaterial({ map: lcd, toneMapped: false })); lcdM.position.set(0, 0.085, 0.088); meter.add(lcdM);
+      for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) rbox(meter, 0.035, 0.025, 0.012, 0.006, mat(0xf4f5f6, { roughness: 0.5 }), -0.045 + c * 0.045, -0.015 - r * 0.033, 0.084);
+      const pulse = glow(0xff3b30); sph(meter, 0.006, pulse, 0.075, -0.125, 0.082, false);
+      const pulseHalo = glowDot(meter, 0xff3b30, 0.06, 0.075, -0.125, 0.09);
+      // a light sensor in a small black cap sits over that red light, wired to the ESP32 box beside the meter
+      cyl(meter, 0.012, 0.012, 0.02, mat(0x15181b), 0.075, -0.125, 0.092, 16).rotation.x = Math.PI / 2;
+      const b = espBox(s, 0.45, 1.3, -1.38);
+      cable(s, [[0.225, 1.225, -1.28], [0.3, 1.2, -1.3], [0.4, 1.27, -1.33]], 0x15181b, 0.003);
+      // a TV on a stand and the sofa: the home using electricity
+      const stand = woodTop(0xcfb08c); rbox(s, 1.3, 0.45, 0.4, 0.01, stand, -1.0, 0.225, -1.15);
+      rbox(s, 1.1, 0.64, 0.05, 0.01, mat(0x15181b, { roughness: 0.3, metalness: 0.3 }), -1.0, 0.82, -1.25);
+      const tvScr = canvasTex(256, 144, (g, w, h) => { const gr = g.createLinearGradient(0, 0, w, h); gr.addColorStop(0, '#2b7fd6'); gr.addColorStop(1, '#1a9c6b'); g.fillStyle = gr; g.fillRect(0, 0, w, h); g.fillStyle = 'rgba(255,255,255,.85)'; g.font = '800 26px Nunito, sans-serif'; g.fillText('Football ⚽ 2 – 1', 18, 80); });
+      const tv = add(s, new THREE.PlaneGeometry(1.04, 0.58), new THREE.MeshBasicMaterial({ map: tvScr, toneMapped: false }), -1.0, 0.82, -1.222, false);
+      const ph = hudPhone(s, cam, alertScreen);
+      const ready = model('sofa').then(({ root }) => place(root, -0.9, 0, 0.55, Math.PI, 0.95) && s.add(root));
+      return { s, cam, period: 10, ready, update(t) {
+        // units go down while the TV and lights are on; under 5 kWh the family gets a warning; at 8 s they top up
+        const u = t < 8 ? 6.2 - t * 0.28 : 25.0;
+        if (Math.abs(u - units) > 0.049) { units = u; lcd.redraw(); }
+        const blink = (t * 3.2) % 1 < 0.18; pulse.emissiveIntensity = blink ? 4 : 0.1; pulseHalo.material.opacity = blink ? 0.9 : 0;
+        const low = units < 5 && t < 8, topped = t >= 8;
+        setLed(b, low ? 0xffb400 : 0x34c759, low ? Math.floor(t * 4) % 2 === 0 : true);
+        ph.set(low ? { title: 'Cash Power is low', text: `${units.toFixed(1)} kWh left.`, text2: 'Top up before the lights go out.', app: 'POWER', color: '#e09b00' }
+          : topped ? { title: 'Topped up: 25 kWh', text: 'Thank you! Power is safe.', app: 'POWER', color: '#16834a' } : null);
+        ph.update(low || topped);
+        tv.material.color.setScalar(0.85 + 0.15 * Math.sin(t * 5));
+      } };
+    }
+
+    /* ---------- 3. solar security light ---------- */
+    function solar() {
+      const R = yard({ hills: hillsTex(true), dusk: true, sun: 1.2, sunPos: [-6, 4, 4] }), s = R.s;
+      const cam = camera([3.8, 1.7, 4.8], [-0.2, 1.3, -1.4], 42);
+      const h = house(s, { x: 0, z: -1.6, w: 7, h: 2.8, wall: '#e3d5bd', roof: '#5f6b75' });
+      // a steel door, a window with burglar bars, the lamp above the door
+      rbox(h, 0.9, 2.0, 0.06, 0.01, mat(0x2d4a63, { metalness: 0.5, roughness: 0.4 }), -0.6, 1.0, 0.14);
+      rbox(h, 1.1, 0.9, 0.04, 0.01, mat(0x1b2733, { roughness: 0.1, metalness: 0.4 }), 1.4, 1.5, 0.13);
+      for (let i = 0; i < 6; i++) cyl(h, 0.008, 0.008, 0.9, steel, 0.95 + i * 0.18, 1.5, 0.17, 8);
+      const lampM = glow(0xfff0c8); const lamp = new THREE.Group(); lamp.position.set(-0.6, 2.35, 0.2); h.add(lamp);
+      rbox(lamp, 0.28, 0.08, 0.18, 0.02, steel, 0, 0, 0); box(lamp, 0.24, 0.02, 0.14, lampM, 0, -0.045, 0, false);
+      const lampHalo = glowDot(lamp, 0xffe2a8, 1.4, 0, -0.08, 0.1);
+      const light = new THREE.SpotLight(0xffe7c0, 0, 9, 0.9, 0.6, 1.5); light.position.set(-0.6, 2.3, -1.3); light.target.position.set(-0.4, 0, 0.8); light.castShadow = true; light.shadow.mapSize.set(1024, 1024); s.add(light); s.add(light.target);
+      // the solar panel on the roof, the battery box with its four charge lights, and the light sensor
+      const panel = new THREE.Group(); panel.position.set(1.6, 3.3, -2.1); panel.rotation.x = -0.6; s.add(panel);
+      const cells = canvasTex(256, 160, (g, w, hh) => { g.fillStyle = '#c9ced4'; g.fillRect(0, 0, w, hh); for (let i = 0; i < 6; i++) for (let j = 0; j < 4; j++) { g.fillStyle = '#16264a'; g.fillRect(4 + i * 42, 4 + j * 39, 39, 36); g.fillStyle = 'rgba(120,160,230,.25)'; g.fillRect(4 + i * 42, 4 + j * 39, 39, 2); } });
+      box(panel, 1.4, 0.04, 0.9, mat(0xffffff, { map: cells, roughness: 0.2, metalness: 0.4 }), 0, 0, 0);
+      const bat = new THREE.Group(); bat.position.set(0.55, 1.15, -1.45); s.add(bat);
+      rbox(bat, 0.3, 0.22, 0.12, 0.015, mat(0x2b2f35, { roughness: 0.5 }), 0, 0, 0.06);
+      const bars = [0, 1, 2, 3].map((i) => { const m = glow(0x34c759); box(bat, 0.04, 0.025, 0.01, m, -0.075 + i * 0.05, 0.05, 0.125, false); return m; });
+      const b = espBox(s, 0.55, 0.85, -1.45);
+      const ldr = sph(s, 0.03, phys(0xffffff, { roughness: 0.2 }), 0.1, 2.55, -1.42);
+      const visitor = walker(s);
+      return { s, cam, period: 10, ready: visitor.ready, update(t) {
+        // sunset (0–3 s); in the dark the lamp glows softly; someone walks in (5–7.5 s): full brightness; then soft again
+        const night = clamp01((t - 1) / 2.5);
+        R.sun.intensity = 1.2 * (1 - night) + 0.05; R.hemi.intensity = 0.5 - 0.38 * night;
+        s.background.setRGB(lerp(0.45, 0.04, night), lerp(0.55, 0.06, night), lerp(0.75, 0.16, night));
+        R.sky.material.color.setScalar(1 - 0.72 * night);
+        const x = t < 5 ? 6 : t < 7.5 ? lerp(6, 0.0, (t - 5) / 2.5) : t < 8.5 ? 0.0 : lerp(0.0, -6, (t - 8.5) / 1.5);
+        visitor.set(x, 0.6, t < 8.5 ? -Math.PI / 2 : -Math.PI / 2, !(t > 7.5 && t < 8.5), t, t > 5);
+        const near = t > 5.6 && t < 9.4;
+        const k = night < 0.8 ? 0 : near ? 1 : 0.45;
+        lampM.emissiveIntensity = 4 * k; lampHalo.material.opacity = 0.9 * Math.min(1, k * 1.6); light.intensity = 3.2 * k;
+        ldr.material.emissive = ldr.material.emissive || new THREE.Color(); ldr.material.emissive.setHex(0x222222);
+        const level = t < 3 ? 4 : 3; bars.forEach((m, i) => { m.emissiveIntensity = i < level ? 2.5 : 0.02; });
+        setLed(b, k > 0.5 ? 0xffd27a : night > 0.8 ? 0x2a9dff : 0x34c759, true);
+      } };
+    }
+
+    /* ---------- 4. rain tank and automatic pump ---------- */
+    function tank() {
+      const R = yard({ sunPos: [6, 9, 4] }), s = R.s;
+      const cam = camera([3.4, 2.2, 4.6], [0.1, 1.6, -0.8], 42);
+      house(s, { x: -2.2, z: -1.9, w: 5, h: 2.8, wall: '#e9dcc4' });
+      banana(s, 3.6, -2.8, 2.6, 0.7); banana(s, -5, -0.8, 2.4, 1.9);
+      // a brick tower with a black ribbed water tank on top
+      const brick = mat(0xffffff, { map: tex('brick.jpg', [1, 1]), roughness: 1 });
+      box(s, 1.4, 1.6, 1.4, brick, 0.9, 0.8, -1.1);
+      const prof = []; for (let i = 0; i <= 20; i++) { const y = i / 20 * 1.6; prof.push(new THREE.Vector2(0.62 + (i % 4 === 0 ? 0.03 : 0), y)); }
+      prof.push(new THREE.Vector2(0.45, 1.72), new THREE.Vector2(0.12, 1.75), new THREE.Vector2(0, 1.75));
+      add(s, new THREE.LatheGeometry(prof, 40), mat(0x1c2024, { roughness: 0.6 }), 0.9, 1.6, -1.1);
+      cyl(s, 0.14, 0.14, 0.06, mat(0x1c2024, { roughness: 0.5 }), 0.9, 3.38, -1.1, 20);
+      // the level lights on the tower (blue: how full), the float sensor's ESP32 box, the tap and a jerrycan
+      const lv = new THREE.Group(); lv.position.set(0.9, 1.0, -0.39); s.add(lv);
+      rbox(lv, 0.14, 0.42, 0.04, 0.01, mat(0xf2f3f4, { roughness: 0.4 }), 0, 0, 0.02);
+      const lvl = [0, 1, 2, 3].map((i) => { const m = glow(0x2a9dff); rbox(lv, 0.08, 0.06, 0.01, 0.01, m, 0, -0.14 + i * 0.095, 0.045); return m; });
+      const b = espBox(s, 0.9, 0.42, -0.39);
+      const pipeM = mat(0xdfe3e6, { roughness: 0.4 });
+      add(s, new THREE.TubeGeometry(new THREE.CatmullRomCurve3([V(0.9, 1.6, -0.48), V(0.9, 1.25, -0.3), V(0.9, 0.55, -0.25)]), 20, 0.025, 10, false), pipeM);
+      cyl(s, 0.03, 0.02, 0.1, mat(0xc9a35a, { metalness: 0.9, roughness: 0.3 }), 0.9, 0.5, -0.22, 12);
+      jerrycan(s, 0.85, 0, -0.1, 0.2);
+      const fill = [0, 1, 2].map(() => sph(s, 0.012, phys(0x4ea3e6, { roughness: 0.05 }), 0.9, 0.45, -0.22, false));
+      // the pump on the ground and the pipe that climbs to the top of the tank
+      const pump = new THREE.Group(); pump.position.set(2.3, 0, -0.4); s.add(pump);
+      rbox(pump, 0.4, 0.25, 0.25, 0.03, mat(0x1d5aa8, { roughness: 0.4, metalness: 0.3 }), 0, 0.15, 0); cyl(pump, 0.11, 0.11, 0.3, mat(0x2a6fd6, { metalness: 0.5, roughness: 0.3 }), -0.2, 0.15, 0, 20).rotation.z = Math.PI / 2;
+      const up = new THREE.CatmullRomCurve3([V(2.3, 0.28, -0.4), V(2.3, 1.2, -0.7), V(2.0, 3.0, -1.0), V(1.5, 3.4, -1.1), V(1.25, 3.3, -1.1)]);
+      add(s, new THREE.TubeGeometry(up, 60, 0.03, 10, false), mat(0x2b2f35, { roughness: 0.5 }));
+      const flow = [0, 1, 2, 3, 4, 5].map(() => sph(s, 0.03, phys(0x4ea3e6, { roughness: 0.05 }), 0, 0, 0, false));
+      const ph = hudPhone(s, cam, alertScreen);
+      return { s, cam, period: 10, update(t) {
+        // the family fills a jerrycan and the level drops; at one light the pump starts and fills the tank; full: pump off
+        const level = t < 3 ? lerp(0.45, 0.2, t / 3) : t < 8 ? lerp(0.2, 1, (t - 3) / 5) : 1;
+        const pumping = t >= 3 && t < 8;
+        const n = Math.max(1, Math.ceil(level * 4 - 0.01));
+        lvl.forEach((m, i) => { m.emissiveIntensity = i < n ? 2.5 : 0.03; });
+        flow.forEach((d, i) => { d.visible = pumping; if (pumping) d.position.copy(up.getPoint(((t * 0.7) + i / 6) % 1)); });
+        fill.forEach((d, i) => { d.visible = t < 3; d.position.y = 0.45 - (((t * 1.8) + i / 3) % 1) * 0.1; });
+        pump.children[1].rotation.x = pumping ? t * 20 : 0;
+        setLed(b, pumping ? 0x2a9dff : 0x34c759, true);
+        ph.set(pumping ? { title: 'Water is low', text: 'The pump is filling the tank.', app: 'WATER', color: '#2a7fd0' } : t >= 8 ? { title: 'Tank full', text: 'The pump switched itself off.', app: 'WATER', color: '#16834a' } : null);
+        ph.update(t > 3.3);
+      } };
+    }
+
+    /* ---------- 5. charcoal kitchen smoke alarm ---------- */
+    function smoke() {
+      const R = room({ bg: 0xe9e4dc, wall: 0xcbb89a, hemi: 0.4, key: 1.2, keyPos: [2, 3.5, 3], back: 1.1, window: [0.95, 1.6, 0.7, 0.6] }), s = R.s;
+      R.s.children.filter((o) => o.isMesh && o.geometry.parameters && o.geometry.parameters.depth === 5 && o.position.y < 0).forEach((o) => { o.material = mat(0x9a948a, { roughness: 0.9 }); }); // a concrete floor
+      const cam = camera([0.95, 1.15, 1.3], [-0.25, 0.85, -0.75], 44);
+      const shelf = woodTop(0x9c7a55); rbox(s, 1.0, 0.03, 0.25, 0.005, shelf, -1.2, 1.25, -0.96);
+      [[-1.55, 0x9aa3ab, 0.09], [-1.3, 0xc9cdd1, 0.11], [-1.02, 0xb8603a, 0.08], [-0.8, 0xe8e4dc, 0.06]].forEach(([x, c, r2]) => cyl(s, r2, r2 * 0.9, r2 * 1.1, mat(c, { metalness: c === 0xc9cdd1 || c === 0x9aa3ab ? 0.8 : 0, roughness: 0.4 }), x, 1.265 + r2 * 0.55, -0.96, 24));
+      jerrycan(s, -1.0, 0, -0.75, 0.4);
+      const stool = woodTop(0x8a6a48); cyl(s, 0.16, 0.16, 0.03, stool, 0.45, 0.32, -0.2, 24); for (let i = 0; i < 3; i++) { const a = i * 2.1; cyl(s, 0.015, 0.015, 0.31, stool, 0.45 + Math.cos(a) * 0.11, 0.155, -0.2 + Math.sin(a) * 0.11, 8); }
+      // the charcoal stove (imbabura) with glowing charcoal and a cooking pot on top
+      const stove = new THREE.Group(); stove.position.set(-0.3, 0, -0.55); s.add(stove);
+      const prof = [[0, 0.12], [0.17, 0.12], [0.2, 0.2], [0.2, 0.36], [0.17, 0.38], [0.16, 0.36]].map(([r, y]) => new THREE.Vector2(r, y));
+      add(stove, new THREE.LatheGeometry(prof, 32), mat(0x3a3d40, { metalness: 0.6, roughness: 0.45, side: THREE.DoubleSide }), 0, 0, 0);
+      for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2; cyl(stove, 0.012, 0.012, 0.13, steel, Math.cos(a) * 0.15, 0.065, Math.sin(a) * 0.15, 8); }
+      const coalM = glow(0xff5a1f, { roughness: 0.9 }); for (let i = 0; i < 9; i++) { const a = rnd() * 6.28, r = rnd() * 0.12; const c = sph(stove, 0.035, i % 3 ? mat(0x1a1a1a, { roughness: 1 }) : coalM, Math.cos(a) * r, 0.33, Math.sin(a) * r, false); c.scale.y = 0.6; }
+      const ember = new THREE.PointLight(0xff6a2a, 1.2, 1.5, 2); ember.position.set(0, 0.45, 0); stove.add(ember);
+      const potP = [[0, 0], [0.19, 0], [0.2, 0.02], [0.2, 0.2], [0.21, 0.21], [0.2, 0.21]].map(([r, y]) => new THREE.Vector2(r, y));
+      add(stove, new THREE.LatheGeometry(potP, 32), mat(0xc9cdd1, { metalness: 0.9, roughness: 0.3, side: THREE.DoubleSide }), 0, 0.38, 0);
+      // the smoke sensor (MQ-2: blue board, metal mesh can) on the wall, the buzzer, the wall fan
+      const sens = new THREE.Group(); sens.position.set(0.35, 1.55, -1.08); s.add(sens);
+      rbox(sens, 0.08, 0.06, 0.01, 0.004, mat(0x1d5aa8, { roughness: 0.45 }), 0, 0, 0.01);
+      cyl(sens, 0.02, 0.02, 0.025, mat(0xb9bec2, { metalness: 0.8, roughness: 0.4 }), 0, 0, 0.025, 16).rotation.x = Math.PI / 2;
+      const b = espBox(s, 0.35, 1.38, -1.08);
+      const rings = [0, 1, 2].map(() => add(s, new THREE.TorusGeometry(0.05, 0.003, 8, 40), new THREE.MeshBasicMaterial({ color: 0xff5a4f, transparent: true, opacity: 0, toneMapped: false }), 0.35, 1.38, -1.0, false));
+      const fan = new THREE.Group(); fan.position.set(-0.9, 1.85, -1.08); s.add(fan);
+      rbox(fan, 0.36, 0.36, 0.06, 0.03, mat(0xf2f3f4, { roughness: 0.4 }), 0, 0, 0.03);
+      add(fan, new THREE.TorusGeometry(0.15, 0.008, 8, 40), steel, 0, 0, 0.065);
+      const blades = new THREE.Group(); blades.position.z = 0.06; fan.add(blades);
+      for (let i = 0; i < 4; i++) { const bl = box(blades, 0.13, 0.05, 0.005, mat(0xc9ced4, { roughness: 0.4 }), 0.07, 0, 0); bl.geometry.translate(0, 0, 0); bl.rotation.z = 0; const p = new THREE.Group(); p.rotation.z = i * Math.PI / 2; blades.add(p); p.add(bl); }
+      const puffs = []; for (let i = 0; i < 24; i++) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDot, color: 0x8d8f92, transparent: true, opacity: 0, depthWrite: false })); sp.userData = { o: rnd(), dx: rnd() - 0.5, dz: rnd() - 0.5 }; s.add(sp); puffs.push(sp); }
+      const ph = hudPhone(s, cam, alertScreen);
+      return { s, cam, period: 9, update(t) {
+        // smoke builds up (0–4 s); the sensor sounds the alarm and switches on the fan; the smoke is pulled out (5–8 s)
+        const level = t < 4 ? t / 4 : t < 5 ? 1 : clamp01(1 - (t - 5) / 3);
+        const alarm = t > 3 && t < 7.5;
+        puffs.forEach((p) => { const u = p.userData, k = (t * 0.25 + u.o) % 1, toFan = alarm ? clamp01((t - 4) / 2) : 0;
+          p.position.set(lerp(-0.3 + u.dx * 0.3 * k, -0.9, toFan * k), 0.6 + k * 1.3, lerp(-0.55 + u.dz * 0.3, -1.0, toFan * k));
+          p.scale.setScalar(0.15 + k * 0.45); p.material.opacity = 0.42 * level * Math.sin(Math.PI * k); });
+        rings.forEach((r, i) => { const f = ((t * 1.6) + i / 3) % 1; r.scale.setScalar(1 + f * 2.5); r.material.opacity = alarm ? 0.85 * (1 - f) : 0; });
+        blades.rotation.z = t > 3.5 ? -(t - 3.5) * 25 : 0;
+        ember.intensity = 1.0 + Math.sin(t * 9) * 0.25; coalM.emissiveIntensity = 1.6 + Math.sin(t * 7) * 0.4;
+        setLed(b, alarm ? 0xff3b30 : 0x34c759, alarm ? Math.floor(t * 6) % 2 === 0 : true);
+        ph.set(alarm ? { title: 'Smoke in the kitchen!', text: 'The fan is on. Open the door', text2: 'and check the stove.', app: 'KITCHEN', color: '#c93131' } : null);
+        ph.update(alarm && t > 3.4);
+      } };
+    }
+
+    /* ---------- 6. smart garden watering ---------- */
+    function garden() {
+      const R = yard({ sunPos: [5, 9, 6] }), s = R.s;
+      const cam = camera([2.1, 1.35, 2.3], [-0.35, 0.35, -0.45], 42);
+      banana(s, -4.2, -1.6, 2.4, 0.2); banana(s, -5.2, -0.2, 2.2, 1.4);
+      house(s, { x: 2.0, z: -6.5, w: 6, h: 2.8, wall: '#e9dcc4', roof: '#7b2f2a' });
+      // two raised beds of beans with a black drip pipe along each row
+      const bedSoil = mat(0xffffff, { map: soilTex, roughness: 1 }), dry = C(0xd08a5c), wet = C(0x7a3a1d);
+      const beds = [];
+      for (const z of [-0.9, 0.2]) {
+        const bed = rbox(s, 2.6, 0.22, 0.75, 0.04, mat(0xffffff, { map: soilTex, roughness: 1 }), -0.4, 0.11, z); beds.push(bed);
+        add(s, new THREE.TubeGeometry(new THREE.LineCurve3(V(-1.7, 0.24, z), V(0.9, 0.24, z)), 4, 0.012, 8, false), mat(0x15181b, { roughness: 0.5 }));
+      }
+      void bedSoil;
+      const plants = [], leafShape = new THREE.Shape(); leafShape.moveTo(0, 0); leafShape.quadraticCurveTo(0.05, 0.04, 0.11, 0); leafShape.quadraticCurveTo(0.05, -0.04, 0, 0);
+      const lg = new THREE.ShapeGeometry(leafShape, 8); lg.rotateX(-Math.PI / 2);
+      const beanM = mat(0x4f9a3c, { roughness: 0.55, side: THREE.DoubleSide }), stemM = mat(0x5f8a3a, { roughness: 0.7 });
+      for (const z of [-0.9, 0.2]) for (let i = 0; i < 8; i++) {
+        const p = new THREE.Group(); p.position.set(-1.55 + i * 0.32, 0.22, z + (i % 2 ? 0.12 : -0.12)); p.scale.setScalar(1.9); s.add(p); plants.push(p); p.userData.s = 1.9;
+        cyl(p, 0.006, 0.008, 0.28, stemM, 0, 0.14, 0, 6);
+        for (let k = 0; k < 9; k++) { const l = add(p, lg, beanM, 0, 0.1 + (k % 3) * 0.07, 0); l.rotation.set(0.2 + (k % 3) * 0.15, k * 2.4, 0.25); }
+      }
+      // the rain tank at the end of the beds, the valve box, the soil sensor and the ESP32 on a post
+      const prof = []; for (let i = 0; i <= 16; i++) prof.push(new THREE.Vector2(0.45 + (i % 4 === 0 ? 0.025 : 0), i / 16 * 1.2)); prof.push(new THREE.Vector2(0.1, 1.28), new THREE.Vector2(0, 1.28));
+      add(s, new THREE.LatheGeometry(prof, 36), mat(0x2f6b3a, { roughness: 0.55 }), 1.6, 0, -0.35);
+      rbox(s, 0.16, 0.12, 0.12, 0.02, mat(0x1d5aa8, { roughness: 0.4 }), 1.08, 0.2, -0.35);
+      add(s, new THREE.TubeGeometry(new THREE.CatmullRomCurve3([V(1.16, 0.2, -0.35), V(1.0, 0.24, -0.9), V(0.9, 0.24, -0.9)]), 20, 0.012, 8, false), mat(0x15181b));
+      add(s, new THREE.TubeGeometry(new THREE.CatmullRomCurve3([V(1.0, 0.2, -0.35), V(0.95, 0.24, 0.2), V(0.9, 0.24, 0.2)]), 20, 0.012, 8, false), mat(0x15181b));
+      box(s, 0.06, 0.9, 0.06, mat(0x6a4a2c, { roughness: 0.8 }), 1.15, 0.45, 0.65);
+      const b = espBox(s, 1.15, 0.85, 0.69, 0, 2.2);
+      rbox(s, 0.02, 0.12, 0.004, 0.003, mat(0x1d5aa8), 0.6, 0.27, 0.32);
+      cable(s, [[0.6, 0.33, 0.32], [0.85, 0.35, 0.5], [1.12, 0.8, 0.69]], 0x15181b, 0.004);
+      const drips = []; for (const z of [-0.9, 0.2]) for (let i = 0; i < 8; i++) drips.push(sph(s, 0.01, phys(0x4ea3e6, { roughness: 0.05 }), -1.55 + i * 0.32, 0.23, z, false));
+      const ph = hudPhone(s, cam, alertScreen);
+      return { s, cam, period: 9, update(t) {
+        // the soil dries in the sun (0–3 s); the sensor opens the valve: drips along every row (3–6.5 s); wet soil, happy beans
+        const m = t < 3 ? 1 - t / 3 * 0.85 : t < 6.5 ? lerp(0.15, 1, (t - 3) / 3.5) : 1;
+        const watering = t >= 3 && t < 6.5;
+        beds.forEach((bd) => bd.material.color.copy(dry).lerp(wet, ease(m)));
+        plants.forEach((p, i) => { p.scale.y = p.userData.s * lerp(0.82, 1, ease(m)); p.rotation.z = lerp(0.18, 0, ease(m)) * (i % 2 ? 1 : -1); });
+        drips.forEach((d, i) => { d.visible = watering; d.position.y = 0.23 - ((t * 1.5 + i * 0.13) % 1) * 0.02; d.scale.setScalar(0.6 + ((t * 1.5 + i * 0.13) % 1)); });
+        setLed(b, watering ? 0x2a9dff : m < 0.35 ? 0xff3b30 : 0x34c759, true);
+        ph.set(watering ? { title: 'Garden is thirsty', text: 'Watering the beans from', text2: 'the rain tank.', app: 'GARDEN', color: '#2a7fd0' } : null);
+        ph.update(watering && t > 3.3);
+      } };
+    }
+
+    /* ---------- 7. football goal counter ---------- */
+    function football() {
+      const R = yard({ sunPos: [-5, 9, 6] }), s = R.s;
+      const cam = camera([3.0, 1.6, 3.9], [0.0, 0.95, -1.6], 44);
+      const grass = canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#5f9a3f'; g.fillRect(0, 0, w, h); for (let i = 0; i < 9000; i++) { g.fillStyle = `rgba(${rnd() < 0.5 ? '40,90,30' : '140,170,80'},.25)`; g.fillRect(rnd() * w, rnd() * h, 1, 3); } for (let i = 0; i < 30; i++) { const x = rnd() * w, y = rnd() * h, r = 8 + rnd() * 20, gr = g.createRadialGradient(x, y, 1, x, y, r); gr.addColorStop(0, 'rgba(165,81,43,.55)'); gr.addColorStop(1, 'rgba(165,81,43,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, 2 * r, 2 * r); } }, [6, 6]);
+      const pitch = add(s, new THREE.PlaneGeometry(14, 12), mat(0xffffff, { map: grass, roughness: 0.95 }), 0, 0.005, 1, false); pitch.rotation.x = -Math.PI / 2;
+      const lineM = mat(0xf4f4f0, { roughness: 0.6 });
+      box(s, 5.2, 0.006, 0.08, lineM, -0.4, 0.01, -1.6, false); box(s, 0.08, 0.006, 1.8, lineM, -2.96, 0.01, -0.7, false); box(s, 0.08, 0.006, 1.8, lineM, 2.16, 0.01, -0.7, false); box(s, 5.2, 0.006, 0.08, lineM, -0.4, 0.01, 0.2, false);
+      // the goal: white posts and crossbar, a net of thin cords
+      const post = mat(0xf7f7f5, { roughness: 0.4 }), gw = 3.0, gh = 1.6, gx = -0.4, gz = -1.6;
+      cyl(s, 0.045, 0.045, gh, post, gx - gw / 2, gh / 2, gz, 16); cyl(s, 0.045, 0.045, gh, post, gx + gw / 2, gh / 2, gz, 16);
+      cyl(s, 0.045, 0.045, gw + 0.09, post, gx, gh, gz, 16).rotation.z = Math.PI / 2;
+      const netM = new THREE.LineBasicMaterial({ color: 0xe8ecef, transparent: true, opacity: 0.7 }), pts = [];
+      for (let i = 0; i <= 15; i++) { const x = gx - gw / 2 + i * gw / 15; pts.push(V(x, gh, gz), V(x, 0, gz - 0.9), V(x, gh, gz), V(x, gh, gz - 0.5)); }
+      for (let j = 0; j <= 8; j++) { const y = j * gh / 8, zz = gz - 0.9 * (1 - y / gh) - 0.5 * (y / gh) * 0; pts.push(V(gx - gw / 2, y, zz), V(gx + gw / 2, y, zz)); }
+      s.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), netM));
+      // the goal sensor: an infrared beam across the goal mouth, a little box on each post
+      for (const sx of [-1, 1]) rbox(s, 0.08, 0.08, 0.06, 0.01, mat(0x2b2f35, { roughness: 0.5 }), gx + sx * (gw / 2 + 0.08), 0.3, gz + 0.02);
+      const beam = box(s, gw, 0.008, 0.008, new THREE.MeshBasicMaterial({ color: 0xff3030, transparent: true, opacity: 0.55, toneMapped: false }), gx, 0.3, gz + 0.02, false);
+      const b = espBox(s, gx + gw / 2 + 0.09, 0.55, gz + 0.05, 0, 2.2);
+      // the scoreboard on a stand beside the pitch
+      let score = [0, 0];
+      const board = canvasTex(320, 160, (g, w, h) => {
+        g.fillStyle = '#0d1418'; g.fillRect(0, 0, w, h);
+        g.fillStyle = '#9fb3c4'; g.font = '800 22px Nunito, sans-serif'; g.textAlign = 'center'; g.fillText('BLUE', w * 0.25, 34); g.fillText('RED', w * 0.75, 34);
+        g.fillStyle = '#ffcf33'; g.font = '800 82px monospace'; g.fillText(String(score[0]), w * 0.25, 120); g.fillText(String(score[1]), w * 0.75, 120);
+        g.fillStyle = '#ffcf33'; g.fillRect(w / 2 - 6, 70, 12, 12); g.fillRect(w / 2 - 6, 96, 12, 12);
+      });
+      const sb = new THREE.Group(); sb.position.set(2.0, 0, -1.9); sb.rotation.y = -0.35; s.add(sb);
+      for (const x of [-0.45, 0.45]) cyl(sb, 0.03, 0.03, 1.4, steel, x, 0.7, 0, 10);
+      rbox(sb, 1.2, 0.62, 0.08, 0.02, mat(0x1d2328, { roughness: 0.4 }), 0, 1.65, 0);
+      const scr = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.55), new THREE.MeshBasicMaterial({ map: board, toneMapped: false })); scr.position.set(0, 1.65, 0.042); sb.add(scr);
+      banana(s, -5.5, -3.6, 2.6, 0.4); banana(s, 4.6, -4.2, 2.4, 1.5);
+      // the ball: a white ball with dark patches, kicked into the goal twice
+      const ballTex = canvasTex(256, 128, (g, w, h) => { g.fillStyle = '#f7f7f5'; g.fillRect(0, 0, w, h); g.fillStyle = '#1b1d20'; for (let i = 0; i < 12; i++) { const x = (i % 6) * w / 6 + (i < 6 ? 0 : w / 12), y = i < 6 ? h * 0.3 : h * 0.72; g.beginPath(); for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2; g.lineTo(x + Math.cos(a) * 14, y + Math.sin(a) * 14); } g.fill(); } });
+      const ball = sph(s, 0.11, mat(0xffffff, { map: ballTex, roughness: 0.45 }), 0, 0.11, 2);
+      const kicks = [{ t0: 0.6, from: V(1.6, 0.11, 3.2), to: V(-0.9, 0.55, gz - 0.6) }, { t0: 4.6, from: V(-2.4, 0.11, 3.0), to: V(0.3, 0.35, gz - 0.6) }];
+      const ph = hudPhone(s, cam, alertScreen);
+      return { s, cam, period: 8, update(t) {
+        // each kick flies for 1.1 s, crosses the beam, then rolls into the net; the ESP32 adds one to the score
+        let k = kicks[0]; if (t >= kicks[1].t0) k = kicks[1];
+        const f = clamp01((t - k.t0) / 1.1);
+        ball.position.lerpVectors(k.from, k.to, f); ball.position.y = lerp(k.from.y, k.to.y, f) + Math.sin(Math.PI * f) * 0.9; ball.rotation.set(t * 8, t * 5, 0);
+        const goals = (t > kicks[0].t0 + 1.0 ? 1 : 0) + (t > kicks[1].t0 + 1.0 ? 1 : 0);
+        if (goals !== score[0] || score[1] !== 1) { score = [goals, 1]; board.redraw(); }
+        const cross = (t > kicks[0].t0 + 0.85 && t < kicks[0].t0 + 1.2) || (t > kicks[1].t0 + 0.85 && t < kicks[1].t0 + 1.2);
+        beam.material.opacity = cross ? 0.08 : 0.55;
+        const flash = (t > kicks[0].t0 + 1 && t < kicks[0].t0 + 2) || (t > kicks[1].t0 + 1 && t < kicks[1].t0 + 2);
+        setLed(b, flash ? 0xffcf33 : 0x34c759, flash ? Math.floor(t * 6) % 2 === 0 : true);
+        ph.set(goals ? { title: 'GOAL! Blue ' + goals + ' – 1 Red', text: 'School match, second half.', app: 'SCORE', color: '#2a7fd0' } : null);
+        ph.update(flash);
+      } };
+    }
+
+    /* ---------- 8. smart bin ---------- */
+    function bin() {
+      const R = yard({ sunPos: [6, 9, 5] }), s = R.s;
+      const cam = camera([1.25, 1.3, 1.55], [-0.3, 0.75, -0.6], 44);
+      // a paved pavement along a street, a low wall, banana trees and a house behind
+      const paving = canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#9b9a95'; g.fillRect(0, 0, w, h); for (let i = 0; i < 4; i++) for (let j = 0; j < 8; j++) { g.fillStyle = `rgb(${170 + rnd() * 20},${168 + rnd() * 18},${160 + rnd() * 16})`; g.fillRect(i * 64 + 2 + (j % 2) * 32, j * 32 + 2, 60, 28); } }, [6, 4]);
+      const pave = add(s, new THREE.PlaneGeometry(12, 5), mat(0xffffff, { map: paving, roughness: 0.9 }), 0, 0.01, 0, false); pave.rotation.x = -Math.PI / 2;
+      const kerb = box(s, 12, 0.12, 0.2, mat(0xd9d6cf, { roughness: 0.8 }), 0, 0.06, 2.4, false); void kerb;
+      const wallM = mat(0xffffff, { map: plasterTex('#efe2c9'), roughness: 0.9 });
+      add(s, new THREE.BoxGeometry(12, 1.4, 0.22), wallM, 0, 0.7, -1.5); add(s, new THREE.BoxGeometry(12.04, 0.07, 0.3), mat(0xb4562e, { roughness: 0.8 }), 0, 1.43, -1.5);
+      banana(s, -2.4, -2.6, 2.6, 0.5); banana(s, 2.8, -2.8, 2.4, 1.8); house(s, { x: 0.5, z: -5.5, w: 7, h: 2.8, roof: '#5f6b75' });
+      const sign = canvasTex(512, 128, (g, w, h) => { g.fillStyle = '#1f6b3f'; g.fillRect(0, 0, w, h); g.fillStyle = '#ffffff'; g.font = '800 46px Nunito, sans-serif'; g.textAlign = 'center'; g.fillText('KEEP OUR CITY CLEAN', w / 2, 62); g.font = '700 26px Nunito, sans-serif'; g.fillStyle = '#cfe8d6'; g.fillText('Use the bin · Thank you', w / 2, 102); });
+      add(s, new THREE.PlaneGeometry(1.6, 0.4), new THREE.MeshStandardMaterial({ map: sign, roughness: 0.6 }), -2.05, 0.98, -1.385, false);
+      const shrub = mat(0x3f7f35, { roughness: 0.8 }), flower = mat(0xd9534f, { roughness: 0.6 });
+      for (let i = 0; i < 7; i++) { const x = -2.6 + i * 0.75 + (i > 2 ? 0.9 : 0); if (Math.abs(x + 2.05) < 0.9) continue; rbox(s, 0.6, 0.3, 0.35, 0.03, mat(0x9a948a, { roughness: 0.9 }), x, 0.15, -1.18); for (let k = 0; k < 4; k++) { sph(s, 0.14 + rnd() * 0.06, shrub, x - 0.18 + k * 0.12, 0.38 + rnd() * 0.08, -1.18 + (rnd() - 0.5) * 0.1); } sph(s, 0.035, flower, x + 0.05, 0.55, -1.08); sph(s, 0.035, flower, x - 0.12, 0.52, -1.06); }
+      // the bin: green, on a short post, with a lid; the distance sensor looks down from under the lid
+      const binG = new THREE.Group(); binG.position.set(-0.3, 0, -0.6); s.add(binG);
+      const prof = [[0, 0.3], [0.26, 0.3], [0.3, 1.05], [0.32, 1.06], [0.32, 1.08], [0.29, 1.08]].map(([r, y]) => new THREE.Vector2(r, y));
+      add(binG, new THREE.LatheGeometry(prof, 40), mat(0x2f7d4a, { roughness: 0.45, side: THREE.DoubleSide }), 0, 0, 0);
+      cyl(binG, 0.04, 0.05, 0.3, steel, 0, 0.15, 0, 12);
+      const lid = new THREE.Group(); lid.position.set(0, 1.09, -0.3); binG.add(lid);
+      cyl(lid, 0.33, 0.33, 0.03, mat(0x24603a, { roughness: 0.45 }), 0, 0, 0.3, 40);
+      const sens = new THREE.Group(); sens.position.set(0, -0.03, 0.3); lid.add(sens);
+      rbox(sens, 0.12, 0.02, 0.05, 0.005, mat(0x1d5aa8), 0, 0, 0); for (const x of [-0.03, 0.03]) cyl(sens, 0.012, 0.012, 0.02, mat(0xd7dbdf, { metalness: 0.9, roughness: 0.3 }), x, -0.015, 0, 14);
+      // the fill level on the front: five lights, green to red
+      const lv = new THREE.Group(); lv.position.set(0, 0.7, 0.29); lv.rotation.x = -0.05; binG.add(lv);
+      rbox(lv, 0.08, 0.3, 0.02, 0.01, mat(0xf2f3f4, { roughness: 0.4 }), 0, 0, 0);
+      const cols = [0x34c759, 0x34c759, 0xffb400, 0xff8a00, 0xff3b30];
+      const lvl = cols.map((c, i) => { const m = glow(c); sph(lv, 0.016, m, 0, -0.11 + i * 0.055, 0.014, false); return m; });
+      const b = espBox(s, -0.3, 0.22, -0.55, 0, 2.2);
+      // rubbish inside (bags and bottles stacking up) and one more piece dropped in from above
+      const junk = new THREE.Group(); binG.add(junk); const items = [];
+      for (let i = 0; i < 18; i++) { const c = [0x3a8fd6, 0xe0e0dc, 0x2b2f35, 0xd9534f, 0x5cb85c][i % 5]; const it = i % 3 === 0 ? cyl(junk, 0.03, 0.03, 0.14, phys(c, { roughness: 0.2, transparent: true, opacity: 0.85 }), 0, 0, 0, 12) : sph(junk, 0.07 + rnd() * 0.04, mat(c, { roughness: 0.8 }), 0, 0, 0); const a = rnd() * 6.28, r = rnd() * 0.16; it.userData = { x: Math.cos(a) * r, z: Math.sin(a) * r, y: 0.36 + i * 0.04, rx: rnd() * 3 }; items.push(it); }
+      const drop = sph(s, 0.06, mat(0xe0e0dc, { roughness: 0.8 }), 0, 0, 0);
+      const ph = hudPhone(s, cam, alertScreen);
+      return { s, cam, period: 9, update(t) {
+        // the bin fills up (0–5 s); at 90 % it tells the collectors; at 7 s it is emptied
+        const fill = t < 5 ? t / 5 * 0.95 : t < 7 ? 0.95 : 0.05;
+        const shown = Math.round(fill * items.length);
+        items.forEach((it, i) => { it.visible = i < shown; const u = it.userData; it.position.set(u.x, u.y, u.z); it.rotation.set(u.rx, u.rx * 2, 0); });
+        const n = Math.ceil(fill * 5 - 0.001); lvl.forEach((m, i) => { m.emissiveIntensity = i < n ? 2.6 : 0.04; });
+        const open = t > 1.2 && t < 2.4; lid.rotation.x = open ? -0.9 * Math.sin(Math.PI * (t - 1.2) / 1.2) : 0;
+        drop.visible = open; drop.position.set(-0.3, 1.6 - (t - 1.2) * 0.9, -0.6);
+        const full = fill > 0.85 && t < 7;
+        setLed(b, full ? 0xff3b30 : 0x34c759, full ? Math.floor(t * 4) % 2 === 0 : true);
+        ph.set(full ? { title: 'Bin 12 is 90% full', text: 'Time for collection on', text2: 'KN 5 Road.', app: 'CLEAN CITY', color: '#16834a' } : t >= 7 ? { title: 'Bin 12 emptied', text: 'Thank you, collectors!', app: 'CLEAN CITY', color: '#16834a' } : null);
+        ph.update(full || t >= 7);
+      } };
+    }
+
 
     /* ---------- draw the scenes into the cards ---------- */
-    const MAKERS = { plant, lights, door, leak, air, parking };
+    const MAKERS = { gate, power, solar, tank, smoke, garden, football, bin };
     const items = [];
     [...canvases].forEach((cv) => { if (MAKERS[cv.dataset.proj]) items.push({ cv, ctx: cv.getContext('2d'), sc: null, visible: false, near: false, ok: false, t0: Math.random() * 3 }); });
     if (!items.length) return null;
