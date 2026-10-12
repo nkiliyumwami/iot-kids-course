@@ -35,7 +35,7 @@
       idea: 'Sound is just switching very fast.',
       hardware: 'Passive buzzer (+ the 330 Ω resistor you already have)',
       code: 'PWM: frequency and on/off time' },
-    { n: 6, slug: '06-measuring-light', skills: ['Built a light sensor voltage divider', 'Read analog values from 0 to 4095', 'Told analog and digital apart'], title: 'Measuring Light', unit: 1, status: 'planned', minutes: 45,
+    { n: 6, slug: '06-measuring-light', skills: ['Built a light sensor voltage divider', 'Read analog values from 0 to 4095', 'Told analog and digital apart'], title: 'Measuring Light', unit: 1, status: 'ready', minutes: 45,
       idea: 'Analog inputs: reading "how much", not just on or off.',
       hardware: 'Light sensor (LDR) + 10 kΩ resistor',
       code: 'ADC readings from 0 to 4095' },

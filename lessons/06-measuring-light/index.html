@@ -1,0 +1,2670 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Measuring Light · KundaKode</title>
+<script src="../../assets/brand.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Layout: a lab bench. The 3D workbench fills the left, the lesson card sits on the right; they stack on phones. */
+:root {
+  --bg: #E3EBF0;
+  --surface: #FFFFFF;
+  --surface-2: #F1F5F8;
+  --ink: #15202A;
+  --muted: #526170;
+  --line: #D2DCE3;
+  --accent: #0A7480;
+  --accent-strong: #075A63;
+  --accent-soft: #DAEEF0;
+  --red: #C93131;
+  --amber: #A86D00;
+  --amber-lamp: #FFB400;
+  --green: #16834A;
+  --hl: #F2B705;
+  --ground: #2E3136;
+  --code-bg: #13202A;
+  --code-ink: #E3ECF1;
+  --code-dim: #8BA0AE;
+  --code-hl: #24404F;
+  --font-display: 'Baloo 2', 'Trebuchet MS', system-ui, sans-serif;
+  --font-body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --font-code: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--hl); outline-offset: 2px; }
+
+.app {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+  padding: 12px 16px 16px;
+  gap: 12px;
+}
+
+/* ---------- header ---------- */
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 20px;
+}
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 26px;
+  line-height: 1.05;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.brand p { margin: 0; color: var(--muted); font-size: 13px; }
+.home-link { display: inline-block; font-size: 13px; font-weight: 800; color: var(--accent-strong); text-decoration: none; margin-bottom: 2px; }
+.home-link:hover { text-decoration: underline; }
+.stages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+}
+.stage-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 4px 12px 4px 4px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--muted);
+}
+.stage-pill b {
+  display: grid;
+  place-items: center;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  font-family: var(--font-display);
+  font-size: 14px;
+  color: var(--muted);
+}
+.stage-pill.done { color: var(--ink); }
+.stage-pill.done b { background: var(--accent-soft); color: var(--accent-strong); }
+.stage-pill.current { border-color: var(--accent); color: var(--ink); background: var(--accent-soft); }
+.stage-pill.current b { background: var(--accent); color: #fff; }
+.progress { display: flex; align-items: center; gap: 10px; min-width: 200px; }
+.progress .bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.progress .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .4s; }
+.progress span { font-weight: 700; font-size: 13px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* ---------- main ---------- */
+main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 410px);
+  gap: 14px;
+  min-height: 0;
+}
+.viewport {
+  position: relative;
+  min-height: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #F3F7FA;
+  border: 1px solid var(--line);
+}
+#scene, #scene canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#scene canvas { touch-action: none; cursor: grab; }
+#scene canvas:active { cursor: grabbing; }
+.labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+
+.lbl { position: absolute; left: 0; top: 0; width: 0; height: 0; --lift: 10px; will-change: transform; color: var(--ink); }
+.lbl > span {
+  position: absolute;
+  left: 0; bottom: var(--lift);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: rgba(255,255,255,.94);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 2px 8px;
+  font-weight: 800;
+  font-size: 12.5px;
+  box-shadow: 0 2px 8px rgba(21,32,42,.12);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.lbl::after {
+  content: '';
+  position: absolute;
+  left: -1px; bottom: 0;
+  width: 2px; height: var(--lift);
+  background: rgba(21,32,42,.45);
+}
+.lbl .dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid rgba(0,0,0,.25); }
+.lbl.lamp.on > span { color: #fff; border-color: transparent; }
+.lbl.lamp.on.red > span { background: var(--red); }
+.lbl.lamp.on.yellow > span { background: var(--amber-lamp); color: var(--ink); }
+.lbl.lamp.on.green > span { background: var(--green); }
+.lbl.pin > span { font-family: var(--font-code); font-size: 11.5px; padding: 1px 6px; }
+.lbl.pin.high > span { background: var(--hl); border-color: transparent; }
+.lbl.callout > span { background: var(--ink); color: #fff; border-color: transparent; font-size: 13px; }
+.lbl.callout::after { background: var(--ink); }
+.lbl.callout.gold > span { background: var(--hl); color: var(--ink); }
+.lbl.callout.blue > span { background: #2F6FDE; }
+.lbl.callout.ground > span { background: var(--ground); }
+
+.status {
+  position: absolute;
+  top: 12px; left: 12px;
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 8px 14px 8px 8px;
+  box-shadow: 0 4px 14px rgba(21,32,42,.1);
+}
+.lamps {
+  display: grid; gap: 4px;
+  background: #2B3038;
+  padding: 5px;
+  border-radius: 10px;
+}
+.lamps i { width: 14px; height: 14px; border-radius: 50%; background: #4A515B; }
+.lamps i[data-k="sun"] { width: 26px; height: 26px; transition: background .15s, box-shadow .15s; }
+.lamps i.on[data-k="red"] { background: #FF4141; box-shadow: 0 0 10px #FF4141; }
+.lamps i.on[data-k="yellow"] { background: var(--amber-lamp); box-shadow: 0 0 10px var(--amber-lamp); }
+.lamps i.on[data-k="green"] { background: #22D36B; box-shadow: 0 0 10px #22D36B; }
+.st-text { display: grid; line-height: 1.2; }
+.st-text b { font-family: var(--font-display); font-size: 20px; letter-spacing: .04em; }
+.st-text small { color: var(--muted); font-weight: 700; font-size: 12.5px; }
+.st-count {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 30px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  min-width: 2.2ch;
+  text-align: right;
+}
+.st-count small { font-size: 14px; color: var(--muted); margin-left: 2px; }
+.st-badge {
+  font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  background: var(--hl); color: var(--ink); border-radius: 6px; padding: 1px 6px;
+}
+
+.reset-view {
+  position: absolute;
+  top: 12px; right: 12px;
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--accent);
+  color: #fff;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-weight: 800;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(10,116,128,.35);
+}
+.reset-view:hover { background: var(--accent-strong); }
+.reset-view svg { width: 18px; height: 18px; }
+
+.presser {
+  position: absolute;
+  left: 50%; bottom: 40px; transform: translateX(-50%);
+  display: inline-flex; align-items: center; gap: 10px;
+  border: 2px solid var(--accent-strong); background: var(--accent); color: #fff;
+  border-radius: 999px; padding: 10px 22px;
+  font-family: var(--font-display); font-weight: 800; font-size: 17px;
+  white-space: nowrap; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none;
+  box-shadow: 0 6px 16px rgba(21,32,42,.25);
+}
+.presser i { width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: inset 0 -3px 0 rgba(0,0,0,.18); transition: transform .1s; }
+.presser.down { background: var(--hl); color: var(--ink); border-color: var(--hl); box-shadow: 0 2px 6px rgba(21,32,42,.25); }
+.presser.down i { transform: translateY(2px) scale(.9); background: var(--ink); }
+.pinread { display: flex; align-items: center; justify-content: center; gap: 14px; background: var(--surface-2); border-radius: 12px; padding: 8px 10px; text-align: center; }
+.pinread div { display: grid; line-height: 1.15; }
+.pinread small { font-size: 12px; font-weight: 800; color: var(--muted); }
+.pinread b { font-family: var(--font-display); font-size: 26px; font-variant-numeric: tabular-nums; }
+.pinread span { font-size: 22px; color: var(--muted); }
+.sw-diagram { width: 100%; max-width: 340px; display: block; margin: 0 auto; }
+.sw-diagram .wires { stroke: #8A929A; transition: stroke .15s; }
+.sw-diagram .bridge { fill: #C9CED4; stroke: #7A828A; transition: fill .15s; }
+.sw-diagram .plunger { transform: translateY(-30px); transition: transform .12s; }
+.sw-diagram.on .plunger { transform: translateY(0); }
+.sw-diagram.on .wires { stroke: var(--hl); }
+.sw-diagram.on .bridge { fill: var(--hl); }
+.sw-diagram text { font-family: var(--font-body); font-weight: 800; font-size: 11px; fill: var(--muted); }
+
+.slider-row { display: flex; align-items: center; gap: 12px; }
+.slider-row input { flex: 1; accent-color: var(--green); min-width: 0; height: 28px; }
+.slider-val { font-family: var(--font-display); font-weight: 800; font-size: 20px; color: var(--green); min-width: 3.4ch; text-align: right; font-variant-numeric: tabular-nums; }
+.var-row { display: grid; gap: 4px; margin-bottom: 8px; }
+.trace { display: flex; flex-wrap: wrap; gap: 4px; margin: 10px 0; min-height: 30px; }
+.trace i { font-style: normal; font-family: var(--font-mono); font-weight: 800; width: 26px; height: 30px; display: inline-grid; place-items: center; border-radius: 6px; color: #fff; }
+.trace i.hi { background: #2F6FDE; }
+.trace i.lo { background: #5b6370; }
+.st-count { max-width: 40vw; }
+@media (max-width: 500px) { .st-count { font-size: 0.8em; } }
+pre.code.linecode { white-space: pre-wrap; overflow-wrap: anywhere; padding: 8px 12px; border-radius: 10px; background: var(--code-bg); color: var(--code-ink); max-height: none; overflow-x: auto; }
+.seg { display: flex; gap: 8px; flex-wrap: wrap; }
+.seg button { flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 2px solid var(--line); background: var(--surface); border-radius: 12px; padding: 8px 6px; font-weight: 800; cursor: pointer; }
+.seg button[aria-pressed="true"] { border-color: var(--ink); background: #FFF6D6; }
+
+.live {
+  position: absolute;
+  left: 50%; top: 70px;
+  transform: translateX(-50%);
+  max-width: calc(100% - 24px);
+  background: var(--ink); color: #fff;
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-weight: 700; font-size: 14px;
+  text-align: center;
+  box-shadow: 0 6px 16px rgba(21,32,42,.25);
+}
+.hint {
+  position: absolute; left: 12px; bottom: 10px; margin: 0;
+  font-size: 12px; font-weight: 700; color: var(--muted);
+  pointer-events: none;
+}
+
+.info {
+  position: absolute;
+  right: 12px; bottom: 40px;
+  width: min(330px, calc(100% - 24px));
+  background: var(--surface);
+  border: 2px solid var(--hl);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 10px 26px rgba(21,32,42,.18);
+}
+.info h3 { font-family: var(--font-display); font-size: 19px; margin: 0 28px 2px 0; line-height: 1.2; }
+.info p { margin: 4px 0 0; }
+.info .purpose { font-weight: 800; }
+.info .more { color: var(--muted); font-size: 14px; }
+.info .close {
+  position: absolute; top: 8px; right: 8px;
+  width: 28px; height: 28px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--surface-2);
+  cursor: pointer; font-weight: 800;
+}
+
+/* ---------- lesson panel ---------- */
+.panel {
+  display: flex; flex-direction: column;
+  min-height: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+}
+.panel-body { flex: 1; overflow: auto; padding: 16px; display: grid; gap: 14px; align-content: start; min-height: 0; }
+.guide { display: grid; grid-template-columns: 58px minmax(0,1fr); gap: 10px; align-items: start; }
+.guide svg { width: 58px; height: 70px; }
+.bubble {
+  position: relative;
+  background: var(--surface-2);
+  border-radius: 14px;
+  padding: 10px 14px 12px;
+}
+.bubble::before {
+  content: ''; position: absolute; left: -8px; top: 22px;
+  border: 8px solid transparent; border-left: 0; border-right-color: var(--surface-2);
+}
+.eyebrow { margin: 0; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.bubble h2 { font-family: var(--font-display); font-size: 23px; line-height: 1.15; margin: 2px 0 6px; text-wrap: balance; }
+.bubble p.text { margin: 0; font-size: 16px; }
+.term { font-weight: 800; color: var(--accent-strong); }
+
+.card { border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+.card h4 { margin: 0 0 8px; font-size: 13px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.list li { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 10px; }
+.list li.on { background: var(--accent-soft); }
+.chip-lamp { width: 16px; height: 16px; border-radius: 50%; flex: none; }
+.chip-lamp.red { background: var(--red); }
+.chip-lamp.yellow { background: var(--amber-lamp); }
+.chip-lamp.green { background: var(--green); }
+.list .secs { margin-left: auto; font-weight: 800; font-variant-numeric: tabular-nums; }
+.check {
+  width: 22px; height: 22px; border-radius: 50%; flex: none;
+  border: 2px solid var(--line); display: grid; place-items: center; font-size: 13px; font-weight: 900; color: transparent;
+}
+.done .check { background: var(--green); border-color: var(--green); color: #fff; }
+.list li.now { background: #FFF6D6; outline: 2px solid var(--hl); }
+.list li.part-item { cursor: pointer; border: 0; background: none; width: 100%; text-align: left; }
+.list li.part-item:hover { background: var(--surface-2); }
+.mono { font-family: var(--font-code); font-size: 13px; }
+.note { font-size: 14px; color: var(--muted); margin: 0; }
+.note.safety { background: #FFF6D6; border-radius: 10px; padding: 8px 10px; color: var(--ink); }
+.legend { display: grid; gap: 6px; font-size: 14px; }
+.legend div { display: flex; gap: 8px; align-items: center; }
+.sw { width: 26px; height: 10px; border-radius: 3px; flex: none; }
+
+/* code */
+.code-card { border-radius: 14px; overflow: hidden; background: var(--code-bg); color: var(--code-ink); }
+.code-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 8px 10px 8px 14px; background: #0D171F; }
+.code-head span { font-family: var(--font-code); font-size: 12.5px; color: var(--code-dim); }
+.code-btns { display: flex; gap: 6px; }
+.code-btns button {
+  border: 1px solid #36505F; background: #1C2E3A; color: var(--code-ink);
+  border-radius: 8px; padding: 4px 10px; font-weight: 800; font-size: 13px; cursor: pointer;
+}
+.code-btns button.on { background: var(--hl); color: var(--ink); border-color: var(--hl); }
+pre.code {
+  margin: 0;
+  padding: 8px 0;
+  font-family: var(--font-code);
+  font-size: 12.5px;
+  line-height: 1.6;
+  max-height: 44vh;
+  overflow: auto;
+  position: relative;
+}
+pre.code .ln { display: block; padding: 0 12px 0 0; white-space: pre; border-left: 4px solid transparent; }
+pre.code .ln::before { content: attr(data-n); display: inline-block; width: 3.2ch; margin-right: 1.2ch; text-align: right; color: #4E6676; }
+pre.code .ln.hl { background: var(--code-hl); border-left-color: var(--hl); }
+pre.code .ln.hl.key { background: #2E5468; }
+pre.code .c { color: #8FA8B5; font-style: italic; }
+pre.code .kw { color: #7FD3E0; }
+pre.code .fn { color: #FFD479; }
+pre.code .k2 { color: #FF9BB0; font-weight: 600; }
+pre.code .num { color: #B6E68A; }
+pre.code .num.flash { background: var(--hl); color: var(--ink); border-radius: 3px; }
+pre.code .tick {
+  margin-left: 10px; font-family: var(--font-body); font-weight: 800; font-size: 11.5px;
+  background: var(--hl); color: var(--ink); border-radius: 6px; padding: 0 6px;
+}
+.code-note { margin: 0; padding: 8px 14px 10px; font-size: 13.5px; color: var(--code-ink); border-top: 1px solid #22323D; }
+.code-note b { color: #FFD479; }
+
+/* experiment */
+.slider-row { display: flex; align-items: center; gap: 12px; }
+.slider-row input { flex: 1; accent-color: var(--green); min-width: 0; height: 28px; }
+.slider-val { font-family: var(--font-display); font-weight: 800; font-size: 26px; color: var(--green); min-width: 3.4ch; text-align: right; font-variant-numeric: tabular-nums; }
+.ticks { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-weight: 700; padding: 0 2px; }
+.sum { margin: 8px 0 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.question { font-family: var(--font-display); font-weight: 700; font-size: 19px; line-height: 1.25; margin: 0 0 8px; }
+.reveal { margin-top: 8px; background: var(--accent-soft); border-radius: 10px; padding: 8px 10px; }
+
+.quiz-opts { display: grid; gap: 8px; }
+.quiz-opts button {
+  text-align: left; border: 2px solid var(--line); background: var(--surface);
+  border-radius: 12px; padding: 10px 12px; cursor: pointer; font-weight: 700;
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.quiz-opts button:hover { border-color: var(--accent); }
+.quiz-opts button b { font-family: var(--font-display); color: var(--accent); }
+.quiz-opts button.right { border-color: var(--green); background: #E3F5EA; }
+.quiz-opts button.wrong { border-color: var(--red); background: #FBE7E7; }
+.feedback { border-radius: 12px; padding: 10px 12px; margin-top: 10px; }
+.feedback.good { background: #E3F5EA; }
+.feedback.try { background: #FFF6D6; }
+.feedback b { font-family: var(--font-display); font-size: 18px; }
+
+/* footer controls */
+.panel-foot { border-top: 1px solid var(--line); padding: 12px 16px; display: grid; gap: 10px; background: var(--surface); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid var(--line); background: var(--surface);
+  border-radius: 12px; padding: 9px 12px; font-weight: 800; font-size: 14px; cursor: pointer;
+  flex: 1 1 auto;
+}
+.btn:hover:not(:disabled) { background: var(--surface-2); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover:not(:disabled) { background: var(--accent-strong); }
+.btn.warn { color: var(--red); }
+.btn.armed { background: var(--red); color: #fff; border-color: var(--red); }
+.btn[aria-pressed="true"] { background: var(--hl); border-color: var(--hl); }
+.toggle { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; font-weight: 800; font-size: 14px; cursor: pointer; flex: 1 1 auto; }
+.toggle input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
+.why { display: grid; gap: 6px; }
+.why-item { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.why-item > button {
+  width: 100%; text-align: left; background: none; border: 0; padding: 9px 12px;
+  font-weight: 800; cursor: pointer; display: flex; gap: 10px; align-items: flex-start; line-height: 1.35;
+}
+.why-item > button::before {
+  content: '?'; flex: none; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent-strong);
+  display: grid; place-items: center; font-family: var(--font-display); font-size: 15px;
+}
+.why-item.seen > button::before { content: '✓'; background: var(--accent); color: #fff; font-size: 13px; }
+.why-item .ans { padding: 0 12px 10px 44px; }
+.why-item .ans p { margin: 0; font-size: 14.5px; }
+.pin-link { display: inline-block; margin-top: 6px; font-weight: 800; color: var(--accent-strong, #075A63); }
+.why-item.now { border-color: var(--hl); box-shadow: inset 0 0 0 1px var(--hl); background: #FFFBEA; }
+.show3d {
+  margin-top: 8px; border: 1px solid var(--accent); background: var(--surface); color: var(--accent-strong);
+  border-radius: 999px; padding: 3px 12px; font-weight: 800; font-size: 13px; cursor: pointer;
+}
+.show3d:hover { background: var(--accent-soft); }
+.analogy { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.analogy li { display: grid; grid-template-columns: minmax(0, 7.5em) minmax(0, 1fr); gap: 10px; font-size: 14.5px; }
+.analogy b { color: var(--accent-strong); }
+.journey { margin: 0; padding-left: 22px; display: grid; gap: 4px; font-size: 14.5px; }
+.meter { position: relative; height: 22px; border-radius: 8px; overflow: hidden; background: linear-gradient(90deg, #DDF2E5 0 40%, #FBE2E2 40% 100%); border: 1px solid var(--line); }
+.meter i { position: absolute; left: 0; top: 0; bottom: 0; width: 8%; background: var(--green); border-radius: 8px; transition: width .6s, background .3s; }
+.meter i.danger { background: var(--red); }
+.meter-scale { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: var(--muted); margin-top: 3px; }
+.meter-limit { position: absolute; left: 40%; top: -2px; bottom: -2px; width: 2px; background: var(--ink); }
+.big-result { margin: 8px 0; font-size: 15px; }
+.fail { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; font-weight: 700; }
+
+.soundbtn {
+  position: absolute; right: 12px; bottom: 8px;
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 2px solid var(--line); background: var(--surface); color: var(--ink);
+  border-radius: 999px; padding: 6px 14px; font-weight: 800; font-size: 14px; cursor: pointer;
+  box-shadow: 0 4px 12px rgba(21,32,42,.15);
+}
+.soundbtn[aria-pressed="true"] { background: var(--hl); border-color: var(--hl); }
+.wave { width: 100%; height: auto; aspect-ratio: 680 / 170; display: block; background: var(--surface-2); border-radius: 12px; }
+.hold { width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.hold.down { background: var(--hl); border-color: var(--hl); }
+.console { border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: #fff; }
+.console-head { padding: 6px 12px; background: var(--surface-2); font-size: 12px; font-weight: 800; color: var(--muted); }
+.console pre { margin: 0; padding: 8px 12px; height: 150px; overflow-y: auto; font-family: var(--font-code); font-size: 13px; color: var(--ink); white-space: pre-wrap; }
+.divider { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 12px; align-items: stretch; }
+.divider .tube { position: relative; height: 210px; border-radius: 12px; overflow: hidden; border: 2px solid var(--ink); background: var(--surface-2); display: flex; flex-direction: column; }
+.divider .tube i { display: block; width: 100%; transition: height .12s; }
+.divider .tube .top { background: #F2B705; }
+.divider .tube .bot { background: #2F6FDE; flex: 1; }
+.divider .tube .mid { position: absolute; left: 0; right: 0; height: 0; border-top: 3px dashed var(--ink); transition: top .12s; }
+.divider .rows { display: grid; gap: 8px; align-content: space-between; font-size: 14px; line-height: 1.3; }
+.divider .rows div { padding: 6px 10px; border-radius: 10px; background: var(--surface-2); }
+.divider .rows b { font-family: var(--font-display); font-variant-numeric: tabular-nums; }
+.vs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.vs > div { background: var(--surface-2); border-radius: 12px; padding: 8px 10px; display: grid; gap: 2px; text-align: center; }
+.vs small { font-size: 12px; font-weight: 800; color: var(--muted); }
+.vs b { font-family: var(--font-display); font-size: 28px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.vs .bar { height: 12px; border-radius: 6px; background: #fff; border: 1px solid var(--line); overflow: hidden; margin-top: 4px; }
+.vs .bar i { display: block; height: 100%; width: 0; background: var(--green); transition: width .12s; }
+.ladder { display: grid; gap: 6px; }
+.ladder button { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; text-align: left; border: 2px solid var(--line); background: var(--surface); border-radius: 12px; padding: 8px 12px; font-weight: 800; cursor: pointer; }
+.ladder button[aria-pressed="true"] { border-color: var(--ink); background: #FFF6D6; }
+.ladder button span { font-family: var(--font-display); font-variant-numeric: tabular-nums; color: var(--accent-strong); }
+.plan-note { margin: 0; }
+@media (max-width: 860px) {
+  .soundbtn { bottom: 10px; padding: 8px 12px; }
+  .soundbtn span { display: none; }
+  .app { height: auto; min-height: 100%; }
+  main { grid-template-columns: minmax(0, 1fr); }
+  .viewport { height: 58vh; min-height: 360px; }
+  .panel-body { overflow: visible; }
+  .stages { margin-left: 0; }
+  .stage-pill span { display: none; }
+  .stage-pill { padding-right: 4px; }
+  .progress { flex: 1 1 100%; }
+  .status { padding: 6px 10px 6px 6px; gap: 8px; }
+  .st-text b { font-size: 16px; }
+  .st-count { font-size: 24px; }
+  .st-count small { display: none; }
+  .st-text small { display: none; }
+  .reset-view { padding: 8px 12px; font-size: 14px; }
+  .hint { display: none; }
+  .presser { bottom: 10px; font-size: 15px; padding: 8px 16px; }
+  .info { bottom: 74px; }
+  pre.code { max-height: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <svg width="34" height="54" viewBox="0 0 34 54" aria-hidden="true">
+        <rect x="3" y="2" width="28" height="50" rx="9" fill="#2B3038"/>
+        <circle cx="17" cy="13" r="6" fill="#FF4141"/>
+        <circle cx="17" cy="27" r="6" fill="#FFB400"/>
+        <circle cx="17" cy="41" r="6" fill="#22D36B"/>
+      </svg>
+      <div>
+        <a class="home-link" href="../../lessons.html">← All lessons</a>
+        <h1>Measuring Light</h1>
+        <p>Lesson 6 · Reading “how much”, not just on or off</p>
+      </div>
+    </div>
+    <nav class="stages" id="stages" aria-label="Lesson stages"></nav>
+    <div class="progress" aria-live="polite">
+      <div class="bar" role="progressbar" aria-label="Lesson progress" id="progressBar" aria-valuemin="0" aria-valuemax="100"><i id="progressFill"></i></div>
+      <span id="progressText">Step 1 of 13</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="viewport" id="viewport" aria-label="3D workbench">
+      <div id="scene"></div>
+      <div class="labels" id="labels"></div>
+      <div class="status" id="status" aria-live="polite">
+        <div class="lamps" aria-hidden="true"><i data-k="sun"></i></div>
+        <div class="st-text"><b id="stName">LIGHT</b><small id="stWord">Normal room</small></div>
+        <div class="st-count" id="stCount">0<small>of 4095</small></div>
+        <span class="st-badge" id="stBadge" hidden>Paused</span>
+      </div>
+      <button class="reset-view" id="resetView" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+        Reset view
+      </button>
+      <div class="live" id="live" hidden></div>
+      <button class="presser" id="pressBtn" type="button" aria-pressed="false" hidden><i aria-hidden="true"></i>Hold to cover the sensor</button>
+      <div class="info" id="info" hidden role="dialog" aria-labelledby="infoTitle">
+        <button class="close" id="infoClose" type="button" aria-label="Close">✕</button>
+        <h3 id="infoTitle"></h3>
+        <p class="purpose" id="infoPurpose"></p>
+        <p class="more" id="infoMore"></p>
+        <a class="pin-link" id="infoPins" href="../../pins.html" target="_blank" rel="noopener" hidden>🔍 Explore all 30 pins of the ESP32</a>
+      </div>
+      <p class="hint">Drag to rotate · Scroll or pinch to zoom · Right-drag to slide · Click a part to learn about it</p>
+    </section>
+
+    <aside class="panel" aria-label="Lesson">
+      <div class="panel-body" id="panelBody">
+        <div class="guide">
+          <svg viewBox="0 0 58 70" aria-hidden="true">
+            <rect x="12" y="44" width="34" height="26" rx="10" fill="#2C4E9E"/>
+            <rect x="26" y="50" width="6" height="7" rx="1.5" fill="#F2B705"/>
+            <circle cx="29" cy="30" r="16" fill="#F2C9A0"/>
+            <circle cx="23" cy="31" r="2.2" fill="#15202A"/>
+            <circle cx="35" cy="31" r="2.2" fill="#15202A"/>
+            <path d="M23 37 q6 5 12 0" stroke="#15202A" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <circle cx="19" cy="36" r="2.6" fill="#F4A6A0" opacity=".7"/>
+            <circle cx="39" cy="36" r="2.6" fill="#F4A6A0" opacity=".7"/>
+            <path d="M11 22 q18 -18 36 0 v3 h-36z" fill="#1F3A7A"/>
+            <rect x="9" y="22" width="40" height="5" rx="2.5" fill="#15202A"/>
+            <circle cx="29" cy="14" r="3.4" fill="#F2B705"/>
+          </svg>
+          <div class="bubble">
+            <p class="eyebrow" id="stageName">Stage A · See it</p>
+            <h2 id="stepTitle">See what we are building</h2>
+            <p class="text" id="stepText"></p>
+          </div>
+        </div>
+        <div id="extra" style="display:grid;gap:14px"></div>
+      </div>
+      <div class="panel-foot">
+        <div class="row">
+          <button class="btn" id="prev" type="button">← Previous</button>
+          <button class="btn" id="replay" type="button">↻ Replay this step</button>
+          <button class="btn primary" id="next" type="button">Next →</button>
+        </div>
+        <div class="row">
+          <button class="btn" id="pause" type="button" aria-pressed="false">❚❚ Pause</button>
+          <label class="toggle" for="labelsToggle"><input type="checkbox" id="labelsToggle" checked> Show labels</label>
+          <button class="btn warn" id="resetLesson" type="button">Reset lesson</button>
+        </div>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="../../course.js"></script>
+<script src="../../assets/ohm/ohm.js"></script>
+<script src="../../assets/rewards.js"></script>
+<script src="../../assets/esp32/board.js"></script>
+<script>
+(function () {
+'use strict';
+const $ = (s) => document.querySelector(s);
+const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+if (!window.THREE || !THREE.OrbitControls) {
+  $('#scene').innerHTML = '<div class="fail">The 3D library could not load. Check your internet connection and reload the page.</div>';
+  return;
+}
+
+/* =========================================================
+   Board geometry. 1 unit ≈ 1 cm; breadboard hole pitch 0.25.
+   ========================================================= */
+const P = 0.25;
+const colX = (c) => (c - 15.5) * P;
+const ROWZ = { a: -1.375, b: -1.125, c: -0.875, d: -0.625, e: -0.375, f: 0.375, g: 0.625, h: 0.875, i: 1.125, j: 1.375 };
+const FAR_ROWS = ['a', 'b', 'c', 'd', 'e'], NEAR_ROWS = ['f', 'g', 'h', 'i', 'j'];
+const NEG_RAIL_Z = 2.2, POS_RAIL_Z = 1.95;
+const RAIL_COLS = [];
+for (let c = 1; c <= 30; c++) if ((c - 1) % 6 !== 0) RAIL_COLS.push(c);
+const HEADER_Z = -3.45, HEADER_TOP = -0.05, SLEEVE = 0.27;
+const PIN_X = { D32: -0.5, D33: -0.25, D25: 0, D26: 0.25, D27: 0.5, D13: 1.25, GND: 1.5, '3V3': 1.75 };
+
+const CH = [
+  { key: 'red', name: 'Red', word: 'Stop', pin: 'D25', num: 25, col: 7, hex: 0xff3030, wire: 0xe0413b },
+  { key: 'yellow', name: 'Yellow', word: 'Get ready to stop', pin: 'D26', num: 26, col: 15, hex: 0xffb400, wire: 0xf2c12e },
+  { key: 'green', name: 'Green', word: 'Go', pin: 'D27', num: 27, col: 23, hex: 0x1fd067, wire: 0x2fae5f },
+];
+
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const holeAt = (c, r, y = 0) => V(colX(c), y, ROWZ[r]);
+const railAt = (c, y = 0) => V(colX(c), y, NEG_RAIL_Z);
+const pinAt = (n, y = HEADER_TOP) => V(PIN_X[n], y, n === '3V3' ? FAR_HEADER_Z : HEADER_Z);
+
+/* =========================================================
+   Renderer, scene, camera
+   ========================================================= */
+const host = $('#scene');
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+} catch (e) {
+  host.innerHTML = '<div class="fail">This device could not start 3D graphics (WebGL). Try another browser.</div>';
+  return;
+}
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+host.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf3f7fa);
+scene.fog = new THREE.Fog(0xf3f7fa, 34, 70);
+
+const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 200);
+camera.position.set(0.5, 6.2, 10.5);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.09;
+controls.minDistance = 2.5;
+controls.maxDistance = 30;
+controls.maxPolarAngle = Math.PI * 0.47;
+controls.target.set(0, 0.6, -1.2);
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0xcdd8e0, 0.72);
+scene.add(hemi);
+scene.add(new THREE.AmbientLight(0xffffff, 0.16));
+const sun = new THREE.DirectionalLight(0xffffff, 0.62);
+sun.position.set(6, 15, 9);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -14; sun.shadow.camera.right = 14;
+sun.shadow.camera.top = 14; sun.shadow.camera.bottom = -14;
+sun.shadow.camera.near = 1; sun.shadow.camera.far = 40;
+sun.shadow.bias = -0.0006;
+sun.shadow.radius = 4;
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0xdfefff, 0.22);
+fill.position.set(-8, 6, -4);
+scene.add(fill);
+
+const mat = (color, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.6, metalness: 0 }, o));
+function mesh(geo, m, x = 0, y = 0, z = 0, shadow = true) {
+  const o = new THREE.Mesh(geo, m);
+  o.position.set(x, y, z);
+  o.castShadow = shadow; o.receiveShadow = true;
+  return o;
+}
+function rod(a, b, r, m) {
+  const d = b.clone().sub(a);
+  const o = mesh(new THREE.CylinderGeometry(r, r, d.length(), 8), m);
+  o.position.copy(a).add(b).multiplyScalar(0.5);
+  o.quaternion.setFromUnitVectors(V(0, 1, 0), d.normalize());
+  return o;
+}
+function roundRect(g, x, y, w, h, r) {
+  g.beginPath();
+  g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+const metal = mat(0xc9ced4, { metalness: 0.3, roughness: 0.35 });
+
+/* ---------- table ---------- */
+const table = mesh(new THREE.BoxGeometry(30, 0.6, 20), mat(0xe6d3b5, { roughness: 0.85 }), 0, -0.7, -2, false);
+scene.add(table);
+const matPad = mesh(new THREE.BoxGeometry(17, 0.02, 13.4), mat(0xcfe2e6, { roughness: 0.95 }), 0.6, -0.39, -2.6, false);
+scene.add(matPad);
+
+const pickables = [];
+function tagPart(obj, part) {
+  obj.userData.part = part;
+  pickables.push(obj);
+}
+
+/* ---------- breadboard ---------- */
+function breadboardTexture(W, D) {
+  const S = 180;
+  const c = document.createElement('canvas');
+  c.width = Math.round(W * S); c.height = Math.round(D * S);
+  const g = c.getContext('2d');
+  const U = (x) => (x + W / 2) * S, Z = (z) => (z + D / 2) * S;
+  g.fillStyle = '#f8f8f4'; g.fillRect(0, 0, c.width, c.height);
+  g.fillStyle = '#dcddd5'; g.fillRect(0, Z(-0.13), c.width, 0.26 * S);
+  const line = (z, col) => { g.fillStyle = col; g.fillRect(U(colX(1) - 0.2), Z(z) - 0.014 * S, (colX(30) - colX(1) + 0.4) * S, 0.028 * S); };
+  line(-2.42, '#2f6fde'); line(-1.76, '#d93b3b'); line(1.76, '#d93b3b'); line(2.42, '#2f6fde');
+  const hole = (x, z) => { const s = 0.1 * S; g.fillStyle = '#41464c'; roundRect(g, U(x) - s / 2, Z(z) - s / 2, s, s, s * 0.22); g.fill(); };
+  for (let col = 1; col <= 30; col++) for (const r in ROWZ) hole(colX(col), ROWZ[r]);
+  for (const col of RAIL_COLS) { hole(colX(col), POS_RAIL_Z); hole(colX(col), NEG_RAIL_Z); hole(colX(col), -1.95); hole(colX(col), -2.2); }
+  g.fillStyle = '#6f7a85'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = `700 ${0.115 * S}px Nunito, Arial, sans-serif`;
+  for (let col = 1; col <= 30; col++) { g.fillText(String(col), U(colX(col)), Z(-1.58)); g.fillText(String(col), U(colX(col)), Z(1.58)); }
+  for (const r in ROWZ) { g.fillText(r, U(colX(0)), Z(ROWZ[r])); g.fillText(r, U(colX(31)), Z(ROWZ[r])); }
+  g.font = `800 ${0.2 * S}px Nunito, Arial, sans-serif`;
+  const sign = (t, col, z, fillc) => { g.fillStyle = fillc; g.fillText(t, U(colX(col)), Z(z)); };
+  sign('−', 0, NEG_RAIL_Z, '#2f6fde'); sign('−', 31, NEG_RAIL_Z, '#2f6fde');
+  sign('+', 0, POS_RAIL_Z, '#d93b3b'); sign('+', 31, POS_RAIL_Z, '#d93b3b');
+  sign('−', 0, -2.2, '#2f6fde'); sign('+', 0, -1.95, '#d93b3b');
+  sign('−', 31, -2.2, '#2f6fde'); sign('+', 31, -1.95, '#d93b3b');
+  const tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return tex;
+}
+
+function makeBreadboard() {
+  const g = new THREE.Group();
+  const W = 8.4, D = 5.3, H = 0.4;
+  g.add(mesh(new THREE.BoxGeometry(W, H, D), mat(0xf2f2ec, { roughness: 0.8 }), 0, -H / 2 - 0.001, 0));
+  const top = mesh(new THREE.PlaneGeometry(W, D), new THREE.MeshStandardMaterial({ map: breadboardTexture(W, D), roughness: 0.85 }), 0, 0.001, 0, false);
+  top.rotation.x = -Math.PI / 2;
+  g.add(top);
+  tagPart(g, 'breadboard');
+  return g;
+}
+
+/* ---------- controller board: ESP32 DevKit V1 (30-pin), pins pointing up ----------
+   Laid out from a top view of the real board: antenna end on the left, micro-USB on the right,
+   the EN…VIN pin row nearest the breadboard and the D23…3V3 row at the back. Rows are 0.9" apart. */
+const NEAR_PINS = ['EN', 'VP', 'VN', 'D34', 'D35', 'D32', 'D33', 'D25', 'D26', 'D27', 'D14', 'D12', 'D13', 'GND', 'VIN'];
+const FAR_PINS = ['D23', 'D22', 'TX0', 'RX0', 'D21', 'D19', 'D18', 'D5', 'TX2', 'RX2', 'D4', 'D2', 'D15', 'GND', '3V3'];
+const FAR_HEADER_Z = HEADER_Z - 0.9 * 2.54;
+const pinColX = (k) => (k - 7) * P;
+const ESP = { x0: pinColX(0) - 0.48, x1: pinColX(14) + 0.65, z0: FAR_HEADER_Z - 0.1, z1: HEADER_Z + 0.1, y: -0.2 };
+ESP.cx = (ESP.x0 + ESP.x1) / 2; ESP.cz = (ESP.z0 + ESP.z1) / 2;
+ESP.W = ESP.x1 - ESP.x0; ESP.D = ESP.z1 - ESP.z0;
+
+function canvasFor(w, d, S) {
+  const c = document.createElement('canvas');
+  c.width = Math.round(w * S); c.height = Math.round(d * S);
+  return [c, c.getContext('2d')];
+}
+function texFrom(c) {
+  const tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return tex;
+}
+function esp32Texture() {
+  const { cx, cz, W, D } = ESP;
+  const S = 220;
+  const [c, g] = canvasFor(W, D, S);
+  const U = (x) => (x - cx + W / 2) * S, Z = (z) => (z - cz + D / 2) * S;
+  g.fillStyle = '#4a4b4f'; g.fillRect(0, 0, c.width, c.height);
+  // mounting holes
+  g.fillStyle = '#f3f7fa';
+  for (const x of [ESP.x0 + 0.2, ESP.x1 - 0.2]) for (const z of [cz - 1.02, cz + 1.02]) { g.beginPath(); g.arc(U(x), Z(z), 0.12 * S, 0, Math.PI * 2); g.fill(); }
+  // through-hole pads (square for VIN and 3V3)
+  for (const z of [HEADER_Z, FAR_HEADER_Z]) for (let k = 0; k < 15; k++) {
+    const x = pinColX(k);
+    g.fillStyle = '#c9ccd1'; g.strokeStyle = '#8d9096'; g.lineWidth = 3;
+    if (k === 14) { g.fillRect(U(x) - 0.09 * S, Z(z) - 0.09 * S, 0.18 * S, 0.18 * S); }
+    else { g.beginPath(); g.arc(U(x), Z(z), 0.095 * S, 0, Math.PI * 2); g.fill(); g.stroke(); }
+  }
+  // silkscreen pin names
+  g.fillStyle = '#ffffff'; g.textBaseline = 'middle';
+  g.font = `800 ${0.11 * S}px Nunito, Arial, sans-serif`;
+  const vert = (t, x, z, align) => { g.save(); g.translate(U(x), Z(z)); g.rotate(-Math.PI / 2); g.textAlign = align; g.fillText(t, 0, 0); g.restore(); };
+  NEAR_PINS.forEach((t, k) => vert(t, pinColX(k), HEADER_Z - 0.14, 'left'));
+  FAR_PINS.forEach((t, k) => vert(t, pinColX(k), FAR_HEADER_Z + 0.14, 'right'));
+  vert('EN', ESP.x1 - 0.42, cz + 0.4, 'center');
+  vert('BOOT', ESP.x1 - 0.42, cz - 0.42, 'center');
+  // small surface-mount parts
+  const smd = (x, z, w, d, body) => {
+    g.fillStyle = '#d9dbde'; g.fillRect(U(x - w / 2), Z(z - d / 2), w * S, d * S);
+    g.fillStyle = body; g.fillRect(U(x - w / 2) + 0.03 * S, Z(z - d / 2) + 0.03 * S, (w - 0.06) * S, (d - 0.06) * S);
+  };
+  for (let k = 0; k < 5; k++) smd(0.42, cz + 0.15 - k * 0.15, 0.2, 0.1, '#111');
+  smd(0.32, cz + 0.65, 0.1, 0.2, '#c9a27a'); smd(0.45, cz + 0.65, 0.1, 0.2, '#c9a27a');
+  smd(0.32, cz - 0.68, 0.1, 0.2, '#111'); smd(0.45, cz - 0.68, 0.1, 0.2, '#111');
+  for (const z of [cz + 0.62, cz + 0.32, cz - 0.05]) smd(ESP.x1 - 0.85, z, 0.1, 0.2, '#111');
+  smd(ESP.x1 - 0.85, cz + 0.02, 0.1, 0.2, '#c9a27a');
+  for (const z of [cz - 0.4, cz - 0.7]) smd(ESP.x1 - 0.85, z, 0.1, 0.2, '#111');
+  smd(0.72, cz - 0.7, 0.18, 0.1, '#111');
+  // highlight the pins this lesson uses
+  g.strokeStyle = '#F2B705'; g.lineWidth = 6;
+  roundRect(g, U(pinColX(7) - 0.15), Z(HEADER_Z - 0.62), 0.8 * S, 0.76 * S, 12); g.stroke();
+  roundRect(g, U(pinColX(13) - 0.15), Z(HEADER_Z - 0.62), 0.3 * S, 0.76 * S, 12); g.stroke();
+  return texFrom(c);
+}
+function moduleTexture(w, d) {
+  const S = 220;
+  const [c, g] = canvasFor(w, d, S);
+  g.fillStyle = '#1b1b1c'; g.fillRect(0, 0, c.width, c.height);
+  // castellated pads along both long sides and the inner end
+  g.fillStyle = '#e8d36a';
+  for (let k = 0; k < 13; k++) {
+    const x = (0.62 + k * 0.105) * S;
+    g.fillRect(x, 0, 0.06 * S, 0.07 * S);
+    g.fillRect(x, c.height - 0.07 * S, 0.06 * S, 0.07 * S);
+  }
+  for (let k = 0; k < 10; k++) g.fillRect(c.width - 0.07 * S, (0.32 + k * 0.105) * S, 0.07 * S, 0.06 * S);
+  // printed antenna trace (zig-zag)
+  g.strokeStyle = '#3b3b3d'; g.lineWidth = 0.05 * S; g.lineJoin = 'miter';
+  const pts = [[0.48, 0.1], [0.1, 0.1], [0.1, 0.3], [0.48, 0.3], [0.48, 0.55], [0.1, 0.55], [0.1, 0.78], [0.48, 0.78], [0.48, 1.0], [0.1, 1.0], [0.1, 1.3], [0.36, 1.3]];
+  g.beginPath(); pts.forEach(([x, z], i) => (i ? g.lineTo(x * S, z * S) : g.moveTo(x * S, z * S))); g.stroke();
+  return texFrom(c);
+}
+function shieldTexture(w, d) {
+  const S = 220;
+  const [c, g] = canvasFor(w, d, S);
+  g.fillStyle = '#a7aaae'; g.fillRect(0, 0, c.width, c.height);
+  g.strokeStyle = '#f2f3f4'; g.lineWidth = 6; g.strokeRect(3, 3, c.width - 6, c.height - 6);
+  g.save(); g.translate(c.width / 2, c.height / 2); g.rotate(Math.PI / 2);
+  g.fillStyle = '#f4f5f6'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = `800 ${0.16 * S}px Nunito, Arial, sans-serif`;
+  g.fillText('ESP-WROOM-32', 0, -0.36 * S);
+  g.font = `800 ${0.34 * S}px Nunito, Arial, sans-serif`;
+  g.fillText('C  E', -0.12 * S, 0.02 * S);
+  g.font = `700 ${0.09 * S}px Nunito, Arial, sans-serif`;
+  g.fillText('FCC ID: 2AC7Z-ESPWROOM32', 0, 0.4 * S);
+  g.restore();
+  g.fillStyle = '#111'; g.beginPath(); g.arc(c.width - 0.14 * S, c.height - 0.14 * S, 0.05 * S, 0, Math.PI * 2); g.fill();
+  return texFrom(c);
+}
+function chipTexture(w, d, lines, rot) {
+  const S = 260;
+  const [c, g] = canvasFor(w, d, S);
+  g.fillStyle = '#26272a'; g.fillRect(0, 0, c.width, c.height);
+  g.save(); g.translate(c.width / 2, c.height / 2); g.rotate(rot);
+  g.fillStyle = '#8f9196'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = `600 ${0.075 * S}px 'JetBrains Mono', monospace`;
+  lines.forEach((t, i) => g.fillText(t, 0, (i - (lines.length - 1) / 2) * 0.09 * S));
+  g.restore();
+  return texFrom(c);
+}
+function topBox(w, h, d, sideMat, tex, x, y, z, tint = 0xffffff) {
+  const m = [sideMat, sideMat, new THREE.MeshStandardMaterial({ map: tex, color: tint, roughness: 0.5 }), sideMat, sideMat, sideMat];
+  return mesh(new THREE.BoxGeometry(w, h, d), m, x, y, z);
+}
+
+function makeESP32() {
+  const g = new THREE.Group();
+  const { cx, cz, W, D, y } = ESP;
+  const top = y + 0.03;
+  const pcb = mat(0x46474b, { roughness: 0.6 });
+  g.add(topBox(W, 0.06, D, pcb, esp32Texture(), cx, y, cz));
+  const dark = mat(0x1d1e21, { roughness: 0.5 });
+  const silver = mat(0xd3d6da, { metalness: 0.45, roughness: 0.3 });
+  // rubber feet under the mounting holes
+  for (const x of [ESP.x0 + 0.2, ESP.x1 - 0.2]) for (const z of [cz - 1.02, cz + 1.02]) g.add(mesh(new THREE.CylinderGeometry(0.12, 0.12, y + 0.4 - 0.03, 12), dark, x, (-0.4 + y - 0.03) / 2, z));
+  // header strips with pins pointing up (female jumper ends slide onto them)
+  const pinGeo = new THREE.BoxGeometry(0.05, 0.3, 0.05);
+  const pinMat = mat(0xd9b44a, { metalness: 0.4, roughness: 0.35 });
+  for (const z of [HEADER_Z, FAR_HEADER_Z]) {
+    g.add(mesh(new THREE.BoxGeometry(15 * P, 0.08, 0.22), dark, 0, top + 0.04, z));
+    for (let k = 0; k < 15; k++) g.add(mesh(pinGeo, pinMat, pinColX(k), top + 0.2, z, false));
+  }
+  // ESP-WROOM-32 module: black carrier with antenna trace, metal shield
+  const mx0 = ESP.x0 + 0.04, mx1 = pinColX(7) + 0.05, mw = mx1 - mx0, md = 1.44;
+  g.add(topBox(mw, 0.06, md, dark, moduleTexture(mw, md), (mx0 + mx1) / 2, top + 0.03, cz));
+  const sw = 1.52, sd = 1.32, sx = mx1 - 0.06 - sw / 2;
+  g.add(topBox(sw, 0.1, sd, silver, shieldTexture(sw, sd), sx, top + 0.11, cz, 0x9a9da2));
+  // power LED (red, lit when powered) and GPIO2 LED (blue)
+  g.add(mesh(new THREE.BoxGeometry(0.16, 0.05, 0.09), mat(0xff2a2a, { emissive: 0xff2020, emissiveIntensity: 0.9 }), 0.42, top + 0.025, cz + 0.45, false));
+  g.add(mesh(new THREE.BoxGeometry(0.16, 0.05, 0.09), mat(0x2aa7e0, { roughness: 0.4 }), 0.42, top + 0.025, cz - 0.45, false));
+  // AMS1117 regulator and CP2102 USB chip
+  g.add(topBox(0.57, 0.12, 0.28, dark, chipTexture(0.57, 0.28, ['AMS1117', '3.3'], 0), 1.3, top + 0.06, cz + 0.48));
+  g.add(mesh(new THREE.BoxGeometry(0.2, 0.03, 0.3), silver, 1.3, top + 0.015, cz + 0.72, false));
+  g.add(topBox(0.44, 0.08, 0.44, dark, chipTexture(0.44, 0.44, ['CP2102', 'DCL0CH'], 0), 1.34, top + 0.04, cz - 0.56));
+  // EN and BOOT buttons either side of the micro-USB socket
+  for (const z of [cz + 0.71, cz - 0.71]) {
+    g.add(mesh(new THREE.BoxGeometry(0.43, 0.12, 0.25), silver, ESP.x1 - 0.25, top + 0.06, z));
+    g.add(mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.08, 16), dark, ESP.x1 - 0.25, top + 0.15, z));
+  }
+  g.add(mesh(new THREE.BoxGeometry(0.5, 0.2, 0.68), silver, ESP.x1 - 0.17, top + 0.1, cz));
+  tagPart(g, 'controller');
+  return g;
+}
+
+/* ---------- LED ---------- */
+function flangeGeometry(r, h) {
+  const s = new THREE.Shape();
+  const cut = 0.8 * r, a = Math.acos(cut / r);
+  s.absarc(0, 0, r, a, Math.PI * 2 - a, false);
+  s.lineTo(cut, r * Math.sin(a));
+  const geo = new THREE.ExtrudeGeometry(s, { depth: h, bevelEnabled: false, curveSegments: 28 });
+  geo.rotateX(-Math.PI / 2);
+  return geo;
+}
+let glowTexture = null;
+function getGlowTexture() {
+  if (glowTexture) return glowTexture;
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const g = c.getContext('2d');
+  const grd = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  grd.addColorStop(0, 'rgba(255,255,255,1)'); grd.addColorStop(0.25, 'rgba(255,255,255,.55)'); grd.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grd; g.fillRect(0, 0, 128, 128);
+  glowTexture = new THREE.CanvasTexture(c);
+  return glowTexture;
+}
+// LED colours: OFF is dark tinted plastic and ON is the pure colour with a coloured halo, so nobody can mix them up
+function ledColours(hex) {
+  const hsl = {}; new THREE.Color(hex).getHSL(hsl);
+  const c = (s, l) => new THREE.Color().setHSL(hsl.h, s, l);
+  return { base: c(1, 0.32), hot: c(1, 0.5), halo: c(1, 0.55), dim: c(hsl.s * 0.55, 0.13) };
+}
+function makeLED(hex, scale = 1, legs = [0.5, 0.5], spread = P) {
+  const g = new THREE.Group();
+  const s = scale;
+  const leg = mat(0xc9ced4, { metalness: 0.3, roughness: 0.35 });
+  const legTop = 0.45 * s;
+  const anode = rod(V(0, legTop - legs[0] * s, 0), V(0, legTop, 0), 0.018 * s, leg);
+  const cathode = rod(V(spread, legTop - legs[1] * s, 0), V(spread, legTop, 0), 0.018 * s, leg);
+  g.add(anode, cathode);
+  const body = mat(hex, { transparent: true, opacity: 0.93, roughness: 0.25, emissive: hex, emissiveIntensity: 0 });
+  const cx = spread / 2;
+  const flange = mesh(flangeGeometry(0.29 * s, 0.06 * s), body, cx, legTop, 0);
+  const barrel = mesh(new THREE.CylinderGeometry(0.25 * s, 0.25 * s, 0.32 * s, 28), body, cx, legTop + 0.06 * s + 0.16 * s, 0);
+  const dome = mesh(new THREE.SphereGeometry(0.25 * s, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2), body, cx, legTop + 0.38 * s, 0);
+  g.add(flange, barrel, dome);
+  const light = new THREE.PointLight(hex, 0, 4.5 * s, 2);
+  light.position.set(cx, legTop + 0.4 * s, 0);
+  g.add(light);
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: getGlowTexture(), color: hex, transparent: true, opacity: 0, depthWrite: false }));
+  glow.scale.set(1.7 * s, 1.7 * s, 1);
+  glow.position.set(cx, legTop + 0.35 * s, 0);
+  g.add(glow);
+  g.userData.led = Object.assign({ body, light, glow }, ledColours(hex));
+  glow.material.color.copy(g.userData.led.halo); body.emissive.copy(g.userData.led.hot);
+  body.color.copy(g.userData.led.dim);
+  return g;
+}
+
+/* ---------- resistor (330 Ω: orange, orange, brown, gold) ---------- */
+function makeResistor() {
+  const g = new THREE.Group();
+  const lead = mat(0xc9ced4, { metalness: 0.3, roughness: 0.35 });
+  const zA = ROWZ.d, zB = ROWZ.g, yb = 0.3, half = 0.27;
+  g.add(rod(V(0, -0.05, zA), V(0, yb, zA), 0.016, lead));
+  g.add(rod(V(0, -0.05, zB), V(0, yb, zB), 0.016, lead));
+  g.add(rod(V(0, yb, zA), V(0, yb, -half), 0.016, lead));
+  g.add(rod(V(0, yb, half), V(0, yb, zB), 0.016, lead));
+  const bodyMat = mat(0xd8c08e, { roughness: 0.5 });
+  const body = mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.42, 20), bodyMat, 0, yb, 0);
+  body.rotation.x = Math.PI / 2;
+  g.add(body);
+  for (const z of [-0.2, 0.2]) g.add(mesh(new THREE.SphereGeometry(0.1, 16, 12), bodyMat, 0, yb, z));
+  const bands = [[-0.17, 0xf08a24], [-0.08, 0xf08a24], [0.01, 0x7a4a22], [0.17, 0xc9a227]];
+  for (const [z, col] of bands) {
+    const b = mesh(new THREE.CylinderGeometry(0.094, 0.094, 0.045, 20), mat(col, { roughness: 0.4, metalness: col === 0xc9a227 ? 0.6 : 0 }), 0, yb, z);
+    b.rotation.x = Math.PI / 2;
+    g.add(b);
+  }
+  return g;
+}
+
+/* ---------- jumper wire ---------- */
+const SEGS = 120, RADIAL = 10;
+function makeWire(points, color) {
+  const g = new THREE.Group();
+  const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
+  const geo = new THREE.TubeGeometry(curve, SEGS, 0.045, RADIAL, false);
+  const tube = mesh(geo, mat(color, { roughness: 0.45 }));
+  g.add(tube);
+  const sleeveMat = mat(0x24272c, { roughness: 0.5 });
+  const pinMat = metal;
+  const ends = [];
+  for (const p of [points[0], points[points.length - 1]]) {
+    const e = new THREE.Group();
+    e.add(mesh(new THREE.CylinderGeometry(0.06, 0.06, SLEEVE, 12), sleeveMat, p.x, p.y - SLEEVE / 2, p.z));
+    e.add(mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.12, 8), pinMat, p.x, p.y - SLEEVE - 0.05, p.z));
+    g.add(e); ends.push(e);
+  }
+  const w = { group: g, curve, geo, ends, progress: 1 };
+  w.set = (f) => {
+    w.progress = f;
+    geo.setDrawRange(0, Math.floor(f * SEGS) * RADIAL * 6);
+    ends[0].visible = f > 0;
+    ends[1].visible = f >= 1;
+  };
+  tagPart(g, 'wire');
+  return w;
+}
+
+/* ---------- push button (tactile switch): four legs, the cap goes down when pressed ---------- */
+let btnCap = null;
+function makeButton() {
+  const g = new THREE.Group();
+  const leg = mat(0xc9ced4, { metalness: 0.3, roughness: 0.35 });
+  for (const x of [-P, P]) for (const z of [ROWZ.e, ROWZ.f]) {
+    g.add(rod(V(x, -0.05, z), V(x, 0.2, z), 0.016, leg));
+    g.add(rod(V(x, 0.2, z), V(x, 0.2, Math.sign(z) * 0.27), 0.016, leg));
+  }
+  g.add(mesh(new THREE.BoxGeometry(0.64, 0.2, 0.6), mat(0x2b2f35, { roughness: 0.55 }), 0, 0.22, 0));
+  g.add(mesh(new THREE.BoxGeometry(0.5, 0.025, 0.5), metal, 0, 0.335, 0));
+  btnCap = new THREE.Group();
+  btnCap.add(mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.14, 28), mat(0x2f6fde, { roughness: 0.35 }), 0, 0.41, 0));
+  btnCap.add(mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.016, 24), mat(0x7fa8ff, { roughness: 0.3 }), 0, 0.485, 0, false));
+  g.add(btnCap);
+  tagPart(g, 'button');
+  return g;
+}
+
+/* ---------- resistor lying along a row (330 Ω: orange, orange, brown, gold; 10 kΩ: brown, black, orange, gold) ---------- */
+function makeResistorFlat(span, bands) {
+  const g = new THREE.Group();
+  const lead = mat(0xc9ced4, { metalness: 0.3, roughness: 0.35 });
+  const half = span / 2, yb = 0.3, bodyHalf = 0.27;
+  for (const sx of [-1, 1]) {
+    g.add(rod(V(sx * half, -0.05, 0), V(sx * half, yb, 0), 0.016, lead));
+    g.add(rod(V(sx * half, yb, 0), V(sx * bodyHalf, yb, 0), 0.016, lead));
+  }
+  const bodyMat = mat(0xd8c08e, { roughness: 0.5 });
+  const body = mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.42, 20), bodyMat, 0, yb, 0);
+  body.rotation.z = Math.PI / 2;
+  g.add(body);
+  for (const x of [-0.2, 0.2]) g.add(mesh(new THREE.SphereGeometry(0.1, 16, 12), bodyMat, x, yb, 0));
+  for (const [x, col] of (bands || [[-0.17, 0xf08a24], [-0.08, 0xf08a24], [0.01, 0x7a4a22], [0.17, 0xc9a227]])) {
+    const b = mesh(new THREE.CylinderGeometry(0.094, 0.094, 0.045, 20), mat(col, { roughness: 0.4, metalness: col === 0xc9a227 ? 0.6 : 0 }), x, yb, 0);
+    b.rotation.z = Math.PI / 2;
+    g.add(b);
+  }
+  tagPart(g, 'resistor');
+  return g;
+}
+
+/* ---------- passive buzzer: a black disc with a sound hole; the + leg is the far one (row e) ---------- */
+let buzzBody = null;
+function buzzerTopTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d');
+  g.strokeStyle = '#4a4f57'; g.lineWidth = 6;
+  g.beginPath(); g.arc(128, 128, 112, 0, Math.PI * 2); g.stroke();
+  g.fillStyle = '#050607'; g.beginPath(); g.arc(128, 128, 30, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#e8ecef'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = '800 56px Nunito, Arial, sans-serif';
+  g.fillText('+', 128, 52);
+  g.font = '800 22px Nunito, Arial, sans-serif';
+  g.fillText('PASSIVE', 128, 212);
+  return texFrom(c);
+}
+function makeBuzzer() {
+  const g = new THREE.Group();
+  const leg = mat(0xc9ced4, { metalness: 0.3, roughness: 0.35 });
+  for (const z of [ROWZ.e, ROWZ.f]) g.add(rod(V(0, -0.05, z), V(0, 0.26, z), 0.018, leg));
+  buzzBody = new THREE.Group();
+  const shell = mat(0x1c1e22, { roughness: 0.45 });
+  buzzBody.add(mesh(new THREE.CylinderGeometry(0.55, 0.57, 0.5, 40), shell, 0, 0.45, 0));
+  buzzBody.add(mesh(new THREE.CylinderGeometry(0.5, 0.55, 0.05, 40), mat(0x2d3036, { roughness: 0.5 }), 0, 0.725, 0));
+  const top = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.0), new THREE.MeshStandardMaterial({ map: buzzerTopTexture(), transparent: true, roughness: 0.5 }));
+  top.rotation.x = -Math.PI / 2; top.position.y = 0.753;
+  buzzBody.add(top);
+  g.add(buzzBody);
+  tagPart(g, 'buzzer');
+  return g;
+}
+
+/* ---------- guide character: Officer Ohm ---------- */
+function makeCop() {
+  const g = new THREE.Group();
+  const navy = mat(0x2c4e9e, { roughness: 0.7 }), dark = mat(0x1f2a3d, { roughness: 0.7 });
+  const skin = mat(0xf2c9a0, { roughness: 0.8 }), gold = mat(0xf2b705, { metalness: 0.4, roughness: 0.35 });
+  const ink = mat(0x15202a, { roughness: 0.5 });
+  for (const sx of [-0.16, 0.16]) {
+    g.add(mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.7, 14), dark, sx, 0.4, 0));
+    g.add(mesh(new THREE.BoxGeometry(0.24, 0.12, 0.36), ink, sx, 0.06, 0.06));
+  }
+  g.add(mesh(new THREE.CylinderGeometry(0.36, 0.42, 0.9, 20), navy, 0, 1.18, 0));
+  g.add(mesh(new THREE.CylinderGeometry(0.43, 0.43, 0.1, 20), ink, 0, 0.8, 0));
+  g.add(mesh(new THREE.BoxGeometry(0.14, 0.1, 0.05), gold, 0, 0.8, 0.42));
+  g.add(mesh(new THREE.BoxGeometry(0.13, 0.15, 0.04), gold, -0.16, 1.38, 0.37));
+  g.add(mesh(new THREE.SphereGeometry(0.4, 24, 18), skin, 0, 1.98, 0));
+  for (const sx of [-0.14, 0.14]) {
+    g.add(mesh(new THREE.SphereGeometry(0.05, 10, 8), ink, sx, 2.03, 0.36, false));
+    g.add(mesh(new THREE.SphereGeometry(0.07, 10, 8), mat(0xf4a6a0, { roughness: 0.9 }), sx * 1.6, 1.9, 0.32, false));
+  }
+  const smile = mesh(new THREE.TorusGeometry(0.11, 0.022, 8, 18, Math.PI), ink, 0, 1.9, 0.37, false);
+  smile.rotation.z = Math.PI;
+  g.add(smile);
+  g.add(mesh(new THREE.CylinderGeometry(0.4, 0.37, 0.26, 24), dark, 0, 2.38, 0));
+  g.add(mesh(new THREE.CylinderGeometry(0.45, 0.4, 0.06, 24), dark, 0, 2.52, -0.02));
+  g.add(mesh(new THREE.CylinderGeometry(0.41, 0.41, 0.07, 24), ink, 0, 2.27, 0));
+  const brim = mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.04, 20, 1, false, -Math.PI / 2, Math.PI), ink, 0, 2.25, 0.25);
+  g.add(brim);
+  g.add(mesh(new THREE.SphereGeometry(0.07, 12, 10), gold, 0, 2.4, 0.38));
+  const armL = new THREE.Group(); armL.position.set(-0.46, 1.52, 0);
+  armL.add(mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.62, 12), navy, 0, -0.3, 0));
+  armL.add(mesh(new THREE.SphereGeometry(0.11, 12, 10), skin, 0, -0.64, 0));
+  armL.rotation.z = -0.15;
+  const armR = new THREE.Group(); armR.position.set(0.46, 1.52, 0);
+  armR.add(mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.62, 12), navy, 0, -0.3, 0));
+  armR.add(mesh(new THREE.SphereGeometry(0.11, 12, 10), skin, 0, -0.64, 0));
+  armR.rotation.z = 0.15;
+  g.add(armL, armR);
+  g.userData.armR = armR;
+  tagPart(g, 'cop');
+  return g;
+}
+
+/* ---------- enlarged LED on a display stand ---------- */
+function makeBigLED() {
+  const g = new THREE.Group();
+  g.add(mesh(new THREE.CylinderGeometry(1.0, 1.1, 0.2, 32), mat(0xffffff, { roughness: 0.6 }), 0, 0.1, 0));
+  g.add(mesh(new THREE.BoxGeometry(0.12, 2.1, 0.12), mat(0xbfe6f0, { transparent: true, opacity: 0.45, roughness: 0.1 }), 0.35, 1.15, -0.55));
+  g.add(mesh(new THREE.BoxGeometry(0.8, 0.08, 0.12), mat(0xbfe6f0, { transparent: true, opacity: 0.45, roughness: 0.1 }), 0.35, 2.2, -0.55));
+  const led = makeLED(0xff3030, 2.6, [0.75, 0.5], 0.7);
+  led.position.set(0, 1.0, 0);
+  led.userData.led.body.color.copy(led.userData.led.base);
+  led.userData.led.body.emissiveIntensity = 0.2;
+  g.add(led);
+  tagPart(g, 'led');
+  return g;
+}
+/* =========================================================
+   Build the scene
+   ========================================================= */
+const breadboard = makeBreadboard();
+scene.add(breadboard);
+const esp32 = makeESP32();
+scene.add(esp32);
+
+/* ---------- light sensor (LDR): two legs, a disc with a zig-zag track on top ---------- */
+function ldrTopTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = '#e9dcb4'; g.beginPath(); g.arc(128, 128, 126, 0, Math.PI * 2); g.fill();
+  g.save(); g.beginPath(); g.arc(128, 128, 100, 0, Math.PI * 2); g.clip();
+  g.fillStyle = '#c9b57a'; g.fillRect(0, 0, 256, 256);
+  g.strokeStyle = '#7a3b1e'; g.lineWidth = 15; g.lineJoin = 'round';
+  g.beginPath();
+  for (let k = 0; k < 6; k++) {
+    const y = 40 + k * 34, x0 = k % 2 ? 214 : 42, x1 = k % 2 ? 42 : 214;
+    if (k === 0) g.moveTo(x0, y); else g.lineTo(x0, y);
+    g.lineTo(x1, y);
+  }
+  g.stroke();
+  g.restore();
+  g.strokeStyle = '#8c7a52'; g.lineWidth = 8; g.beginPath(); g.arc(128, 128, 118, 0, Math.PI * 2); g.stroke();
+  return texFrom(c);
+}
+function makeLDR() {
+  const g = new THREE.Group();
+  const leg = mat(0xc9ced4, { metalness: 0.3, roughness: 0.35 });
+  for (const z of [ROWZ.e, ROWZ.f]) g.add(rod(V(0, -0.05, z), V(0, 0.3, z), 0.018, leg));
+  g.add(mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.16, 36), mat(0xb9a56e, { roughness: 0.5 }), 0, 0.38, 0));
+  const top = new THREE.Mesh(new THREE.CircleGeometry(0.33, 40), new THREE.MeshStandardMaterial({ map: ldrTopTexture(), roughness: 0.3 }));
+  top.rotation.x = -Math.PI / 2; top.position.y = 0.462;
+  g.add(top);
+  tagPart(g, 'ldr');
+  return g;
+}
+
+/* ---------- a desk lamp that lights the sensor, and a hand that can cover it ---------- */
+const LDR_COL = 11, LRES_COL = 14;
+const LDR_POS = V(colX(LDR_COL), 0.45, 0);
+const LAMP_HEAD = V(-4.5, 5.2, -1.6);
+const lamp = (function () {
+  const g = new THREE.Group();
+  const body = mat(0x39414d, { roughness: 0.5 }), shade = mat(0xe8eef2, { roughness: 0.4, side: THREE.DoubleSide });
+  const base = V(-7.3, -0.4, -2.6), top = V(-7.3, 5.5, -2.6);
+  g.add(mesh(new THREE.CylinderGeometry(0.95, 1.05, 0.22, 32), body, base.x, base.y + 0.11, base.z));
+  g.add(rod(V(base.x, base.y + 0.2, base.z), top, 0.11, body));
+  g.add(rod(top, LAMP_HEAD, 0.09, body));
+  const dir = LDR_POS.clone().sub(LAMP_HEAD).normalize();
+  const cone = mesh(new THREE.CylinderGeometry(0.28, 0.85, 0.85, 32, 1, true), shade, 0, 0, 0);
+  cone.position.copy(LAMP_HEAD).addScaledVector(dir, 0.2);
+  cone.quaternion.setFromUnitVectors(V(0, -1, 0), dir);
+  g.add(cone);
+  const bulbMat = new THREE.MeshStandardMaterial({ color: 0xfff6d0, emissive: 0xffe9a0, emissiveIntensity: 1, roughness: 0.3 });
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.27, 20, 16), bulbMat);
+  bulb.position.copy(LAMP_HEAD).addScaledVector(dir, 0.45);
+  g.add(bulb);
+  const beamLen = LAMP_HEAD.distanceTo(LDR_POS);
+  const beamMat = new THREE.MeshBasicMaterial({ color: 0xffe9a0, transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide });
+  const beam = new THREE.Mesh(new THREE.ConeGeometry(1.5, beamLen, 40, 1, true), beamMat);
+  beam.position.copy(LAMP_HEAD).add(LDR_POS).multiplyScalar(0.5);
+  beam.quaternion.setFromUnitVectors(V(0, 1, 0), LAMP_HEAD.clone().sub(LDR_POS).normalize());
+  beam.renderOrder = 3;
+  g.add(beam);
+  const pl = new THREE.PointLight(0xfff0c8, 0, 60);
+  pl.position.copy(bulb.position);
+  g.add(pl);
+  g.userData = { bulbMat, beamMat, pl };
+  return g;
+})();
+scene.add(lamp);
+
+function makeHand() {
+  const g = new THREE.Group();
+  const skin = mat(0xe0a878, { roughness: 0.75 }), sleeve = mat(0x2f6fde, { roughness: 0.7 });
+  g.add(mesh(new THREE.BoxGeometry(0.8, 0.16, 0.7), skin, 0, 0, 0));
+  [[-0.28, 0.45], [-0.09, 0.54], [0.1, 0.56], [0.29, 0.44]].forEach(([x, len]) => {
+    const f = mesh(new THREE.CylinderGeometry(0.085, 0.085, len, 14), skin, x, 0, -0.35 - len / 2 + 0.05);
+    f.rotation.x = Math.PI / 2;
+    g.add(f);
+    g.add(mesh(new THREE.SphereGeometry(0.085, 14, 10), skin, x, 0, -0.35 - len + 0.05));
+  });
+  const th = mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.4, 14), skin, -0.5, 0, -0.15);
+  th.rotation.set(Math.PI / 2, 0, 0.9);
+  g.add(th);
+  // the arm rises towards the viewer so it never hides the board
+  g.add(rod(V(0, 0, 0.3), V(0, 0.45, 1.1), 0.2, skin));
+  g.add(rod(V(0, 0.45, 1.1), V(0, 1.7, 2.9), 0.3, sleeve));
+  return g;
+}
+const hand = makeHand();
+scene.add(hand);
+const HAND_COVER = V(LDR_POS.x, 1.1, 0.2), HAND_AWAY = V(LDR_POS.x + 4.2, 2.6, 2.6);
+function placeHand(c) {
+  hand.position.lerpVectors(HAND_AWAY, HAND_COVER, c);
+  hand.rotation.set((1 - c) * 0.55, (1 - c) * -0.5, 0);
+}
+
+const leds = [], resistors = [], pinWires = [], cathodeWires = [];
+CH.forEach((ch, i) => {
+  const led = makeLED(ch.hex);
+  led.position.set(colX(ch.col), 0, ROWZ.i);
+  tagPart(led, 'led');
+  scene.add(led); leds.push(led);
+
+  const r = makeResistor();
+  r.position.set(colX(ch.col), 0, 0);
+  tagPart(r, 'resistor');
+  scene.add(r); resistors.push(r);
+
+  const A = pinAt(ch.pin, HEADER_TOP + SLEEVE), B = holeAt(ch.col, 'b', SLEEVE);
+  const h = [0, 0.18, 0.36][i];
+  const w = makeWire([
+    A, V(A.x, A.y + 0.45 + h, A.z + 0.12),
+    V((A.x + B.x) / 2, 1.5 + h, (A.z + B.z) / 2 - 0.1),
+    V(B.x, B.y + 0.55, B.z - 0.18), B,
+  ], ch.wire);
+  scene.add(w.group); pinWires.push(w);
+
+  const cA = holeAt(ch.col + 1, 'j', SLEEVE), cB = railAt(ch.col + 1, SLEEVE);
+  const k = makeWire([cA, V(cA.x, cA.y + 0.14, cA.z + 0.2), V(cB.x, cB.y + 0.14, cB.z - 0.2), cB], 0x2b2b2e);
+  scene.add(k.group); cathodeWires.push(k);
+});
+const gA = pinAt('GND', HEADER_TOP + SLEEVE), gB = railAt(30, SLEEVE);
+const gndWire = makeWire([gA, V(1.55, 0.85, -3.3), V(3.3, 1.5, -2.6), V(4.6, 1.35, -0.6), V(4.45, 1.0, 1.5), V(gB.x, 0.72, gB.z), gB], 0x2b2b2e);
+scene.add(gndWire.group);
+
+// push button (lesson 3) and passive buzzer (lesson 5): still wired, today's program does not use them
+const btnGroup = makeButton();
+btnGroup.position.set(colX(3), 0, 0);
+scene.add(btnGroup);
+const bwA = pinAt('D32', HEADER_TOP + SLEEVE), bwB = holeAt(2, 'b', SLEEVE);
+const btnWire = makeWire([
+  bwA, V(bwA.x, bwA.y + 0.5, bwA.z + 0.12),
+  V((bwA.x + bwB.x) / 2, 1.7, (bwA.z + bwB.z) / 2 - 0.1),
+  V(bwB.x, bwB.y + 0.55, bwB.z - 0.18), bwB,
+], 0x2f6fde);
+scene.add(btnWire.group);
+const bgA = holeAt(2, 'j', SLEEVE), bgB = railAt(2, SLEEVE);
+const btnGndWire = makeWire([bgA, V(bgA.x, bgA.y + 0.14, bgA.z + 0.2), V(bgB.x, bgB.y + 0.14, bgB.z - 0.2), bgB], 0x2b2b2e);
+scene.add(btnGndWire.group);
+const bzGroup = makeBuzzer();
+bzGroup.position.set(colX(29), 0, 0);
+scene.add(bzGroup);
+const bzRes = makeResistorFlat(colX(29) - colX(25));
+bzRes.position.set((colX(25) + colX(29)) / 2, 0, ROWZ.c);
+scene.add(bzRes);
+const zwA = pinAt('D13', HEADER_TOP + SLEEVE), zwB = holeAt(25, 'b', SLEEVE);
+const buzzWire = makeWire([
+  zwA, V(zwA.x, zwA.y + 0.5, zwA.z + 0.12),
+  V((zwA.x + zwB.x) / 2, 2.2, (zwA.z + zwB.z) / 2 - 0.1),
+  V(zwB.x, zwB.y + 0.55, zwB.z - 0.18), zwB,
+], 0xe8862a);
+scene.add(buzzWire.group);
+const zgA = holeAt(29, 'j', SLEEVE), zgB = railAt(29, SLEEVE);
+const buzzGndWire = makeWire([zgA, V(zgA.x, zgA.y + 0.14, zgA.z + 0.2), V(zgB.x, zgB.y + 0.14, zgB.z - 0.2), zgB], 0x2b2b2e);
+scene.add(buzzGndWire.group);
+
+// the light sensor: LDR across the gap in column 11 (rows e and f), a 10 kΩ resistor along row i from column 11 to 14,
+// a black wire from column 14 to the ground rail, D33 to the bottom of column 11 (the middle point) and 3V3 to the top of column 11
+const ldrGroup = makeLDR();
+ldrGroup.position.set(colX(LDR_COL), 0, 0);
+scene.add(ldrGroup);
+const lRes = makeResistorFlat(colX(LRES_COL) - colX(LDR_COL), [[-0.17, 0x7a4a22], [-0.08, 0x1a1a1d], [0.01, 0xf08a24], [0.17, 0xc9a227]]);
+lRes.position.set((colX(LDR_COL) + colX(LRES_COL)) / 2, 0, ROWZ.i);
+tagPart(lRes, 'bigres');
+scene.add(lRes);
+const lgA = holeAt(LRES_COL, 'j', SLEEVE), lgB = railAt(LRES_COL, SLEEVE);
+const ldrGndWire = makeWire([lgA, V(lgA.x, lgA.y + 0.14, lgA.z + 0.2), V(lgB.x, lgB.y + 0.14, lgB.z - 0.2), lgB], 0x2b2b2e);
+scene.add(ldrGndWire.group);
+const lwA = pinAt('D33', HEADER_TOP + SLEEVE), lwB = holeAt(LDR_COL, 'h', SLEEVE);
+const ldrSigWire = makeWire([
+  lwA, V(lwA.x, lwA.y + 0.5, lwA.z + 0.12),
+  V((lwA.x + lwB.x) / 2 - 0.3, 2.0, (lwA.z + lwB.z) / 2 - 0.1),
+  V(lwB.x - 0.55, 1.0, -0.7), V(lwB.x - 0.5, 0.65, 0.6), V(lwB.x - 0.12, lwB.y + 0.3, lwB.z), lwB,
+], 0x8a5cd6);
+scene.add(ldrSigWire.group);
+const lpA = pinAt('3V3', HEADER_TOP + SLEEVE), lpB = holeAt(LDR_COL, 'b', SLEEVE);
+const ldrPowWire = makeWire([
+  lpA, V(lpA.x, lpA.y + 0.6, lpA.z + 0.15),
+  V((lpA.x + lpB.x) / 2, 2.8, (lpA.z + lpB.z) / 2),
+  V(lpB.x, lpB.y + 0.55, lpB.z - 0.18), lpB,
+], 0xe0413b);
+scene.add(ldrPowWire.group);
+
+const cop = makeCop();
+cop.position.set(-5.9, -0.4, 1.6);
+cop.rotation.y = 0.45;
+scene.add(cop);
+
+const PARTS = {};
+CH.forEach((_, i) => {
+  PARTS['res' + i] = { obj: resistors[i] };
+  PARTS['led' + i] = { obj: leds[i] };
+  PARTS['w' + i] = { obj: pinWires[i].group, wire: pinWires[i] };
+  PARTS['k' + i] = { obj: cathodeWires[i].group, wire: cathodeWires[i] };
+});
+PARTS.gnd = { obj: gndWire.group, wire: gndWire };
+PARTS.btn = { obj: btnGroup };
+PARTS.bw = { obj: btnWire.group, wire: btnWire };
+PARTS.bg = { obj: btnGndWire.group, wire: btnGndWire };
+PARTS.bz = { obj: bzGroup };
+PARTS.bzr = { obj: bzRes };
+PARTS.bzw = { obj: buzzWire.group, wire: buzzWire };
+PARTS.bzg = { obj: buzzGndWire.group, wire: buzzGndWire };
+PARTS.ldr = { obj: ldrGroup };
+PARTS.lres = { obj: lRes };
+PARTS.lg = { obj: ldrGndWire.group, wire: ldrGndWire };
+PARTS.lw = { obj: ldrSigWire.group, wire: ldrSigWire };
+PARTS.lp = { obj: ldrPowWire.group, wire: ldrPowWire };
+const ALL_PARTS = Object.keys(PARTS);
+const NEW_PARTS = ['ldr', 'lres', 'lg', 'lw', 'lp'];
+function setPart(id, on) {
+  const p = PARTS[id];
+  p.obj.visible = on;
+  p.obj.position.y = 0;
+  if (p.wire) p.wire.set(on ? 1 : 0);
+}
+
+/* ---------- lights: every traffic-light LED stays dark in this lesson ---------- */
+let litIndex = -1;
+function setLights(idx) {
+  if (idx === litIndex) return;
+  litIndex = idx;
+  leds.forEach((led, i) => {
+    const on = i === idx;
+    const L = led.userData.led;
+    L.body.color.copy(on ? L.base : L.dim);
+    L.body.emissiveIntensity = on ? 0.9 : 0;
+    L.body.opacity = on ? 0.97 : 0.93;
+    L.light.intensity = on ? 2.4 : 0;
+    L.glow.material.opacity = on ? 0.7 : 0;
+  });
+}
+
+/* ---------- current flow dots: 3V3 → LDR → middle point → 10 kΩ → ground → GND ---------- */
+function buildLdrPath() {
+  const x = colX(LDR_COL), x2 = colX(LRES_COL);
+  const pts = [pinAt('3V3')];
+  pts.push(...ldrPowWire.curve.getPoints(60));
+  pts.push(V(x, 0.03, ROWZ.b), V(x, 0.03, ROWZ.e), V(x, 0.3, ROWZ.e), V(x, 0.3, ROWZ.f), V(x, 0.03, ROWZ.f), V(x, 0.03, ROWZ.i));
+  pts.push(V(x, 0.3, ROWZ.i), V(x2, 0.3, ROWZ.i), V(x2, 0.03, ROWZ.i), V(x2, 0.03, ROWZ.j));
+  pts.push(...ldrGndWire.curve.getPoints(16));
+  pts.push(V(x2, 0.03, NEG_RAIL_Z), V(colX(30), 0.03, NEG_RAIL_Z));
+  pts.push(...gndWire.curve.getPoints(60).reverse());
+  pts.push(pinAt('GND'));
+  const cum = [0];
+  for (let k = 1; k < pts.length; k++) cum.push(cum[k - 1] + pts[k].distanceTo(pts[k - 1]));
+  return { pts, cum, len: cum[cum.length - 1] };
+}
+const flowPath = buildLdrPath();
+const DOTS = 40;
+const dotMat = new THREE.MeshBasicMaterial({ color: 0xffd23f, depthTest: false, transparent: true, opacity: 0.95 });
+const dots = [];
+for (let k = 0; k < DOTS; k++) {
+  const d = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 8), dotMat);
+  d.renderOrder = 10; d.visible = false;
+  scene.add(d); dots.push(d);
+}
+let flowOn = false, flowOffset = 0;
+function pointAlong(path, s) {
+  const { pts, cum } = path;
+  let lo = 0, hi = cum.length - 1;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (cum[m] < s) lo = m; else hi = m; }
+  const seg = cum[hi] - cum[lo] || 1;
+  return pts[lo].clone().lerp(pts[hi], (s - cum[lo]) / seg);
+}
+function updateFlow(dt) {
+  dots.forEach((d) => { d.visible = flowOn; });
+  if (!flowOn) return;
+  // a wider pipe (more light) lets more flow: the dots move faster
+  flowOffset = (flowOffset + dt * (0.25 + 2.4 * effLight())) % flowPath.len;
+  const gap = flowPath.len / DOTS;
+  dots.forEach((d, k) => d.position.copy(pointAlong(flowPath, (flowOffset + k * gap) % flowPath.len)));
+}
+
+/* =========================================================
+   Labels that stay readable while the camera moves
+   ========================================================= */
+const labelLayer = $('#labels');
+const labels = [];
+let showLabels = true;
+function addLabel(html, posFn, opt = {}) {
+  const el = document.createElement('div');
+  el.className = 'lbl ' + (opt.cls || '');
+  if (opt.lift != null) el.style.setProperty('--lift', opt.lift + 'px');
+  el.innerHTML = '<span>' + html + '</span>';
+  labelLayer.appendChild(el);
+  const L = { el, pos: typeof posFn === 'function' ? posFn : () => posFn, obj: opt.obj || null, kind: opt.kind || 'part', update: opt.update || null };
+  labels.push(L);
+  return L;
+}
+function removeLabel(L) {
+  const i = labels.indexOf(L);
+  if (i >= 0) labels.splice(i, 1);
+  L.el.remove();
+}
+function visibleInScene(o) {
+  while (o) { if (!o.visible) return false; o = o.parent; }
+  return true;
+}
+const tmpV = new THREE.Vector3();
+function updateLabels() {
+  const w = labelLayer.clientWidth, h = labelLayer.clientHeight;
+  for (const L of labels) {
+    let show = L.kind === 'callout' || (showLabels && (!L.obj || visibleInScene(L.obj)));
+    if (show) {
+      tmpV.copy(L.pos()).project(camera);
+      if (tmpV.z > 1 || tmpV.z < -1) show = false;
+    }
+    if (!show) { if (L.el.style.display !== 'none') L.el.style.display = 'none'; continue; }
+    if (L.el.style.display === 'none') L.el.style.display = '';
+    if (L.update) L.update(L);
+    const x = (tmpV.x + 1) / 2 * w, y = (1 - tmpV.y) / 2 * h;
+    L.el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+  }
+}
+
+// Part labels
+CH.forEach((ch, i) => {
+  const x = colX(ch.col) + P / 2;
+  addLabel(`<i class="dot" style="background:#${ch.hex.toString(16).padStart(6, '0')}"></i>${ch.name.toUpperCase()} LED`,
+    V(x, 1.15, ROWZ.i),
+    { obj: leds[i], cls: 'lamp ' + ch.key, lift: 58 });
+  addLabel('330 Ω', V(colX(ch.col) - 0.05, 0.42, -0.15), { obj: resistors[i], lift: 8 });
+});
+addLabel('ESP32 DevKit (controller)', V(-1.0, 0.0, ESP.cz), { obj: esp32, lift: 6 });
+addLabel('Breadboard', V(-3.9, 0.02, 2.55), { obj: breadboard, lift: 6 });
+addLabel('Ground rail (−)', V(colX(3), 0.02, NEG_RAIL_Z), { obj: breadboard, lift: 34 });
+addLabel('Jumper wire', () => gndWire.curve.getPoint(0.45), { obj: gndWire.group, lift: 12 });
+addLabel('Officer Ohm', V(-5.9, 2.7, 1.6), { obj: cop, lift: 8 });
+addLabel('Push button', V(colX(3), 0.62, 0), { obj: btnGroup, lift: 40 });
+addLabel('Passive buzzer', V(colX(29), 0.8, 0), { obj: bzGroup, lift: 40 });
+addLabel('330 Ω', V((colX(25) + colX(29)) / 2, 0.42, ROWZ.c), { obj: bzRes, lift: 14 });
+addLabel('LDR (light sensor)', V(colX(LDR_COL), 0.62, 0), { obj: ldrGroup, cls: 'lamp', lift: 44 });
+addLabel('10 kΩ', V((colX(LDR_COL) + colX(LRES_COL)) / 2, 0.42, ROWZ.i), { obj: lRes, lift: 16 });
+addLabel('Room lamp', () => LAMP_HEAD.clone().add(V(0, 0.9, 0)), { obj: lamp, lift: 6 });
+addLabel('Your hand', () => hand.position.clone().add(V(0, 0.3, 0)), { obj: hand, lift: 6 });
+const pinLabels = ['D25', 'D26', 'D27', 'D32', 'D33', 'D13', 'GND', '3V3'].map((n, i) => addLabel(n, pinAt(n, HEADER_TOP + 0.05), {
+  obj: esp32, cls: 'pin', lift: [14, 40, 66, 92, 118, 40, 14, 14][i],
+  update: (L) => {
+    if (n !== 'D33') return;
+    const show = showPinStates && sim.running;
+    const txt = show ? `D33 reads ${reading()}` : 'D33';
+    if (L._t !== txt) { L.el.firstChild.textContent = txt; L._t = txt; }
+    L.el.classList.toggle('high', show && effLight() > 0.5);
+  },
+}));
+let showPinStates = false;
+
+/* =========================================================
+   Temporary step helpers: endpoint rings, strip highlights, callouts
+   ========================================================= */
+let temps = [], callouts = [];
+const basicT = (color, opacity) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false });
+function ring(pos, color = 0xf2b705) {
+  const m = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.03, 10, 36), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.95, depthTest: false }));
+  m.rotation.x = -Math.PI / 2;
+  m.position.copy(pos); m.position.y += 0.02;
+  m.renderOrder = 6;
+  m.userData.pulse = true;
+  scene.add(m); temps.push(m);
+  return m;
+}
+function strip(points, color) {
+  const g = new THREE.Group();
+  const a = points[0], b = points[points.length - 1];
+  const alongZ = Math.abs(b.z - a.z) > Math.abs(b.x - a.x);
+  const len = a.distanceTo(b) + 0.22;
+  const bar = new THREE.Mesh(new THREE.BoxGeometry(alongZ ? 0.19 : len, 0.01, alongZ ? len : 0.19), basicT(color, 0.42));
+  bar.position.set((a.x + b.x) / 2, 0.009, (a.z + b.z) / 2);
+  g.add(bar);
+  for (const p of points) {
+    const s = new THREE.Mesh(new THREE.BoxGeometry(0.135, 0.014, 0.135), basicT(color, 0.95));
+    s.position.set(p.x, 0.013, p.z);
+    g.add(s);
+  }
+  g.traverse((o) => { if (o.material) o.userData.o0 = o.material.opacity; });
+  scene.add(g); temps.push(g);
+  return g;
+}
+const column = (c, half) => (half === 'far' ? FAR_ROWS : NEAR_ROWS).map((r) => holeAt(c, r));
+const railPoints = () => RAIL_COLS.map((c) => railAt(c));
+function callout(text, pos, cls = '', lift = 26) {
+  const L = addLabel(text, pos, { kind: 'callout', cls: 'callout ' + cls, lift });
+  callouts.push(L);
+  return L;
+}
+function clearTemps() {
+  temps.forEach((o) => { scene.remove(o); o.traverse((x) => { if (x.geometry) x.geometry.dispose(); if (x.material) x.material.dispose(); }); });
+  temps = [];
+  callouts.forEach(removeLabel);
+  callouts = [];
+}
+
+/* =========================================================
+   Tweens (step animations respect Pause; camera does not)
+   ========================================================= */
+let token = 0, paused = false, tweens = [];
+const easeInOut = (f) => f < 0.5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2;
+const easeOut = (f) => 1 - Math.pow(1 - f, 3);
+const speed = reduceMotion ? 0.35 : 1;
+function tween(dur, fn, t, ease = easeInOut) {
+  return new Promise((res) => tweens.push({ e: 0, dur: Math.max(0.001, dur * speed), fn, ease, t, res }));
+}
+const wait = (dur, t) => new Promise((res) => tweens.push({ e: 0, dur: Math.max(0.001, dur), fn: () => {}, ease: (f) => f, t, res }));
+function updateTweens(dt) {
+  const keep = [];
+  for (const tw of tweens) {
+    if (tw.t !== token) continue;
+    tw.e += dt;
+    const f = Math.min(1, tw.e / tw.dur);
+    tw.fn(tw.ease(f));
+    if (f >= 1) tw.res(); else keep.push(tw);
+  }
+  tweens = keep;
+}
+function fadeOut(g, dur, t) {
+  return tween(dur, (f) => g.traverse((o) => { if (o.material && o.userData.o0 != null) o.material.opacity = o.userData.o0 * (1 - f); }), t);
+}
+async function dropIn(id, t) {
+  const o = PARTS[id].obj;
+  o.visible = true;
+  await tween(0.8, (f) => { o.position.y = (1 - f) * 1.8; }, t, easeOut);
+}
+async function drawWire(id, t, dur = 1.5) {
+  const w = PARTS[id].wire;
+  w.group.visible = true;
+  await tween(dur, (f) => w.set(f), t);
+}
+const live = $('#live');
+function caption(text) {
+  live.hidden = !text;
+  live.textContent = text || '';
+}
+/* ---------- camera ---------- */
+const CAM = {
+  hero: { p: [-0.2, 7.4, 12.2], t: [-1.0, 0.4, -1.4] },
+  ldr: { p: [-0.6, 6.0, 6.0], t: [-1.0, 0.2, 0.2] },
+  lamp: { p: [-2.4, 6.0, 7.4], t: [-3.0, 1.6, -0.8] },
+  pin: { p: [-0.9, 7.6, 3.4], t: [-0.7, 0, -1.8] },
+  power: { p: [1.2, 9.2, 3.6], t: [0, 0, -2.8] },
+  setup: { p: [-0.3, 6.6, 0.4], t: [-0.3, 0, -4.4] },
+  code: { p: [1.0, 8.2, 10.8], t: [0.2, 0.3, -2.2] },
+};
+let camTw = null;
+function flyTo(key, instant) {
+  const c = CAM[key];
+  const to = { p: V(...c.p), t: V(...c.t) };
+  const aspect = camera.aspect;
+  if (aspect < 1.25) {
+    const k = 1 + (1.25 - aspect) * 0.4;
+    to.p.sub(to.t).multiplyScalar(k).add(to.t);
+  }
+  if (instant || reduceMotion) {
+    camera.position.copy(to.p); controls.target.copy(to.t); camTw = null; return;
+  }
+  camTw = { e: 0, dur: 1.3, fp: camera.position.clone(), ft: controls.target.clone(), to };
+}
+function updateCam(dt) {
+  if (!camTw) return;
+  camTw.e += dt;
+  const f = easeInOut(Math.min(1, camTw.e / camTw.dur));
+  camera.position.lerpVectors(camTw.fp, camTw.to.p, f);
+  controls.target.lerpVectors(camTw.ft, camTw.to.t, f);
+  if (f >= 1) camTw = null;
+}
+controls.addEventListener('start', () => { camTw = null; });
+/* =========================================================
+   The pretend light sensor and the program that reads it
+   ========================================================= */
+const pressBtn = $('#pressBtn');
+const DEFAULT_CFG = { interval: 0.5 }; // seconds between readings
+const sim = { running: false, held: false, auto: false, autoCover: false, t: 0, room: 0.75, cover: 0, printT: 0, noise: 0, noiseT: 0,
+  log: [], cfg: Object.assign({}, DEFAULT_CFG) };
+const isCovered = () => sim.held || sim.autoCover;
+// how much light reaches the sensor: the room's light, shut out by a hand
+function effLight() { return sim.room * (1 - 0.96 * sim.cover); }
+// pretend LDR: wide open (about 500 Ω) in bright light, almost shut (about 1 MΩ) in the dark
+const ldrOhms = (e) => 500 * Math.pow(10, 3.3 * (1 - e));
+// the voltage divider: the middle point sits across the 10 kΩ resistor
+const voltAt = (e) => 3.3 * 10000 / (ldrOhms(e) + 10000);
+const rawAt = (e) => Math.round(voltAt(e) / 3.3 * 4095);
+function reading() { return Math.max(0, Math.min(4095, rawAt(effLight()) + sim.noise)); }
+const lightWord = (e) => (e > 0.85 ? 'Very bright' : e > 0.6 ? 'Bright' : e > 0.35 ? 'Normal room' : e > 0.12 ? 'Dim' : 'Dark');
+const fmtOhm = (r) => (r >= 1e6 ? (r / 1e6).toFixed(1) + ' MΩ' : r >= 1000 ? (r / 1000).toFixed(r >= 1e5 ? 0 : 1) + ' kΩ' : Math.round(r) + ' Ω');
+function setHeld(on) {
+  sim.held = on;
+  pressBtn.classList.toggle('down', on);
+  pressBtn.setAttribute('aria-pressed', String(on));
+}
+function resetCycle() { sim.t = 0; sim.printT = 0; sim.log = []; sim.autoCover = false; renderConsole(); }
+function renderConsole() {
+  const pre = document.getElementById('consolePre');
+  if (!pre) return;
+  pre.textContent = '>>> %Run main.py\n' + sim.log.join('\n');
+  pre.scrollTop = pre.scrollHeight;
+}
+// the same loop as the program: read → print → sleep → read …
+function updateSim(dt) {
+  sim.noiseT += dt;
+  if (sim.noiseT >= 0.1) {
+    sim.noiseT = 0;
+    // a real ADC wiggles a little, even when nothing changes
+    sim.noise = Math.round((Math.random() - 0.5) * 2 * (4 + rawAt(effLight()) * 0.012));
+  }
+  if (sim.auto) {
+    sim.t += dt;
+    const m = sim.t % 9;
+    sim.autoCover = m > 3.5 && m < 6.5; // the pretend hand covers the sensor now and then
+  } else sim.autoCover = false;
+  const target = isCovered() ? 1 : 0;
+  sim.cover = reduceMotion ? target : sim.cover + (target - sim.cover) * Math.min(1, dt * 5);
+  if (sim.running) {
+    sim.printT += dt;
+    if (sim.printT >= sim.cfg.interval) {
+      sim.printT = 0;
+      sim.log.push('light: ' + reading());
+      if (sim.log.length > 40) sim.log.shift();
+      renderConsole();
+    }
+  }
+}
+pressBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); pressBtn.setPointerCapture(e.pointerId); setHeld(true); });
+['pointerup', 'pointercancel', 'lostpointercapture'].forEach((n) => pressBtn.addEventListener(n, () => setHeld(false)));
+pressBtn.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setHeld(true); } });
+pressBtn.addEventListener('keyup', (e) => { if (e.key === ' ' || e.key === 'Enter') setHeld(false); });
+pressBtn.addEventListener('blur', () => setHeld(false));
+
+// the room: a bright lamp lights the scene; a dim one makes it a little darker
+let lampOn = false;
+const BG0 = new THREE.Color(0xf3f7fa);
+function applyRoom() {
+  const b = lampOn ? sim.room : 1;
+  const f = 0.55 + 0.45 * b;
+  hemi.intensity = 0.72 * f; sun.intensity = 0.62 * f;
+  scene.background.copy(BG0).multiplyScalar(0.8 + 0.2 * b);
+  scene.fog.color.copy(scene.background);
+  const u = lamp.userData;
+  u.bulbMat.emissiveIntensity = 0.05 + 1.15 * sim.room;
+  u.beamMat.opacity = 0.2 * sim.room;
+  u.pl.intensity = 1.1 * sim.room;
+}
+
+/* =========================================================
+   Code panel
+   ========================================================= */
+function codeLines(cfg = sim.cfg) {
+  return [
+    ['# Measuring Light (ESP32)', ''],
+    ['from machine import Pin, ADC', 'imp', 'key'],
+    ['import time', 'imp'],
+    ['', ''],
+    ['ldr = ADC(Pin(33))  # D33 can measure voltages', 'set', 'key'],
+    ['ldr.atten(ADC.ATTN_11DB)  # measure the whole 0 to 3.3 V', 'set', 'key'],
+    ['', ''],
+    ['while True:', 'loop'],
+    ['    light = ldr.read()  # a number from 0 to 4095', 'rd', 'key'],
+    ['    print("light:", light)', 'pr', 'key'],
+    [`    time.sleep(${cfg.interval.toFixed(1)})`, 'sl'],
+  ];
+}
+const LN = (re) => codeLines().findIndex((l) => re.test(l[0]));
+let CODE = codeLines();
+function highlightCode(src) {
+  const esc = src.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  return esc.replace(/(#.*$)|\b(from|import|while|True)\b|\b(Pin|ADC|read|print|sleep|atten)\b|\b(ATTN_11DB)\b|(&quot;|")([^"]*)"|\b(\d+(?:\.\d+)?)\b/g,
+    (m, c, kw, fn, k2, q, str, num) => {
+      if (c) return `<span class="c">${c}</span>`;
+      if (kw) return `<span class="kw">${kw}</span>`;
+      if (fn) return `<span class="fn">${fn}</span>`;
+      if (k2) return `<span class="k2">${k2}</span>`;
+      if (q) return `<span class="c" style="color:#9fe0b0">"${str}"</span>`;
+      return `<span class="num">${num}</span>`;
+    });
+}
+const codeCard = document.createElement('div');
+codeCard.className = 'code-card';
+codeCard.innerHTML = `
+  <div class="code-head"><span>main.py</span></div>
+  <pre class="code" id="codePre" aria-label="MicroPython program"></pre>
+  <p class="code-note" id="codeNote"></p>`;
+const codePre = codeCard.querySelector('#codePre');
+const lineEls = CODE.map(([src, block, role], n) => {
+  const el = document.createElement('span');
+  el.className = 'ln';
+  el.dataset.n = String(n + 1);
+  codePre.appendChild(el);
+  return el;
+});
+let codeRev = 0;
+function renderCode() {
+  CODE = codeLines();
+  lineEls.forEach((el, n) => {
+    const [src, block, role] = CODE[n];
+    el.dataset.b = block;
+    if (role) el.dataset.role = role; else delete el.dataset.role;
+    el.innerHTML = highlightCode(src) || ' ';
+  });
+  codeRev++;
+}
+renderCode();
+let codeOverride = null, lastCodeKey = '';
+function setCodeNote(html) { codeCard.querySelector('#codeNote').innerHTML = html; }
+function liveBlock() {
+  const f = sim.printT / sim.cfg.interval;
+  return f < 0.14 ? 'rd' : f < 0.3 ? 'pr' : 'sl';
+}
+function updateCodeHighlight() {
+  if (!codeCard.isConnected) return;
+  let block = codeOverride ? codeOverride.block : null;
+  const only = codeOverride ? codeOverride.lines : null;
+  const live = !codeOverride && sim.running;
+  if (live) block = liveBlock();
+  const key = `${block}|${only}|${paused}|${codeRev}|${live}`;
+  if (key === lastCodeKey) return;
+  lastCodeKey = key;
+  let first = null;
+  lineEls.forEach((el, n) => {
+    const on = only != null ? only.includes(n) : (block && el.dataset.b.split(' ').includes(block));
+    el.classList.toggle('hl', !!on);
+    el.classList.toggle('key', !!on && el.dataset.role === 'key');
+    if (on && !first) first = el;
+  });
+  if (live) {
+    setCodeNote(block === 'rd' ? 'Reading: <b>ldr.read()</b> measures the voltage on D33 and gives a number from 0 to 4095.'
+      : block === 'pr' ? 'Printing: the number travels down the USB cable and appears in the Shell.'
+        : `Sleeping for ${sim.cfg.interval.toFixed(1)} s, then measuring again.`);
+  }
+}
+/* =========================================================
+   Lesson steps
+   ========================================================= */
+const STAGES = [
+  { letter: 'A', name: 'See it' },
+  { letter: 'B', name: 'Build it' },
+  { letter: 'C', name: 'Volts and numbers' },
+  { letter: 'D', name: 'Code it' },
+  { letter: 'E', name: 'Experiment' },
+];
+const T = (w, def) => `<span class="term" title="${def}">${w}</span>`;
+const W = (k, t) => (window.ESP32 ? ESP32.chip(k, t) : (t || k)); // tappable maker word, saved in the word book
+const BASE = ALL_PARTS.filter((id) => !NEW_PARTS.includes(id));
+const PLAN = [
+  'Light sensor (LDR) across the middle gap (column 11)',
+  '10 kΩ resistor along row i (column 11 to column 14)',
+  'Column 14 → ground rail (black wire)',
+  'D33 → bottom half of column 11 (purple wire)',
+  '3V3 → top half of column 11 (red wire)',
+];
+
+const STEPS = [
+  { stage: 0, title: 'Last time the crossing could speak. Now it can see light!', cam: 'hero', light: true, run: true, auto: true, try: true, flow: true, pinStates: true, console: true, extra: 'A',
+    text: `Last time your crossing learned to beep. But it still cannot tell day from night. Today it learns to <i>see</i> light: a tiny ${W('sensor', 'sensor')} turns “how bright is it?” into a number from 0 to 4095. Hold the button under the scene to cover the sensor with a hand and watch the number drop. The lamp and the hand are pretend, but the numbers behave just like a real sensor’s.` },
+  { stage: 1, title: 'Meet the light sensor (LDR)', cam: 'lamp', light: true, extra: 'M', why: () => WHY.meet, play: playMeet,
+    text: `This little disc is a ${W('ldr', 'light sensor')}. Look at its zig-zag window: that is where light gets in. In the dark it lets very little electricity through, and in bright light it lets a lot through. Engineers call it an LDR, a <b>light-dependent resistor</b>.` },
+  { stage: 1, title: 'The sensor goes across the gap', cam: 'ldr', build: BASE, plan: 0, play: playLdrGap, why: () => WHY.gap,
+    text: 'Just like the push button and the buzzer, the sensor sits across the middle gap, this time in column 11 (rows e and f). One leg lands in the top half and the other in the bottom half. It stays on top so nothing blocks its window.' },
+  { stage: 1, title: 'A 10 kΩ resistor is its partner', cam: 'ldr', build: BASE.concat(['ldr']), plan: 1, play: playLres, why: () => WHY.res,
+    text: 'A second resistor lies flat along row i, from column 11 to column 14. Its left leg shares the bottom half of column 11 with the sensor’s bottom leg. This one is <b>10 kΩ</b>: brown, black, orange. The sensor will use its partner to tell the ESP32 how much light there is.' },
+  { stage: 1, title: 'The partner goes to ground', cam: 'ldr', build: BASE.concat(['ldr', 'lres']), plan: 2, play: playLgnd, why: () => WHY.gnd,
+    text: 'A short black wire joins column 14 (the resistor’s other leg) to the ground rail, which already reaches GND. Now the electricity will have a road home: sensor → resistor → ground.' },
+  { stage: 1, title: 'Pin D33 listens in the middle', cam: 'pin', build: BASE.concat(['ldr', 'lres', 'lg']), plan: 3, play: playLsig, why: () => WHY.pin33,
+    text: 'A purple wire joins pin D33 to the bottom half of column 11: the meeting point of the sensor and the resistor. D33 will listen there and measure the voltage, so it can feel how much light there is.' },
+  { stage: 1, title: 'Power from 3V3, last', cam: 'power', build: BASE.concat(['ldr', 'lres', 'lg', 'lw']), plan: 4, play: playLpow, why: () => WHY.pow,
+    text: 'The last wire is red: it joins the 3V3 pin to the top half of column 11, where the sensor’s top leg is. Now the loop is complete: 3V3 → sensor → resistor → ground, with D33 listening in the middle.' },
+  { stage: 2, title: 'Two resistors share the push', cam: 'ldr', light: true, run: true, try: true, flow: true, pinStates: true, extra: 'V', why: () => WHY.divider, play: playDivider,
+    text: `The sensor and the 10 kΩ resistor are in a row, and together they share the 3.3 volts. Engineers call this a ${W('divider', 'voltage divider')}. The voltage at the meeting point depends on how open the sensor is, and D33 measures it. Slide the room light and hold the button to cover the sensor.` },
+  { stage: 2, title: 'Not just on or off', cam: 'ldr', light: true, run: true, try: true, flow: true, pinStates: true, extra: 'AD', why: () => WHY.analog, play: playAnalog,
+    text: `The button in lesson 3 was ${W('digital', 'digital')}: its pin said only 1 or 0. The light sensor is ${W('analog', 'analog')}: it can say <i>how much</i>. A part inside the ESP32, the ${W('adc', 'ADC')}, turns the voltage into a number: 0 V gives 0, and 3.3 V gives 4095.` },
+  { stage: 3, title: 'Set up the sensor', cam: 'setup', code: true, pinStates: true, why: () => WHY.setup, play: playSetup,
+    text: 'Two new lines get the sensor ready, and one word is added to the import. <b>ADC(Pin(33))</b> turns GPIO 33 into a measuring pin. <b>atten(ADC.ATTN_11DB)</b> tells it to measure the whole range up to 3.3 volts.' },
+  { stage: 3, title: 'Read the light and print it', cam: 'code', light: true, try: true, code: true, console: true, pinStates: true, flow: true, why: () => WHY.read, play: playRead,
+    text: 'The loop measures, prints and rests. <b>ldr.read()</b> gives the number, <b>print()</b> sends it to the Shell in Thonny, and <b>sleep</b> waits before the next reading. Watch the Shell fill up, then hold the button to cover the sensor.' },
+  { stage: 4, title: 'Make it yours: the light ladder', cam: 'hero', light: true, run: true, try: true, free: true, code: true, console: true, pinStates: true, flow: true, extra: 'E1',
+    text: 'Try different kinds of light and see which numbers you get. Then choose how often the program measures and read the code that goes with your choice.' },
+  { stage: 4, title: 'Quick quiz', cam: 'hero', light: true, run: true, auto: true, flow: true, extra: 'E2',
+    text: 'Three quick questions to check what you learned. Wrong answers are fine: you get a hint and can try again.' },
+];
+
+let stepIndex = 0;
+const partsFound = new Set();
+let quiz = [0, 1, 2].map(() => ({ choice: null, solved: false }));
+let revealOpen = false;
+
+const PART_INFO = {
+  controller: { name: 'ESP32 DevKit (controller)', purpose: 'Follows our instructions: it controls the lights, listens to the button, makes the buzzer sing and now measures light.', more: 'Pin D33 measures the voltage in the middle of the light sensor circuit. The ESP32 turns it into a number from 0 to 4095.' },
+  led: { name: 'LED', purpose: 'A small light that lets electricity flow in one direction.', more: 'LED stands for light-emitting diode. Its long leg (anode, +) must face the pin, and its short leg (cathode, −) faces ground.' },
+  resistor: { name: '330 Ω resistor', purpose: 'Limits the current to help protect the part it is wired to.', more: 'Current means how much electricity is flowing. Ω (ohm) is the unit for resistance; the bands orange, orange, brown mean 330.' },
+  bigres: { name: '10 kΩ resistor', purpose: 'The light sensor’s partner. Together they split the 3.3 volts.', more: 'k means thousand, so 10 kΩ is 10,000 ohms. The bands brown (1), black (0), orange (×1000) spell it out.' },
+  breadboard: { name: 'Breadboard', purpose: 'Holds connections so we can build without soldering.', more: 'On a breadboard you just push parts into the holes. The 5 holes in a row are joined; the middle gap keeps the halves apart.' },
+  wire: { name: 'Jumper wire', purpose: 'Connects one part of the circuit to another.', more: 'One end slides onto an ESP32 pin. The other end has a metal pin that pushes into a breadboard hole.' },
+  button: { name: 'Push button (tactile switch)', purpose: 'Lets a person tell the ESP32 something: press to connect, let go to disconnect.', more: 'Not used by today’s program, but it is still wired to D32 for later.' },
+  buzzer: { name: 'Passive buzzer', purpose: 'Makes sound when the ESP32 switches it on and off very fast.', more: 'Not used by today’s program, but it is still wired to D13 for later.' },
+  ldr: { name: 'Light sensor (LDR)', purpose: 'A resistor that changes with light: wide open in bright light, almost shut in the dark.', more: 'LDR stands for light-dependent resistor; some people say photoresistor. It has no + or − leg, so it cannot go in backwards.' },
+  cop: { name: 'Officer Ohm', purpose: 'Your guide for this lesson.', more: 'Officer Ohm is named after the ohm (Ω), the unit we use to measure resistors.' },
+};
+const CORE_PARTS = ['controller', 'led', 'resistor', 'breadboard', 'wire'];
+
+/* ---------- "Why?" questions: each answer can light up the board ---------- */
+async function flash(t, parts, labels = []) {
+  const made = parts.map(([pts, color]) => strip(pts, color));
+  const cs = labels.map(([txt, pos, cls, lift]) => callout(txt, pos, cls, lift || 30));
+  await wait(4, t); if (t !== token) return;
+  made.forEach((g) => fadeOut(g, 0.6, t));
+  cs.forEach((c) => removeLabel(c));
+  callouts = callouts.filter((L) => !cs.includes(L));
+}
+async function flashRings(t, list) {
+  const made = list.map(([pos, color]) => ring(pos, color));
+  const cs = list.filter((x) => x[2]).map(([pos, , txt, lift]) => callout(txt, V(pos.x, pos.y + 0.05, pos.z), 'gold', lift || 34));
+  await wait(4, t); if (t !== token) return;
+  made.forEach((m) => { m.visible = false; });
+  cs.forEach((c) => removeLabel(c));
+  callouts = callouts.filter((L) => !cs.includes(L));
+}
+const GOLD = 0xf2b705, BLUE = 0x2f6fde, DARK = 0x2e3136;
+const WHY = {
+  meet: [
+    { cue: 'how', q: 'How does a light sensor work?',
+      a: 'The zig-zag track on top is made of a material that lets more electricity through when light hits it. Picture a pipe that opens wider in bright light and almost shuts in the dark. In the dark it can block a million ohms; in bright light only a few hundred.' },
+    { cue: 'nodir', q: 'Which leg goes where?',
+      a: 'Either way round! Like an ordinary resistor, the sensor has no + or − leg, so you cannot put it in backwards. (An LED is different: it has a long and a short leg.)' },
+    { cue: 'why', q: 'Why can’t the ESP32 just measure the sensor’s resistance?',
+      a: 'The ESP32 can only measure <b>voltage</b> (how hard electricity pushes), not resistance. So we need a trick that turns “how wide is the pipe?” into a voltage. The trick is a partner resistor, and it is coming in the next steps.' },
+  ],
+  gap: [
+    { cue: 'gap', q: 'Why across the middle gap?',
+      a: 'The gap splits each column into a top half and a bottom half that are not joined. The sensor’s two legs land in different halves, so the electricity can only get across by going through the sensor.',
+      show: (t) => flash(t, [[column(11, 'far'), GOLD], [column(11, 'near'), BLUE]], [['Top half of column 11', holeAt(11, 'a', 0.02), 'gold'], ['Bottom half of column 11', holeAt(11, 'j', 0.02), 'blue']]) },
+    { cue: 'col', q: 'Why column 11?',
+      a: 'It is free space between the red and yellow lights, so no wire has to cross another part. Rows e and f are the two holes either side of the gap.' },
+    { cue: 'top', q: 'Why does the sensor sit on top, facing up?',
+      a: 'Its zig-zag window has to see the light. Nothing may cover it, or it would think the room is dark.' },
+  ],
+  res: [
+    { cue: 'why', q: 'Why a second resistor?',
+      a: 'A resistor on its own cannot talk to the ESP32. But two resistors in a row share the 3.3 volts, and the voltage at their meeting point changes when one of them changes. That is how “more light” becomes a voltage D33 can measure.' },
+    { cue: 'size', q: 'Why 10 kΩ?',
+      a: 'In an ordinary room the sensor is about 10 to 20 kΩ. A partner of a similar size makes the voltage swing over nearly the whole range, from close to 0 V to close to 3.3 V. A tiny 330 Ω partner would keep the voltage near 0 V almost all the time.' },
+    { cue: 'where', q: 'Why along row i, from column 11 to column 14?',
+      a: 'Its left leg shares the bottom half of column 11 with the sensor’s bottom leg, so they are connected. Its right leg is in a different column (14), so the electricity has to go through the resistor to get there.',
+      show: (t) => flash(t, [[column(11, 'near'), BLUE], [column(14, 'near'), BLUE]], [['Column 11: sensor + resistor meet', holeAt(11, 'j', 0.02), 'blue'], ['Column 14: ground wire', holeAt(14, 'j', 0.02), 'blue']]) },
+    { cue: 'bands', q: 'How do I read the colours?',
+      a: 'Brown is 1, black is 0, and orange means “multiply by 1000”. So 1, 0 and ×1000 make 10,000 ohms, which engineers write as 10 kΩ. The gold band on the end is only the tolerance (how exact it is). Our 330 Ω resistors were orange, orange, brown: 3, 3, ×10.' },
+  ],
+  gnd: [
+    { cue: 'start', q: 'Why must the resistor go to ground?',
+      a: 'Electricity needs a loop. It leaves 3V3, goes through the sensor and the resistor, and must return to GND, the road home. No road home, nothing flows and the meeting point could never be pulled down.' },
+    { cue: 'rail', q: 'Why the ground rail?',
+      a: 'The ground rail already reaches the GND pin from lesson 1. Joining the resistor to the rail uses that road, so we do not need another wire all the way to the ESP32.',
+      show: (t) => flash(t, [[railPoints(), DARK]], [['Ground rail: already joined to GND', railAt(12, 0.02), 'ground']]) },
+    { cue: 'end', q: 'Why a black wire?',
+      a: 'Engineers use black for ground, so anyone can spot it at a glance. The colour makes no difference to the electricity, but it makes mistakes much easier to find.' },
+  ],
+  pin33: [
+    { cue: 'pin', q: 'Why pin D33?',
+      a: 'D33 can measure voltages. It belongs to the group called ADC1, which keeps working when Wi-Fi is switched on (lesson 8). Another group, ADC2, stops working then. D32 is already our button, so the pin next to it is the next free measuring pin.',
+      show: (t) => flashRings(t, [[pinAt('D33', HEADER_TOP), GOLD, 'D33: measures voltage', 34]]) },
+    { cue: 'num', q: 'Why is it called Pin(33) in the code?',
+      a: 'The code uses the GPIO number, 33, and the board prints it as D33. It does not mean the 33rd pin along the header. Curious about this pin? <a class="pin-link" href="../../pins.html?pin=D33" target="_blank" rel="noopener">🔍 Look at D33 in the Pin Explorer</a>' },
+    { cue: 'mid', q: 'Why the bottom half of column 11?',
+      a: 'That is the meeting point of the sensor and the resistor, the only place where the voltage changes with the light. On the 3V3 side it would always read 3.3 V, and on the ground side always 0 V.',
+      show: (t) => flash(t, [[column(11, 'near'), BLUE]], [['The middle point', holeAt(11, 'j', 0.02), 'blue']]) },
+    { cue: 'quiet', q: 'Does electricity flow along this wire?',
+      a: 'Almost none. An analog pin only <i>listens</i> to the voltage, a bit like a pressure gauge on a pipe: it reads the pressure without taking any water. So the wire does not change the circuit.' },
+  ],
+  pow: [
+    { cue: 'why', q: 'Why 3V3?',
+      a: '3V3 gives a steady 3.3 volts, all the time, whatever the program does. That is exactly the top of the range D33 can measure, so the readings use the whole scale.' },
+    { cue: 'vin', q: 'Why not VIN, the 5-volt pin?',
+      a: 'ESP32 pins can only take 3.3 volts. If the meeting point went up to 5 V, D33 could be damaged. A sensor that talks to a pin must always be powered from 3V3.' },
+    { cue: 'last', q: 'Why is the power wire last?',
+      a: 'It is a good habit from Circuit Lab 1: the circuit has no power until the very last wire goes in, so nothing surprises you while you are still building.' },
+    { cue: 'short', q: 'Wouldn’t 3V3 touching ground be dangerous?',
+      a: 'Yes, that would be a short circuit. Here the sensor and the 10 kΩ resistor sit between 3V3 and ground, and they only let a tiny trickle through, so it is safe.' },
+  ],
+  divider: [
+    { cue: 'idea', q: 'What is a voltage divider?',
+      a: 'Picture a water tank at the top (3.3 V) and a drain at the bottom (0 V), with two pipes in a row between them. The pressure in the middle depends on which pipe is narrower. Our two “pipes” are the sensor and the 10 kΩ resistor, and D33 is a pressure gauge in the middle.' },
+    { cue: 'bright', q: 'Why does bright light give a bigger number?',
+      a: 'Light opens the sensor’s pipe wide. It then uses up very little of the push, so almost all 3.3 V is left for the middle: the voltage goes up, and so does the number.' },
+    { cue: 'dark', q: 'Why does darkness give a number near 0?',
+      a: 'In the dark the sensor’s pipe is almost shut. It uses nearly all of the 3.3 V, and the 10 kΩ resistor pulls the middle down towards ground. Almost no push is left in the middle.' },
+    { cue: 'rule', q: 'Is there a simple rule?',
+      a: 'Yes: the bigger resistor takes the bigger share of the push. In the dark the sensor is the bigger one, so it takes most of the volts. In bright light the 10 kΩ resistor is the bigger one.' },
+    { cue: 'flow', q: 'Why do the dots move faster in bright light?',
+      a: 'Wider pipe, more flow. In bright light the sensor lets more electricity through, so more current flows round the loop. In the dark it is just a thin trickle.' },
+  ],
+  analog: [
+    { cue: 'digital', q: 'How is this different from the button?',
+      a: 'The button only has two answers: pressed (0) or not (1). That is digital. The light sensor can give any voltage between 0 and 3.3 V, so it can tell you <i>how much</i> light there is. That is analog.' },
+    { cue: 'adc', q: 'How does the ESP32 turn a voltage into a number?',
+      a: 'A part called the ADC (analog-to-digital converter) measures the voltage on the pin and answers with a number. 0 volts gives 0 and about 3.3 volts gives 4095. Half way gives about half.' },
+    { cue: '4095', q: 'Why is the biggest number 4095?',
+      a: 'The ADC works with 12 tiny ON/OFF switches (bits). Twelve switches can make 4096 different patterns, and counting starts at 0, so the numbers run from 0 to 4095.' },
+    { cue: 'wiggle', q: 'Why does the number wiggle even when nothing changes?',
+      a: 'A tiny amount of stray electricity (engineers call it noise) always sneaks into the measurement, and the ADC is not perfect. So the last digits jump a little. Engineers look at the big picture and ignore small wiggles.' },
+    { cue: 'exact', q: 'Is 4095 exactly 3.3 volts?',
+      a: 'Roughly. The ESP32’s ADC is not perfectly straight, especially near the top and bottom of its range. Use the numbers to compare (more light, less light), not as exact volts.' },
+  ],
+  setup: [
+    { cue: 'imp', q: 'Why add ADC to the import line?',
+      a: 'ADC is another tool in the machine module, like Pin. Python only gives us the tools we ask for, so we add its name to the line.' },
+    { cue: 'adc', q: 'Why ADC(Pin(33))?',
+      a: 'Like PWM last time, ADC does not own a pin: we give it one. Pin(33) means GPIO 33, the pin printed D33, which our purple wire is connected to. We do not write Pin.IN: ADC sets the pin up for measuring by itself.' },
+    { cue: 'atten', q: 'What does atten do, and why ATTN_11DB?',
+      a: 'The ADC can measure ranges of different sizes. ATTN_11DB (11 decibels of “attenuation”, which means shrinking the signal so it fits) is the biggest range: from 0 up to about 3.3 volts. Without it the ADC would only measure up to about 1 volt and bright light would all look the same.' },
+    { cue: 'once', q: 'Why are these lines before the loop?',
+      a: 'Setting up only needs to happen once. The loop then repeats just the measuring, over and over.' },
+  ],
+  read: [
+    { cue: 'read', q: 'What does ldr.read() give back?',
+      a: 'A whole number from 0 to 4095. We keep it in a variable called light, so we can print it now and use it for decisions in the next lesson.' },
+    { cue: 'print', q: 'Why print()?',
+      a: 'The ESP32 has no screen. print() sends the text down the USB cable and Thonny shows it in the Shell, just as in lesson 2.' },
+    { cue: 'sleep', q: 'Why sleep before measuring again?',
+      a: 'Light does not change a thousand times a second. Two readings a second are easy to read. Without the sleep the Shell would scroll too fast to follow.' },
+    { cue: 'loop', q: 'Why inside while True?',
+      a: 'One reading only tells you about one moment. A loop keeps measuring, so you see the number change when you cover the sensor.' },
+    { cue: 'rest', q: 'What about the lights, the button and the buzzer?',
+      a: 'They are still wired, but today’s program only measures. Next lesson the light number will switch the traffic light into a night mode.' },
+  ],
+};
+
+let whyEls = [], whyList = [];
+function whyCard(list) {
+  whyList = list;
+  const card = el(`<div class="card"><h4>Why is it built this way?</h4><div class="why"></div>
+    <p class="note" style="margin-top:8px">Tap a question to read the answer.${list.some((w) => w.show) ? ' “Show me” lights it up on the board.' : ''}</p></div>`);
+  const box = card.querySelector('.why');
+  whyEls = list.map((w, k) => {
+    const item = el(`<div class="why-item"><button type="button" aria-expanded="false">${w.q}</button>
+      <div class="ans" hidden><p>${w.a}</p>${w.show ? '<button type="button" class="show3d">Show me on the board</button>' : ''}</div></div>`);
+    item.firstElementChild.addEventListener('click', () => openWhy(k, { toggle: true, scroll: false }));
+    if (w.show) item.querySelector('.show3d').addEventListener('click', () => w.show(token));
+    box.appendChild(item);
+    return item;
+  });
+  return card;
+}
+function openWhy(k, opt = {}) {
+  const item = whyEls[k];
+  if (!item) return;
+  const ans = item.querySelector('.ans');
+  const open = opt.toggle ? ans.hidden : true;
+  whyEls.forEach((e) => e.classList.remove('now'));
+  ans.hidden = !open;
+  item.firstElementChild.setAttribute('aria-expanded', String(open));
+  if (open) item.classList.add('now', 'seen');
+  if (opt.scroll !== false) {
+    const pb = $('#panelBody');
+    if (pb.scrollHeight > pb.clientHeight + 4) {
+      const r = item.getBoundingClientRect(), pr = pb.getBoundingClientRect();
+      if (r.top < pr.top || r.bottom > pr.bottom) pb.scrollTop += r.top - pr.top - 12;
+    }
+  }
+}
+// open every "why" for this cue, the first one gets focus
+function cue(t, name) {
+  if (t !== token) return;
+  const ks = whyList.map((w, k) => (w.cue === name ? k : -1)).filter((k) => k >= 0);
+  ks.slice().reverse().forEach((k) => openWhy(k, { scroll: false }));
+  if (ks.length) openWhy(ks[0]);
+}
+
+/* ---------- step animations ---------- */
+async function playMeet(t) {
+  caption('Look at the zig-zag window: light gets in there');
+  cue(t, 'how');
+  callout('Zig-zag window', V(colX(LDR_COL), 0.75, 0), 'gold', 40);
+  callout('Two legs, no + or −', V(colX(LDR_COL), 0.05, -0.375), 'ground', 24);
+  await wait(3.8, t); if (t !== token) return;
+  cue(t, 'nodir');
+  await wait(3.6, t); if (t !== token) return;
+  cue(t, 'why');
+  caption('Click Next to put the sensor on the breadboard');
+}
+async function playLdrGap(t) {
+  caption('Find the two holes: row e just above the gap, row f just below');
+  cue(t, 'gap');
+  const rs = [['e', GOLD], ['f', BLUE]].map(([r, col]) => ring(holeAt(LDR_COL, r), col));
+  callout('Top half', holeAt(LDR_COL, 'a', 0.02), 'gold', 30);
+  callout('Bottom half', holeAt(LDR_COL, 'j', 0.02), 'blue', 30);
+  await wait(2.6, t); if (t !== token) return;
+  caption('Pushing the sensor in across the gap');
+  cue(t, 'col');
+  await dropIn('ldr', t); if (t !== token) return;
+  rs.forEach((m) => { m.visible = false; });
+  strip(column(LDR_COL, 'far'), 0xf2b705);
+  strip(column(LDR_COL, 'near'), 0x2f6fde);
+  cue(t, 'top');
+  caption('One leg in the top half, one in the bottom half. Read the “Why?” questions, then click Next.');
+}
+async function playLres(t) {
+  caption('Find both ends: column 11 and column 14, in row i');
+  cue(t, 'why');
+  const rs = [LDR_COL, LRES_COL].map((c) => ring(holeAt(c, 'i'), BLUE));
+  callout('Column 11', holeAt(LDR_COL, 'j', 0.02), 'blue', 30);
+  callout('Column 14', holeAt(LRES_COL, 'j', 0.02), 'blue', 30);
+  await wait(2.8, t); if (t !== token) return;
+  caption('Laying the resistor along the row');
+  cue(t, 'size');
+  await dropIn('lres', t); if (t !== token) return;
+  rs.forEach((m) => { m.visible = false; });
+  const s1 = strip(column(LDR_COL, 'near'), 0x2f6fde);
+  caption('The resistor and the sensor now meet in the bottom half of column 11');
+  cue(t, 'where');
+  await wait(3.4, t); if (t !== token) return;
+  fadeOut(s1, 0.6, t);
+  cue(t, 'bands');
+  caption('Done! Read the “Why?” questions, then click Next.');
+}
+async function playLgnd(t) {
+  caption('Find both ends: column 14 (bottom half) and the ground rail');
+  cue(t, 'start');
+  const a = ring(holeAt(LRES_COL, 'j'), BLUE), b = ring(railAt(LRES_COL), BLUE);
+  await wait(2.0, t); if (t !== token) return;
+  caption('Wiring the resistor to ground');
+  cue(t, 'rail');
+  await drawWire('lg', t, 1.1); if (t !== token) return;
+  a.visible = b.visible = false;
+  const r = strip(railPoints(), 0x2e3136);
+  callout('Ground rail: already joined to GND', railAt(12, 0.02), 'ground', 30);
+  cue(t, 'end');
+  caption('Done! The road home is ready.');
+  await wait(4, t); if (t !== token) return;
+  fadeOut(r, 0.8, t);
+}
+async function playLsig(t) {
+  caption('Find both ends: pin D33 and the bottom half of column 11');
+  cue(t, 'pin');
+  const r1 = ring(pinAt('D33', HEADER_TOP)), r2 = ring(holeAt(LDR_COL, 'h'));
+  callout('Pin D33', pinAt('D33', HEADER_TOP + 0.05), 'gold', 34);
+  callout('The middle point', holeAt(LDR_COL, 'h', 0.02), 'gold', 30);
+  await wait(2.8, t); if (t !== token) return;
+  caption('Drawing a jumper wire from D33 to the middle point');
+  cue(t, 'num');
+  await drawWire('lw', t, 1.6); if (t !== token) return;
+  [r1, r2].forEach((m) => { m.visible = false; });
+  const s = strip(column(LDR_COL, 'near'), 0x2f6fde);
+  caption('D33 now listens where the sensor and the resistor meet');
+  cue(t, 'mid');
+  await wait(3.2, t); if (t !== token) return;
+  fadeOut(s, 0.6, t);
+  cue(t, 'quiet');
+  caption('Done! Read the “Why?” questions, then click Next.');
+}
+async function playLpow(t) {
+  caption('Find both ends: pin 3V3 (at the back) and the top half of column 11');
+  cue(t, 'why');
+  const r1 = ring(pinAt('3V3', HEADER_TOP), 0xe0413b), r2 = ring(holeAt(LDR_COL, 'b'), 0xe0413b);
+  callout('Pin 3V3', pinAt('3V3', HEADER_TOP + 0.05), 'gold', 34);
+  callout('Top half of column 11', holeAt(LDR_COL, 'a', 0.02), 'gold', 30);
+  await wait(3.0, t); if (t !== token) return;
+  caption('Connecting the power last');
+  cue(t, 'vin');
+  await drawWire('lp', t, 1.9); if (t !== token) return;
+  [r1, r2].forEach((m) => { m.visible = false; });
+  const s = strip(column(LDR_COL, 'far'), 0xe0413b);
+  cue(t, 'last');
+  caption('The sensor’s top leg is now powered from 3V3');
+  await wait(3.2, t); if (t !== token) return;
+  fadeOut(s, 0.6, t);
+  cue(t, 'short');
+  caption('The sensor is built! Read the “Why?” questions, then click Next.');
+}
+async function playDivider(t) {
+  caption('Slide the room light, or hold the button to cover the sensor');
+  cue(t, 'idea');
+  await wait(5, t); if (t !== token) return;
+  cue(t, 'bright');
+  await wait(4.5, t); if (t !== token) return;
+  cue(t, 'dark');
+  await wait(4.5, t); if (t !== token) return;
+  cue(t, 'rule');
+}
+async function playAnalog(t) {
+  caption('Slide the light and compare the two readings');
+  cue(t, 'digital');
+  await wait(5, t); if (t !== token) return;
+  cue(t, 'adc');
+  await wait(4.5, t); if (t !== token) return;
+  cue(t, '4095');
+  await wait(4.5, t); if (t !== token) return;
+  cue(t, 'wiggle');
+}
+async function playSetup(t) {
+  const imp = LN(/^from machine/), ad = LN(/^ldr = ADC/), at = LN(/^ldr\.atten/);
+  codeOverride = { lines: [imp] };
+  setCodeNote('<b>ADC</b> is added to the import: it is a tool from the machine module, like Pin.');
+  cue(t, 'imp');
+  await wait(3.6, t); if (t !== token) return;
+  codeOverride = { lines: [ad] };
+  const r = ring(pinAt('D33', HEADER_TOP));
+  callout('D33: ADC', pinAt('D33', HEADER_TOP + 0.05), 'gold', 34);
+  setCodeNote('<b>ADC(Pin(33))</b> makes GPIO 33 (printed D33) a measuring pin. We call it <b>ldr</b>.');
+  cue(t, 'adc');
+  await wait(3.8, t); if (t !== token) return;
+  codeOverride = { lines: [at] };
+  setCodeNote('<b>atten(ADC.ATTN_11DB)</b>: measure the whole range, from 0 up to about 3.3 volts.');
+  cue(t, 'atten');
+  await wait(3.8, t); if (t !== token) return;
+  r.visible = false;
+  codeOverride = { lines: [imp, ad, at] };
+  setCodeNote('The sensor is ready. These lines run once. Click <b>Next</b> to start measuring.');
+  cue(t, 'once');
+}
+async function playRead(t) {
+  const rd = LN(/ldr\.read/), pr = LN(/print\(/), sl = LN(/time\.sleep/);
+  codeOverride = { lines: [rd] };
+  setCodeNote('<b>ldr.read()</b> measures D33 and gives a number from 0 to 4095. We keep it in <b>light</b>.');
+  cue(t, 'read');
+  await wait(3.8, t); if (t !== token) return;
+  codeOverride = { lines: [pr] };
+  setCodeNote('<b>print()</b> sends the number down the USB cable to the Shell.');
+  cue(t, 'print');
+  await wait(3.4, t); if (t !== token) return;
+  codeOverride = { lines: [sl] };
+  setCodeNote('<b>sleep</b> waits before the next reading.');
+  cue(t, 'sleep');
+  await wait(3.2, t); if (t !== token) return;
+  codeOverride = { lines: [LN(/^while True/), rd, pr, sl] };
+  setCodeNote('All inside <b>while True</b>, so it measures again and again. Now hold the button to cover the sensor!');
+  cue(t, 'loop');
+  await wait(3.4, t); if (t !== token) return;
+  codeOverride = null; lastCodeKey = '';
+  resetCycle(); sim.running = true; sim.auto = true;
+  cue(t, 'rest');
+}
+
+/* ---------- panel rendering ---------- */
+const extra = $('#extra');
+function el(html) { const d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstElementChild; }
+function planList(cur) {
+  const items = PLAN.map((txt, k) => {
+    const cls = k < cur ? 'done' : k === cur ? 'now' : '';
+    return `<li class="${cls}"><span class="check">✓</span><span class="mono">${txt}</span></li>`;
+  }).join('');
+  return el(`<div class="card"><h4>Wiring plan</h4><ul class="list">${items}</ul></div>`);
+}
+// the pretend room light: one slider that every card shares
+function syncRoomSliders() {
+  document.querySelectorAll('.roomSlider').forEach((s) => { s.value = String(Math.round(sim.room * 100)); });
+  document.querySelectorAll('.roomVal').forEach((s) => { s.textContent = lightWord(sim.room); });
+  document.querySelectorAll('.ladder button').forEach((b) => b.setAttribute('aria-pressed', String(Math.abs(+b.dataset.e - sim.room) < 0.005)));
+}
+function roomCard(title = 'Pretend room light') {
+  const card = el(`<div class="card"><h4>${title}</h4>
+    <div class="slider-row"><input type="range" class="roomSlider" min="0" max="100" step="1" value="${Math.round(sim.room * 100)}" aria-label="Room light, from dark to very bright"><span class="slider-val roomVal" style="min-width:7.5ch;font-size:16px"></span></div>
+    <p class="note" style="margin:6px 0 0">Slide it from dark to bright. Use <b>Hold to cover the sensor</b> under the 3D scene to shut the light out with a hand.</p></div>`);
+  card.querySelector('.roomSlider').addEventListener('input', (e) => { sim.room = +e.target.value / 100; syncRoomSliders(); });
+  return card;
+}
+function consoleCard() {
+  return el(`<div class="console"><div class="console-head">Shell · what print() sends to Thonny</div><pre id="consolePre" aria-live="off"></pre></div>`);
+}
+const LADDER = [
+  ['🌑', 'Dark cupboard', 0.03],
+  ['🌆', 'Evening room', 0.25],
+  ['🏫', 'Bright classroom', 0.6],
+  ['🪟', 'Sunny window', 0.85],
+  ['🔦', 'Torch right on it', 1.0],
+];
+function renderExtra(s) {
+  extra.innerHTML = '';
+  if (s.plan != null) extra.appendChild(planList(s.plan));
+  if (s.extra === 'A') {
+    extra.appendChild(el(`<div class="card"><h4>The big idea</h4><ul class="list">
+      <li><span style="font-size:20px">☀️</span><span><b>Bright</b> light gives a <b>big</b> number, up to 4095.</span></li>
+      <li><span style="font-size:20px">🌥️</span><span><b>Dim</b> light gives a number in the middle.</span></li>
+      <li><span style="font-size:20px">🌑</span><span><b>Dark</b> gives a <b>small</b> number, close to 0.</span></li>
+    </ul><p class="note" style="margin-top:8px">Phones dim their screens and street lamps switch on at dusk because something measured the light first.</p></div>`));
+    extra.appendChild(roomCard());
+    extra.appendChild(consoleCard());
+  }
+  if (s.extra === 'M') {
+    extra.appendChild(el(`<div class="card"><h4>A resistor that feels light</h4><ul class="analogy">
+      <li><b>In the dark</b><span>A very narrow pipe: it lets almost no electricity through (up to about 1,000,000 Ω).</span></li>
+      <li><b>In bright light</b><span>The pipe opens wide and lets lots through (down to a few hundred Ω).</span></li>
+    </ul><p class="note" style="margin-top:8px">Engineers call this part an <b>LDR</b>, a light-dependent resistor.</p></div>`));
+  }
+  if (s.extra === 'V') {
+    extra.appendChild(roomCard());
+    extra.appendChild(el(`<div class="card"><h4>Sharing the 3.3 volts (pretend numbers)</h4>
+      <div class="divider"><div class="tube" role="img" aria-label="A tube showing how the 3.3 volts are shared between the light sensor (gold, top) and the 10 kilo-ohm resistor (blue, bottom)"><i class="top" data-live="tubeTop"></i><i class="bot"></i><span class="mid" data-live="tubeMid"></span></div>
+      <div class="rows"><div>🟨 Light sensor: <b data-live="ldrOhm"></b><br>uses <b data-live="ldrV"></b></div>
+      <div>⬛ Middle point (D33): <b data-live="midV"></b></div>
+      <div>🟦 10 kΩ resistor<br>uses <b data-live="resV"></b></div></div></div>
+      <p class="big-result" data-live="divText" style="margin-bottom:0"></p></div>`));
+  }
+  if (s.extra === 'AD') {
+    extra.appendChild(roomCard());
+    extra.appendChild(el(`<div class="card"><h4>Two ways to listen</h4><div class="vs">
+      <div><small>DIGITAL (like the button)</small><b data-live="dig">1</b><small data-live="digTxt"></small></div>
+      <div><small>ANALOG (the ADC on D33)</small><b data-live="ana">0</b><div class="bar"><i data-live="anaBar"></i></div><small>from 0 to 4095</small></div></div>
+      <p class="note" style="margin:8px 0 0">A digital pin only asks “more than halfway?”. An analog pin tells you exactly how far.</p></div>`));
+  }
+  if (s.code) {
+    lastCodeKey = '';
+    if (!s.play) setCodeNote('');
+    if (s.extra !== 'E1') extra.appendChild(codeCard);
+  }
+  if (s.code && s.why) { /* the code card goes first, then the Why card */ }
+  if (s.why) extra.appendChild(whyCard(s.why()));
+  if (s.console && s.extra !== 'A') extra.appendChild(consoleCard());
+  if (s.extra === 'E1') {
+    const wrap = el(`<div style="display:grid;gap:14px"><div class="card"><h4>The light ladder</h4>
+      <p class="note" style="margin:0 0 8px">Tap each kind of light and read the number the ESP32 would print.</p>
+      <div class="ladder"></div>
+      <p class="big-result" id="ladderText" style="margin-bottom:0"></p></div>
+      <div class="card"><h4>How often to measure</h4>
+      <div class="var-row"><label class="mono" for="s_interval">time.sleep(…)</label>
+      <div class="slider-row"><input type="range" id="s_interval" min="0.1" max="2" step="0.1" value="${sim.cfg.interval}" aria-label="Seconds between readings"><span class="slider-val" id="intVal">${sim.cfg.interval.toFixed(1)} s</span></div></div>
+      <p class="big-result" id="cfgText" style="margin-bottom:0"></p></div></div>`);
+    const lad = wrap.querySelector('.ladder');
+    LADDER.forEach(([icon, name, e]) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.dataset.e = e;
+      b.innerHTML = `<b>${icon} ${name}</b><span>≈ ${rawAt(e)}</span>`;
+      b.addEventListener('click', () => { sim.room = e; setHeld(false); syncRoomSliders(); updateLadderText(); });
+      lad.appendChild(b);
+    });
+    wrap.appendChild(roomCard('Or slide it yourself'));
+    wrap.querySelector('#s_interval').addEventListener('input', (e) => {
+      sim.cfg.interval = +e.target.value;
+      wrap.querySelector('#intVal').textContent = sim.cfg.interval.toFixed(1) + ' s';
+      renderCode(); updateCfgText();
+    });
+    wrap.appendChild(codeCard);
+    wrap.appendChild(consoleCard());
+    wrap.appendChild(el(`<div class="card"><p class="question">A porch lamp should switch on when it gets dark. Which number would you pick as “dark”? Why not 0?</p>
+      <button class="btn" id="revealBtn" type="button" aria-expanded="${revealOpen}">${revealOpen ? 'Hide the answer' : 'Think first, then show the answer'}</button>
+      <div class="reveal" id="revealBox" ${revealOpen ? '' : 'hidden'}>Somewhere around 300 to 800 works well. Not 0, because even a dark room has a little light and the readings wiggle, so the lamp would flicker on and off. In the next lesson you will use a number like this to make a decision.</div>
+      <p class="note" style="margin-top:10px"><b>Make it yours:</b> write down the number you would call “dark”. You will need it in lesson 7!</p></div>`));
+    wrap.querySelector('#revealBtn').addEventListener('click', (e) => {
+      revealOpen = !revealOpen;
+      wrap.querySelector('#revealBox').hidden = !revealOpen;
+      e.currentTarget.textContent = revealOpen ? 'Hide the answer' : 'Think first, then show the answer';
+      e.currentTarget.setAttribute('aria-expanded', String(revealOpen));
+    });
+    extra.appendChild(wrap);
+    setTimeout(() => { updateCfgText(); updateLadderText(); }, 0);
+  }
+  if (s.extra === 'E2') QUIZ.forEach((_, k) => extra.appendChild(renderQuiz(k)));
+  syncRoomSliders();
+  renderConsole();
+  liveKey = '';
+}
+function updateLadderText() {
+  const t = $('#ladderText');
+  if (!t) return;
+  t.innerHTML = `Now: <b>${lightWord(sim.room)}</b>, about <b>${rawAt(sim.room)}</b> out of 4095. Cover it with the button under the scene and it drops to about <b>${rawAt(sim.room * 0.04)}</b>.`;
+}
+function updateCfgText() {
+  const t = $('#cfgText');
+  if (!t) return;
+  const n = sim.cfg.interval;
+  t.innerHTML = `The program measures <b>${(1 / n).toFixed(1)}</b> time${n === 1 ? '' : 's'} a second. `
+    + (n < 0.3 ? 'Very fast: the Shell fills up quickly.' : n > 1.2 ? 'Slow: you might miss a quick shadow.' : 'A good pace to read.');
+}
+// live numbers inside the cards, refreshed whenever the light changes
+let liveKey = '';
+function updateLive() {
+  const e = effLight(), rd = reading();
+  const key = `${sim.room.toFixed(2)}|${sim.cover.toFixed(2)}|${rd}|${stepIndex}`;
+  if (key === liveKey) return;
+  liveKey = key;
+  const set = (k, html) => { const n = extra.querySelector(`[data-live="${k}"]`); if (n && n.innerHTML !== html) n.innerHTML = html; };
+  const R = ldrOhms(e), vm = voltAt(e), vl = 3.3 - vm;
+  const tube = extra.querySelector('[data-live="tubeTop"]');
+  if (tube) {
+    tube.style.height = (vl / 3.3 * 100).toFixed(1) + '%';
+    extra.querySelector('[data-live="tubeMid"]').style.top = (vl / 3.3 * 100).toFixed(1) + '%';
+  }
+  set('ldrOhm', fmtOhm(R)); set('ldrV', vl.toFixed(2) + ' V'); set('midV', vm.toFixed(2) + ' V'); set('resV', vm.toFixed(2) + ' V');
+  set('divText', `The light sensor is ${fmtOhm(R)} and the 10 kΩ resistor is the ${R > 10000 ? 'smaller' : 'bigger'} one, so D33 sees <b>${vm.toFixed(2)} V</b>, which the ESP32 turns into <b>${rd}</b>.`);
+  set('dig', rd >= 2048 ? '1' : '0');
+  set('digTxt', rd >= 2048 ? 'above halfway' : 'below halfway');
+  set('ana', String(rd));
+  const bar = extra.querySelector('[data-live="anaBar"]');
+  if (bar) bar.style.width = (rd / 4095 * 100).toFixed(1) + '%';
+}
+const QUIZ = [
+  { q: 'The ESP32 reads about 3900 in a bright room. You cover the light sensor with your hand. What do you expect?',
+    opts: ['A bigger number, about 4095', 'A much smaller number, close to 0', 'The same number', 'An error message'],
+    right: 1,
+    good: 'In the dark the sensor is a very narrow pipe. It uses almost all of the 3.3 volts, so little is left at the meeting point and the number drops.',
+    hint: 'Picture the sensor as a pipe. When light is shut out, is the pipe wide open or almost shut? How much push is left in the middle?' },
+  { q: 'What is the difference between a digital and an analog reading?',
+    opts: ['Digital is faster', 'Digital gives only 0 or 1; analog gives a number that says how much', 'Analog only works in the dark', 'There is no difference'],
+    right: 1,
+    good: 'The button was digital: pressed or not. The light sensor is analog, so its reading can be anywhere from 0 to 4095.',
+    hint: 'Think about the button in lesson 3. How many different answers could it give? And the light sensor?' },
+  { q: 'Why does the circuit need the 10 kΩ resistor?',
+    opts: ['To make the light sensor brighter', 'To protect the LEDs', 'It shares the 3.3 volts with the sensor, so the voltage in the middle changes with the light', 'To store the number'],
+    right: 2,
+    good: 'Two resistors in a row share the push. When the sensor changes, the voltage at the meeting point changes, and D33 can measure it.',
+    hint: 'Remember the two pipes between the tank and the drain. What changes in the middle when one pipe gets wider?' },
+];
+function renderQuiz(n) {
+  const Q = QUIZ[n], st = quiz[n];
+  const card = el(`<div class="card"><h4>Question ${n + 1} of ${QUIZ.length}</h4><p class="question">${Q.q}</p><div class="quiz-opts" role="group" aria-label="Answers"></div><div aria-live="polite"></div></div>`);
+  const box = card.querySelector('.quiz-opts');
+  Q.opts.forEach((txt, k) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.innerHTML = `<b>${'ABCD'[k]}</b><span>${txt}</span>`;
+    if (st.choice === k) b.classList.add(k === Q.right ? 'right' : 'wrong');
+    if (st.solved && k === Q.right) b.classList.add('right');
+    b.addEventListener('click', () => {
+      st.choice = k; if (k === Q.right) st.solved = true;
+      card.replaceWith(renderQuiz(n));
+      const done = document.getElementById('quizDone');
+      if (quiz.every((x) => x.solved) && !done) extra.appendChild(finishCard());
+    });
+    box.appendChild(b);
+  });
+  const fb = card.lastElementChild;
+  if (st.choice != null) {
+    fb.innerHTML = st.choice === Q.right
+      ? `<div class="feedback good"><b>Yes, great thinking!</b><p style="margin:4px 0 0">${Q.good}</p></div>`
+      : `<div class="feedback try"><b>Good try!</b><p style="margin:4px 0 0">That’s not quite it. ${Q.hint} Pick another answer.</p></div>`;
+  }
+  return card;
+}const LESSON_SLUG = '06-measuring-light';
+function saveProgress(patch) {
+  if (window.COURSE) window.COURSE.saveProgress(LESSON_SLUG, patch);
+}
+function finishCard() {
+  saveProgress({ done: true });
+  const next = window.COURSE ? window.COURSE.nextLesson(LESSON_SLUG) : null;
+  const link = next && next.status === 'ready'
+    ? `<p style="margin:8px 0 0"><a class="btn primary" href="../${next.slug}/index.html">Next lesson: ${next.title} →</a></p>`
+    : `<p style="margin:8px 0 0"><a class="btn" href="../../lessons.html">Back to all lessons</a></p>`;
+  return el(`<div class="feedback good" id="quizDone"><b>You finished the lesson!</b><p style="margin:4px 0 0">Your crossing can see light now: the sensor and the 10 kΩ resistor share the 3.3 volts, D33 measures the middle, and the ADC turns it into a number from 0 to 4095. Great work, engineer!</p>${link}</div>`);
+}
+
+/* ---------- header progress ---------- */
+const stagesNav = $('#stages');
+STAGES.forEach((st, k) => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'stage-pill';
+  b.innerHTML = `<b>${st.letter}</b><span>${st.name}</span>`;
+  b.setAttribute('aria-label', `Stage ${st.letter}: ${st.name}`);
+  b.addEventListener('click', () => goTo(STEPS.findIndex((s) => s.stage === k)));
+  stagesNav.appendChild(b);
+});
+function updateNav() {
+  const s = STEPS[stepIndex];
+  [...stagesNav.children].forEach((b, k) => {
+    b.classList.toggle('current', k === s.stage);
+    b.classList.toggle('done', k < s.stage);
+    if (k === s.stage) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+  });
+  const pct = Math.round(((stepIndex + 1) / STEPS.length) * 100);
+  $('#progressFill').style.width = pct + '%';
+  $('#progressBar').setAttribute('aria-valuenow', String(pct));
+  $('#progressText').textContent = `Step ${stepIndex + 1} of ${STEPS.length}`;
+  $('#prev').disabled = stepIndex === 0;
+  $('#next').disabled = stepIndex === STEPS.length - 1;
+  const st = STAGES[s.stage];
+  $('#stageName').textContent = `Stage ${st.letter} · ${st.name}`;
+  $('#stepTitle').textContent = s.title;
+  $('#stepText').innerHTML = s.text;
+}
+
+/* ---------- selection / info card ---------- */
+let selHelper = null;
+const info = $('#info');
+function clearSelection() {
+  if (selHelper) { scene.remove(selHelper); selHelper.geometry.dispose(); selHelper = null; }
+}
+function hideInfo() { info.hidden = true; clearSelection(); }
+function selectPart(part, obj) {
+  clearSelection();
+  if (!obj) {
+    const candidates = pickables.filter((o) => o.userData.part === part && visibleInScene(o));
+    obj = candidates[0] || null;
+  }
+  if (obj) {
+    selHelper = new THREE.BoxHelper(obj, 0xf2b705);
+    selHelper.material.depthTest = false;
+    selHelper.material.transparent = true;
+    selHelper.renderOrder = 8;
+    selHelper.userData.target = obj;
+    scene.add(selHelper);
+  }
+  const d = PART_INFO[part];
+  $('#infoTitle').textContent = d.name;
+  $('#infoPurpose').textContent = d.purpose;
+  $('#infoMore').textContent = d.more;
+  $('#infoPins').hidden = part !== 'controller';
+  info.hidden = false;
+  if (CORE_PARTS.includes(part) && !partsFound.has(part)) {
+    partsFound.add(part);
+    const li = document.querySelector(`#partList [data-part="${part}"]`);
+    if (li) li.classList.add('done');
+    const fc = $('#foundCount');
+    if (fc) fc.textContent = String(partsFound.size);
+    if (partsFound.size === 5 && STEPS[stepIndex].extra === 'B1') caption('You found all five parts! Click Next.');
+  }
+}
+$('#infoClose').addEventListener('click', hideInfo);
+
+const raycaster = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+let downAt = null;
+renderer.domElement.addEventListener('pointerdown', (e) => { downAt = { x: e.clientX, y: e.clientY }; });
+renderer.domElement.addEventListener('pointerup', (e) => {
+  if (!downAt) return;
+  const moved = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y);
+  downAt = null;
+  if (moved > 6) return;
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  raycaster.setFromCamera(ndc, camera);
+  const hits = raycaster.intersectObjects(pickables.filter(visibleInScene), true);
+  for (const h of hits) {
+    let o = h.object;
+    while (o && !o.userData.part) o = o.parent;
+    if (o && visibleInScene(o)) { selectPart(o.userData.part, o); return; }
+  }
+});
+/* =========================================================
+   Navigation
+   ========================================================= */
+let copWave = 0;
+function goTo(i, opt = {}) {
+  i = Math.max(0, Math.min(STEPS.length - 1, i));
+  token++;
+  const t = token;
+  tweens = [];
+  clearTemps();
+  hideInfo();
+  caption('');
+  stepIndex = i;
+  const s = STEPS[i];
+  const built = new Set(s.build || ALL_PARTS);
+  ALL_PARTS.forEach((id) => setPart(id, built.has(id)));
+  flowOn = !!s.flow;
+  showPinStates = !!s.pinStates;
+  codeOverride = null;
+  setHeld(false);
+  lampOn = !!s.light;
+  lamp.visible = lampOn;
+  sim.running = !!s.run;
+  sim.auto = !!s.auto;
+  if (!s.free) sim.cfg = Object.assign({}, DEFAULT_CFG);
+  resetCycle();
+  renderCode();
+  pressBtn.hidden = !s.try;
+  whyEls = []; whyList = [];
+  setLights(-1);
+  updateNav();
+  renderExtra(s);
+  flyTo(s.cam, opt.instant);
+  copWave = 1.8;
+  $('#panelBody').scrollTop = 0;
+  if (s.play) s.play(t);
+  saveProgress({ step: i, steps: STEPS.length });
+}
+
+$('#prev').addEventListener('click', () => goTo(stepIndex - 1));
+$('#next').addEventListener('click', () => goTo(stepIndex + 1));
+$('#replay').addEventListener('click', () => goTo(stepIndex, { replay: true }));
+$('#resetView').addEventListener('click', () => flyTo(STEPS[stepIndex].cam));
+$('#labelsToggle').addEventListener('change', (e) => { showLabels = e.target.checked; });
+const pauseBtn = $('#pause');
+function setPaused(p) {
+  paused = p;
+  pauseBtn.setAttribute('aria-pressed', String(p));
+  pauseBtn.textContent = p ? '▶ Resume' : '❚❚ Pause';
+}
+pauseBtn.addEventListener('click', () => setPaused(!paused));
+const resetBtn = $('#resetLesson');
+let resetArmed = null;
+resetBtn.addEventListener('click', () => {
+  if (!resetArmed) {
+    resetBtn.classList.add('armed');
+    resetBtn.textContent = 'Click again to reset';
+    resetArmed = setTimeout(() => { resetArmed = null; resetBtn.classList.remove('armed'); resetBtn.textContent = 'Reset lesson'; }, 3000);
+    return;
+  }
+  clearTimeout(resetArmed); resetArmed = null;
+  resetBtn.classList.remove('armed'); resetBtn.textContent = 'Reset lesson';
+  resetLesson();
+});
+function resetLesson() {
+  partsFound.clear();
+  quiz = [0, 1, 2].map(() => ({ choice: null, solved: false }));
+  revealOpen = false;
+  setPaused(false);
+  showLabels = true; $('#labelsToggle').checked = true;
+  sim.cfg = Object.assign({}, DEFAULT_CFG);
+  sim.room = 0.75;
+  stepIndex = 0;
+  goTo(0, { replay: true });
+}
+document.addEventListener('keydown', (e) => {
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
+  if (e.key === 'ArrowRight' && stepIndex < STEPS.length - 1) goTo(stepIndex + 1);
+  if (e.key === 'ArrowLeft' && stepIndex > 0) goTo(stepIndex - 1);
+});
+
+/* ---------- status chip + live readings ---------- */
+const stName = $('#stName'), stWord = $('#stWord'), stCount = $('#stCount'), stBadge = $('#stBadge');
+const lampEls = [...document.querySelectorAll('.lamps i')];
+let lastStatus = '';
+function updateStatus() {
+  const e = effLight(), rd = reading();
+  const key = `${sim.running}|${rd}|${paused}|${stepIndex}|${sim.cover > 0.5}`;
+  if (key === lastStatus) return;
+  lastStatus = key;
+  const sun = lampEls[0];
+  const k = sim.running ? e : 0;
+  const mix = (a, b) => Math.round(a + (b - a) * k);
+  sun.style.background = `rgb(${mix(74, 255)},${mix(81, 210)},${mix(91, 63)})`;
+  sun.style.boxShadow = k > 0.3 ? `0 0 ${Math.round(k * 14)}px #FFD23F` : 'none';
+  stName.textContent = sim.running ? 'LIGHT' : 'LIGHT SENSOR';
+  stName.style.color = 'var(--ink)';
+  stWord.textContent = sim.running ? lightWord(e) + (sim.cover > 0.5 ? ' · hand covering' : '') : 'Not measuring yet';
+  stCount.innerHTML = sim.running ? `${rd}<small>of 4095</small>` : '';
+  stCount.hidden = !sim.running;
+  stBadge.hidden = !paused;
+  stBadge.textContent = 'Paused';
+}
+
+/* =========================================================
+   Main loop
+   ========================================================= */
+function resize() {
+  const r = $('#viewport').getBoundingClientRect();
+  const w = Math.max(1, r.width), h = Math.max(1, r.height);
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.fov = camera.aspect < 1 ? 52 : 40;
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe($('#viewport'));
+resize();
+
+let last = performance.now();
+function frame(now) {
+  const rdt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  const dt = paused ? 0 : rdt;
+  updateTweens(dt);
+  updateCam(rdt);
+  updateSim(dt);
+  updateFlow(dt);
+  applyRoom();
+  placeHand(sim.cover);
+  hand.visible = lampOn && sim.cover > 0.02;
+  updateLive();
+  // Officer Ohm bobs and waves at each new step
+  const tt = now / 1000;
+  cop.position.y = -0.4 + Math.sin(tt * 2) * 0.03;
+  const armR = cop.userData.armR;
+  if (copWave > 0) { copWave -= rdt; armR.rotation.z = 2.5 + Math.sin(tt * 11) * 0.35; }
+  else armR.rotation.z += (0.15 - armR.rotation.z) * Math.min(1, rdt * 5);
+  for (const o of temps) if (o.userData.pulse) o.scale.setScalar(1 + 0.22 * Math.sin(tt * 6));
+  if (selHelper) selHelper.update();
+  controls.update();
+  renderer.render(scene, camera);
+  updateLabels();
+  updateStatus();
+  updateCodeHighlight();
+  requestAnimationFrame(frame);
+}
+
+if (window.ESP32) ESP32.initWords();
+if (window.innerWidth < 600) { showLabels = false; $('#labelsToggle').checked = false; }
+goTo(0, { instant: true });
+requestAnimationFrame(frame);
+
+// expose a tiny hook for automated checks
+window.__lesson = { camera, controls, goTo, get step() { return stepIndex; }, sim, setHeld, selectPart, reading, effLight, tick(dt) { updateSim(dt); } };
+  // the program for "Try it on my real board": exactly the code shown in this lesson
+  window.__lessonProgram = () => codeLines(sim.cfg).map((l) => l[0]).join('\n') + '\n';
+})();
+</script>
+<script src="../../assets/board-link.js"></script>
+<script src="../../assets/prepare-board.js"></script>
+<script src="../../assets/run-panel.js"></script>
+<script src="../../assets/board-drawer.js"></script>
+<script>KKBoard.attach({ id: '06-measuring-light', base: '../../', buttonHost: 'header.top .progress', program: () => window.__lessonProgram(), wiring: 'Keep the traffic light, button and buzzer wiring, and add the light sensor: 3V3 → one leg of the LDR (top of column 11); the LDR’s other leg shares a column with a 10 kΩ resistor and a wire to D33; the resistor’s other end → ground rail.' });</script>
+</body>
+</html>
