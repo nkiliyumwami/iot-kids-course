@@ -51,6 +51,15 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 host.appendChild(renderer.domElement);
 
+/* The opening flight through a future town (assets/story/future-world.js, if it is loaded): drone, robot,
+   smart home, self-driving car. It plays at the start of chapter l0, then a white flash brings in the ESP32. */
+let future = null;
+try { if (window.KKFuture) future = window.KKFuture.create({ renderer, base: o.base || '', low: window.matchMedia && matchMedia('(max-width: 700px)').matches }); } catch (e) { future = null; }
+const FLASH_IN = 0.45, FLASH_OUT = 0.6;
+const flash = document.createElement('div');
+flash.style.cssText = 'position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none';
+host.appendChild(flash);
+
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xf3f7fa);
 scene.fog = new THREE.Fog(0xf3f7fa, 34, 70);
@@ -624,7 +633,7 @@ function updateCam(dt) {
 
 /* ---------- the story: one chapter per lesson ---------- */
 const CHAPTERS = [
-  { id: 'l0', len: 5.5, shot: 'esp' },
+  { id: 'l0', len: future ? future.LEN + 4.4 : 5.5, shot: 'esp' },
   { id: 'l1', len: 11, shot: 'build' },
   { id: 'l2', len: 5, shot: 'leds' },
   { id: 'l3', len: 8, shot: 'button' },
@@ -634,6 +643,7 @@ const CHAPTERS = [
 let chapter = -1, ct = 0, paused = false;
 function go(k) {
   chapter = k; ct = 0; drift = 0;
+  lastScene = ''; // the caption follows the picture again
   const c = CHAPTERS[k];
   shot(c.shot);
   if (o.onChapter) o.onChapter(c.id, k);
@@ -645,7 +655,8 @@ function play(dt) {
   let cap = 0;
   if (c.id === 'l0') {
     showTraffic(0); showButton(0); setLights(-1);
-    setBlue(Math.floor(t * 2) % 2 === 0); // the blue LED blinks: the first program
+    const e = future ? t - future.LEN : t; // the ESP32 appears after the future flight
+    setBlue(e > 0 && Math.floor(e * 2) % 2 === 0); // the blue LED blinks: the first program
   } else if (c.id === 'l1') {
     setBlue(false); showButton(0);
     showTraffic(Math.min(1, t / 3.5));
@@ -690,6 +701,27 @@ function resize() {
   const w = Math.max(1, host.clientWidth), h = Math.max(1, host.clientHeight);
   renderer.setSize(w, h, false);
   camera.aspect = w / h; camera.fov = camera.aspect < 1.2 ? 50 : 38; camera.updateProjectionMatrix();
+  if (future) future.resize(w / h);
+}
+// draw the picture: the future town (filmic colour, like the photos on the project cards) or the workbench
+let lastScene = '';
+function draw(dt) {
+  const inFuture = !!future && chapter === 0 && ct < future.LEN;
+  let fl = 0;
+  if (future && chapter === 0) {
+    const L = future.LEN;
+    if (ct > L - FLASH_IN && ct < L) fl = (ct - (L - FLASH_IN)) / FLASH_IN;
+    else if (ct >= L && ct < L + FLASH_OUT) fl = 1 - (ct - L) / FLASH_OUT;
+  }
+  flash.style.opacity = fl.toFixed(3);
+  const name = inFuture ? 'future' : 'bench';
+  if (name !== lastScene) { lastScene = name; if (o.onScene) o.onScene(name); }
+  if (!inFuture) { renderer.render(scene, camera); return; }
+  future.update(ct, dt);
+  const tm = renderer.toneMapping, enc = renderer.outputEncoding, ex = renderer.toneMappingExposure;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.outputEncoding = THREE.sRGBEncoding; renderer.toneMappingExposure = 0.9;
+  renderer.render(future.scene, future.camera);
+  renderer.toneMapping = tm; renderer.outputEncoding = enc; renderer.toneMappingExposure = ex;
 }
 new ResizeObserver(resize).observe(host);
 resize();
@@ -707,7 +739,7 @@ function frame(now) {
   updateCam(dt);
   // Officer Ohm bobs gently
   cop.position.y = -0.4 + Math.sin(now / 500) * 0.03;
-  renderer.render(scene, camera);
+  draw(dt);
   if (o.onTime) o.onTime(chapter, ct / CHAPTERS[chapter].len);
   raf = requestAnimationFrame(frame);
 }
@@ -717,16 +749,19 @@ go(reduceMotion ? 4 : 0);
 shot(CHAPTERS[chapter].shot, true);
 if (reduceMotion) { ct = 6; } // a still scene: the walkers' turn in the fair crossing
 // render one frame straight away, so there is a picture before the loop starts
-play(0); updateCam(0); renderer.render(scene, camera);
+play(0); updateCam(0); draw(0);
 return {
   start, stop,
-  jump: (k) => { go(k); if (reduceMotion) { ct = CHAPTERS[k].len * 0.6; play(0); updateCam(0); renderer.render(scene, camera); } },
+  jump: (k) => { go(k); if (reduceMotion) { ct = CHAPTERS[k].len * 0.6; play(0); updateCam(0); draw(0); } },
   pause: (p) => { paused = p; },
   get paused() { return paused; },
   get chapter() { return chapter; },
   CHAPTERS, roadApi, walkers,
   tick: (dt) => { ct += dt; if (ct >= CHAPTERS[chapter].len) go((chapter + 1) % CHAPTERS.length); play(dt); roadApi.update(dt); walkers.update(dt); updateCam(dt); },
-  render: () => renderer.render(scene, camera),
+  render: () => draw(0),
+  future,
+  get time() { return ct; },
+  seek: (t) => { ct = t; play(0); updateCam(5); draw(0); }, // for tests: a moment of the current chapter
 };
 }
 window.KKStory = { mount };
