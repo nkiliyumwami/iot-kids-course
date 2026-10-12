@@ -279,7 +279,7 @@ function banana(x, z, h = 2.6, s0 = 0) {
   for (let i = 0; i < 9; i++) { const l = new THREE.Mesh(leafGeos[i % 3], leafM); l.castShadow = true; l.position.y = h - 0.05 + (i % 2) * 0.08; l.rotation.set(0, (i / 9) * Math.PI * 2 + s0, 0.35 + (i % 4) * 0.14); g.add(l); }
   return g;
 }
-[[-24, -8.5], [-11, -9], [-8, 9.5], [-26, 9], [12, -9.5], [28, -9.5], [3, 9.2], [15, 9.5], [-40, -9], [31, 8.5], [24, -21], [12, -21]].forEach(([x, z], i) => banana(x, z, 2.3 + (i % 3) * 0.4, i));
+[[-24, -8.5], [-11, -9], [-8, 9.5], [-26, 9], [12, -9.5], [28, -9.5], [15, 9.5], [-40, -9], [31, 8.5], [24, -21], [12, -21]].forEach(([x, z], i) => banana(x, z, 2.3 + (i % 3) * 0.4, i));
 
 /* ---------- the smart home: solar panels, lights that switch themselves on, a robot helper ---------- */
 const HOMEP = V(20, 0, -15);
