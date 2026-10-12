@@ -168,7 +168,7 @@ const grain = canvasTex(256, 256, (g, w, h) => {
   const nH = low ? 70 : 150, wallG = new THREE.BoxGeometry(1, 1, 1); wallG.translate(0, 0.5, 0);
   const gable = new THREE.Shape(); gable.moveTo(-0.5, 0); gable.lineTo(0.5, 0); gable.lineTo(0, 1); gable.closePath();
   const roofG = new THREE.ExtrudeGeometry(gable, { depth: 1, bevelEnabled: false }); roofG.translate(0, 0, -0.5); roofG.rotateY(Math.PI / 2); // the ridge runs along x
-  const walls = new THREE.InstancedMesh(wallG, mat(0xffffff, { roughness: 0.9 }), nH), roofs = new THREE.InstancedMesh(roofG, mat(0xffffff, { roughness: 0.6, metalness: 0.3 }), nH);
+  const walls = new THREE.InstancedMesh(wallG, mat(0xffffff, { roughness: 0.9, envMapIntensity: 0.35 }), nH), roofs = new THREE.InstancedMesh(roofG, mat(0xffffff, { roughness: 0.6, metalness: 0.3 }), nH);
   for (let i = 0; i < nH; i++) {
     let x, z, d; do { x = (rnd() - 0.5) * 460; z = (rnd() - 0.5) * 460; d = Math.hypot(x * 0.75, z); } while (d < 52);
     const y = groundY(x, z), w = 5 + rnd() * 4, dd = 4 + rnd() * 2, hh = 2.6 + rnd() * 0.6, ry = rnd() * 3;
@@ -228,7 +228,7 @@ const glassM = phys(0x223040, { roughness: 0.08, metalness: 0.2, clearcoat: 1 })
 function house(x, z, ry, o = {}) {
   const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g);
   const W = o.w || 8, D = o.d || 6, H = o.h || 2.9;
-  box(g, W, H, D, mat(0xffffff, { map: plasterTex(o.wall || '#ecdcbf'), roughness: 0.92 }), 0, H / 2, 0);
+  box(g, W, H, D, mat(0xffffff, { map: plasterTex(o.wall || '#ecdcbf'), roughness: 0.92, envMapIntensity: 0.35 }), 0, H / 2, 0);
   box(g, W + 0.02, 0.6, D + 0.02, mat(o.band || 0x8c4a2f, { roughness: 0.85 }), 0, 0.3, 0, false);
   const pitch = 0.42, half = D / 2 + 0.5, len = half / Math.cos(pitch), roofM = mat(0xffffff, { map: tinTex(o.roof || '#8a3326'), metalness: 0.45, roughness: 0.45, side: THREE.DoubleSide });
   const slopes = [];
@@ -238,7 +238,7 @@ function house(x, z, ry, o = {}) {
   }
   // the gable ends (triangles of wall under the roof)
   const tri = new THREE.Shape(); tri.moveTo(-D / 2, 0); tri.lineTo(D / 2, 0); tri.lineTo(0, Math.tan(pitch) * (D / 2)); tri.closePath();
-  for (const s of [1, -1]) { const m = add(g, new THREE.ShapeGeometry(tri), mat(0xffffff, { map: plasterTex(o.wall || '#ecdcbf'), roughness: 0.92, side: THREE.DoubleSide }), s * W / 2, H, 0); m.rotation.y = Math.PI / 2; }
+  for (const s of [1, -1]) { const m = add(g, new THREE.ShapeGeometry(tri), mat(0xffffff, { map: plasterTex(o.wall || '#ecdcbf'), roughness: 0.92, side: THREE.DoubleSide, envMapIntensity: 0.35 }), s * W / 2, H, 0); m.rotation.y = Math.PI / 2; }
   box(g, 1.0, 2.1, 0.08, mat(o.door || 0x2f5d8a, { roughness: 0.5 }), o.doorX || 0, 1.05, D / 2 + 0.03);
   const wins = [];
   for (const wx of o.windows || [-W / 3, W / 3]) {
@@ -300,7 +300,7 @@ const home = house(HOMEP.x, HOMEP.z, 0, { w: 10, d: 7, h: 3.1, wall: '#f3ead8', 
   // window light spilling out
   home.glows = [-3.2, 3.2].map((wx) => glowDot(home.g, 0xffc477, 3.2, wx, 1.65, home.D / 2 + 0.3));
   // a low wall and gate around the yard, and a path to the door
-  const wallM = mat(0xffffff, { map: plasterTex('#efe2c9'), roughness: 0.92 }), capM = mat(0xb4562e, { roughness: 0.8 });
+  const wallM = mat(0xffffff, { map: plasterTex('#efe2c9'), roughness: 0.92, envMapIntensity: 0.35 }), capM = mat(0xb4562e, { roughness: 0.8 });
   for (const [x0, x1] of [[13.5, 18.4], [21.6, 26.5]]) { box(scene, x1 - x0, 1.0, 0.2, wallM, (x0 + x1) / 2, 0.5, -6.6); box(scene, x1 - x0 + 0.04, 0.06, 0.28, capM, (x0 + x1) / 2, 1.03, -6.6); }
   for (const x of [13.5, 26.5]) { box(scene, 0.2, 1.0, 5.4, wallM, x, 0.5, -9.3); box(scene, 0.28, 0.06, 5.44, capM, x, 1.03, -9.3); }
   const path = add(scene, new THREE.PlaneGeometry(1.6, 4.9), mat(0xc7b9a2, { map: grain, roughness: 0.9 }), 20, 0.035, -9.05, false); path.rotation.x = -Math.PI / 2;
@@ -489,7 +489,7 @@ function update(t, dt) {
   if (robot.root) {
     const wt = t - HOME[0], walkEnd = 1.7;
     const rx = lerp(17.2, 19.1, clamp01(wt / walkEnd)), rz = lerp(-10.4, -8.2, clamp01(wt / walkEnd));
-    robot.root.position.set(rx, 0, rz); robot.root.rotation.y = wt < walkEnd ? Math.atan2(19.1 - 17.2, -8.2 + 10.4) : lerp(0.71, 0.62, clamp01((wt - walkEnd) / 0.6)); // then it faces us
+    robot.root.position.set(rx, 0, rz); robot.root.rotation.y = wt < walkEnd ? Math.atan2(19.1 - 17.2, -8.2 + 10.4) : lerp(0.71, 0.3, clamp01((wt - walkEnd) / 0.6)); // then it faces us
     const waving = wt > walkEnd;
     if (robot.acts.Walking) robot.acts.Walking.setEffectiveWeight(waving ? 0 : 1);
     if (robot.acts.Wave) robot.acts.Wave.setEffectiveWeight(waving ? 1 : 0);
@@ -530,8 +530,8 @@ function update(t, dt) {
     sunAt(dp, 18);
   } else if (t < HOME[1]) {
     const f = ease((t - HOME[0]) / (HOME[1] - HOME[0]));
-    camP.set(lerp(26.5, 24.2, f), lerp(2.3, 1.7, f), lerp(1.0, -1.4, f));
-    camT.set(lerp(19.6, 19.3, f), lerp(3.2, 2.5, f), lerp(-12.5, -11.5, f));
+    camP.set(lerp(22.6, 21.2, f), lerp(2.2, 1.6, f), lerp(1.6, -1.0, f));
+    camT.set(lerp(18.6, 18.9, f), lerp(2.6, 1.9, f), lerp(-12.5, -11.5, f)); // the robot stays in the middle, clear of the caption
     sunAt(V(20, 0, -11), 14);
   } else {
     const f = ease((t - CAR[0]) / (CAR[1] - CAR[0]));
