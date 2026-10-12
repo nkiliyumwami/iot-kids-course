@@ -99,12 +99,12 @@ for (let i = 0; i < 9; i++) {
 const hemi = new THREE.HemisphereLight(C(0xf4f1ea), C(0x6b5a3a), 0.45); scene.add(hemi);
 const sun = new THREE.DirectionalLight(C(0xfff0d8), 2.3);
 sun.castShadow = true; sun.shadow.mapSize.set(low ? 1024 : 2048, low ? 1024 : 2048);
-Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 16, bottom: -16, near: 1, far: 120 });
+Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 16, bottom: -16, near: 1, far: 260 });
 sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.04;
 scene.add(sun); scene.add(sun.target);
 const SUN_DIR = V(-0.45, 0.8, 0.4).normalize();
 function sunAt(p, size) {
-  sun.target.position.copy(p); sun.position.copy(p).addScaledVector(SUN_DIR, 60);
+  sun.target.position.copy(p); sun.position.copy(p).addScaledVector(SUN_DIR, 130);
   const c = sun.shadow.camera; if (c.right !== size) { c.left = c.bottom = -size; c.right = c.top = size; c.updateProjectionMatrix(); }
 }
 // reflections: a studio light first, the real outdoor sky (assets/projects/sky/park.exr) when it arrives
@@ -122,62 +122,209 @@ libs.then(async () => {
 }).catch(() => {});
 
 /* ---------- the land of a thousand hills ---------- */
+// smooth random noise (value noise, a few layers) for natural, rounded hills
+const hash2 = (i, j) => { let h = (i * 374761393 + j * 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+function vnoise(x, z) {
+  const i = Math.floor(x), j = Math.floor(z), fx = x - i, fz = z - j, u = fx * fx * (3 - 2 * fx), v = fz * fz * (3 - 2 * fz);
+  return lerp(lerp(hash2(i, j), hash2(i + 1, j), u), lerp(hash2(i, j + 1), hash2(i + 1, j + 1), u), v);
+}
+function fbm(x, z, oct = 4) { let s = 0, a = 0.5, f = 1; for (let k = 0; k < oct; k++) { s += a * vnoise(x * f, z * f); f *= 2.03; a *= 0.5; } return s / (1 - Math.pow(0.5, oct)); }
+// the drone's route: it flies up a valley between the hills, into the town
+const dronePath = new THREE.CatmullRomCurve3([V(-120, 40, -64), V(-82, 34, -48), V(-46, 25, -34), V(-14, 17, -24), V(8, 11, -17), V(18.5, 6.2, -12.2)]);
+const ROUTE = [[-200, -94], [-120, -64], [-82, -48], [-46, -34], [-14, -24]];
+function routeDist(x, z) {
+  let best = 1e9;
+  for (let k = 0; k < ROUTE.length - 1; k++) {
+    const [ax, az] = ROUTE[k], [bx, bz] = ROUTE[k + 1], dx = bx - ax, dz = bz - az;
+    const f = clamp01(((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz));
+    best = Math.min(best, Math.hypot(x - ax - dx * f, z - az - dz * f));
+  }
+  return best;
+}
 // flat in the valley where the town is, rolling green hills all around
-function hillShape(x, z) {
-  return Math.sin(x * 0.017 + 1.3) * Math.cos(z * 0.021 - 0.4) * 0.55 + Math.sin(x * 0.041 + z * 0.033 + 2.1) * 0.3 + Math.sin(x * 0.087 - z * 0.071) * 0.15;
-}
 function groundY(x, z) {
-  const d = Math.hypot(x * 0.75, z), rise = smooth(48, 150, d);
-  return rise * (hillShape(x, z) * 0.5 + 0.62) * 52 + rise * rise * 10;
+  const d = Math.hypot(x * 0.75, z), rise = smooth(46, 150, d);
+  if (rise === 0) return 0;
+  const n = fbm(x / 72 + 3.1, z / 72 - 1.7, 4), valley = lerp(0.28, 1, smooth(12, 60, routeDist(x, z)));
+  return rise * (Math.pow(n, 1.3) * 88 + 3) * valley + rise * rise * 5;
 }
+// the fields, in GLSL (the same rules as a farmer's hillside: strips along the contour lines, a step at each terrace)
+const FIELDS_GLSL = `
+float h2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float vn(vec2 p) { vec2 i = floor(p), f = fract(p), u = f * f * (3.0 - 2.0 * f); return mix(mix(h2(i), h2(i + vec2(1.0, 0.0)), u.x), mix(h2(i + vec2(0.0, 1.0)), h2(i + vec2(1.0, 1.0)), u.x), u.y); }
+vec3 crop(float k) {
+  if (k < 0.16) return vec3(92.0, 150.0, 60.0);   // beans, young and bright
+  if (k < 0.30) return vec3(64.0, 116.0, 46.0);   // cassava, dark
+  if (k < 0.42) return vec3(146.0, 156.0, 72.0);  // maize, yellow-green
+  if (k < 0.52) return vec3(70.0, 138.0, 56.0);   // tea, bright and even
+  if (k < 0.62) return vec3(166.0, 138.0, 84.0);  // harvested, straw
+  if (k < 0.72) return vec3(146.0, 84.0, 54.0);   // ploughed red earth
+  if (k < 0.82) return vec3(54.0, 96.0, 44.0);    // bananas, deep green
+  if (k < 0.92) return vec3(112.0, 148.0, 64.0);  // sorghum
+  return vec3(96.0, 128.0, 52.0);                 // potatoes
+}
+vec3 fieldColour(vec3 p, float steep) {
+  float d = length(vec2(p.x * 0.75, p.z)), wob = vn(p.xz / 9.0);
+  vec3 col = vec3(88.0 + wob * 22.0, 136.0 + wob * 24.0, 58.0 + wob * 10.0);
+  float farm = smoothstep(44.0, 70.0, d);
+  if (farm > 0.0) {
+    float band = p.y / 2.6 + vn(p.xz / 40.0) * 0.9, bi = floor(band), bf = fract(band), fb = fwidth(band);
+    float len = 14.0 + h2(vec2(bi, 7.0)) * 20.0, ang = h2(vec2(bi, 3.0)) * 6.283;
+    float along = p.x * cos(ang) + p.z * sin(ang), cell = along / len, ci = floor(cell), cf = fract(cell);
+    vec3 f = crop(h2(vec2(bi * 31.0 + 5.0, ci))) * (0.9 + h2(vec2(ci, bi)) * 0.2);
+    float rows = along * 3.0 + bi, ra = clamp(1.0 - fwidth(rows) * 0.7, 0.0, 1.0);
+    f *= 1.0 - 0.07 * ra * (0.5 + 0.5 * sin(rows)); // crop rows, faded out where they would be too fine to see
+    float riser = 1.0 - smoothstep(0.0, 0.07 + fb, bf), lip = smoothstep(0.06, 0.08 + fb, bf) * (1.0 - smoothstep(0.13, 0.16 + fb, bf));
+    f *= mix(1.0, 0.62, riser) * (1.0 + 0.09 * lip);  // the terrace step: a shaded riser, then a lit lip
+    float edgeM = min(cf, 1.0 - cf) * len, fe = fwidth(along);
+    f = mix(vec3(58.0, 94.0, 40.0), f, smoothstep(0.35, 0.7 + fe, edgeM)); // a hedge between fields
+    float wood = vn(p.xz / 46.0 + vec2(9.0, -4.0)), k = vn(p.xz / 3.0);
+    float k2 = vn(p.xz / 0.8) * clamp(1.0 - fwidth(p.x) * 1.5, 0.0, 1.0); // tufts, faded out far away
+    vec2 wp = vec2(p.x + p.y * 0.7, p.z - p.y * 0.7); k = vn(wp / 3.0); k2 = vn(wp / 0.8) * clamp(1.0 - fwidth(p.x) * 1.5, 0.0, 1.0); // also along the slope
+    vec3 wild = vec3(42.0 + k * 24.0, 76.0 + k * 30.0, 44.0 + k * 14.0) * (0.85 + 0.3 * k2);
+    f = mix(f, wild, max(smoothstep(0.18, 0.24, steep), smoothstep(0.68, 0.72, wood)));
+    f = mix(vec3(78.0, 122.0, 64.0), f, smoothstep(2.0, 3.0, p.y)); // the wet valley bottom
+    col = mix(col, f, farm);
+  }
+  float pth = abs(vn(p.xz / 70.0 + vec2(2.0, 5.0)) - 0.5), pw = fwidth(pth);
+  col = mix(col, vec3(168.0, 98.0, 62.0), (1.0 - smoothstep(0.003, 0.0045 + pw, pth)) * farm); // winding red earth paths through the farms
+  return pow(col / 255.0, vec3(2.2));
+}
+`;
+// fine grass and soil grain, repeated many times over the land (multiplied on top of the fields)
 const grain = canvasTex(256, 256, (g, w, h) => {
   g.fillStyle = '#b8b8b8'; g.fillRect(0, 0, w, h);
   for (let i = 0; i < 9000; i++) { const v = 150 + rnd() * 105; g.fillStyle = `rgba(${v},${v},${v},.5)`; g.fillRect(rnd() * w, rnd() * h, 1 + rnd() * 3, 1 + rnd() * 2); }
 }, [90, 90]);
+const detail = canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#9e9e9e'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 14000; i++) { const v = 110 + rnd() * 120; g.strokeStyle = `rgba(${v},${v},${v},.55)`; g.lineWidth = 1; const x = rnd() * w, y = rnd() * h; g.beginPath(); g.moveTo(x, y); g.lineTo(x + (rnd() - 0.5) * 3, y - 2 - rnd() * 4); g.stroke(); }
+}, [1, 1]);
+detail.encoding = THREE.LinearEncoding;
 {
-  const S = 900, N = low ? 120 : 190, geo = new THREE.PlaneGeometry(S, S, N, N); geo.rotateX(-Math.PI / 2);
-  const p = geo.attributes.position, col = new Float32Array(p.count * 3), c = new THREE.Color();
-  for (let i = 0; i < p.count; i++) {
-    const x = p.getX(i), z = p.getZ(i), y = groundY(x, z); p.setY(i, y);
-    const d = Math.hypot(x * 0.75, z), patch = Math.sin(x * 0.11 + Math.sin(z * 0.07) * 2) * Math.cos(z * 0.13 + Math.sin(x * 0.05) * 2);
-    // terraced fields on the slopes: bands of lighter and darker green, a few ploughed red-brown plots
-    const band = (y / 1.7) % 1, slope = smooth(50, 90, d);
-    let h = 0.25 + patch * 0.03, s = 0.5, l = 0.27 + patch * 0.05;
-    if (slope > 0) { l += (band < 0.5 ? 0.035 : -0.02) * slope; const f = Math.sin(x * 0.31 + z * 0.17) * Math.sin(z * 0.29 - x * 0.11); if (patch > 0.75 && f > 0.3) { h = 0.06; s = 0.38; l = 0.3; } else if (patch < -0.7 && f < -0.2) { h = 0.17; s = 0.42; l = 0.33; } }
-    if (d < 40) { h = 0.24 + patch * 0.02; s = 0.45; l = 0.3 + patch * 0.03; }
-    c.setHSL(h, s, l).convertSRGBToLinear(); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
-  }
-  geo.setAttribute('color', new THREE.BufferAttribute(col, 3)); geo.computeVertexNormals();
-  const land = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, map: grain, roughness: 0.95 }));
-  land.receiveShadow = true; scene.add(land);
+  const S = 900, N = low ? 150 : 240, geo = new THREE.PlaneGeometry(S, S, N, N); geo.rotateX(-Math.PI / 2);
+  const p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) p.setY(i, groundY(p.getX(i), p.getZ(i)));
+  geo.computeVertexNormals();
+  // the fields are drawn by the graphics card from each point's position, so they stay sharp at any distance:
+  // terraced strips of crops following the hills, hedges, red earth paths, wild slopes and eucalyptus woods
+  const landM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.96 });
+  landM.extensions = { derivatives: true };
+  landM.onBeforeCompile = (sh) => {
+    sh.uniforms.detailMap = { value: detail };
+    sh.vertexShader = 'varying vec3 vWPos;\nvarying float vSteep;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n\tvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\n\tvSteep = 1.0 - normalize(objectNormal).y;');
+    sh.fragmentShader = 'uniform sampler2D detailMap;\nvarying vec3 vWPos;\nvarying float vSteep;\n' + FIELDS_GLSL + sh.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\n\tdiffuseColor.rgb = fieldColour(vWPos, vSteep) * texture2D(detailMap, vWPos.xz / 1.7).rgb * 1.6;');
+  };
+  const land = new THREE.Mesh(geo, landM); land.receiveShadow = true; scene.add(land);
 }
-// trees on the hills (eucalyptus and bushes) and small houses with red roofs, all drawn at once
+
+// soft round trees: clusters of bumpy leaf balls, lighter on top, darker underneath
+const crownTex = canvasTex(128, 128, (g, w, h) => {
+  g.fillStyle = '#bdbdbd'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 1800; i++) { const v = 120 + rnd() * 135; g.fillStyle = `rgb(${v},${v},${v})`; g.beginPath(); g.arc(rnd() * w, rnd() * h, 1 + rnd() * 2.2, 0, 7); g.fill(); }
+}, [2, 2]);
+function crownGeo(blobs) {
+  const pos = [], nor = [], col = [], uv = [];
+  let y0 = 1e9, y1 = -1e9;
+  blobs.forEach(([cx, cy, cz, r]) => { y0 = Math.min(y0, cy - r); y1 = Math.max(y1, cy + r); });
+  blobs.forEach(([cx, cy, cz, r], bi) => {
+    const s = new THREE.IcosahedronGeometry(r, 1), sp = s.attributes.position, su = s.attributes.uv;
+    for (let i = 0; i < sp.count; i++) {
+      const nx = sp.getX(i) / r, ny = sp.getY(i) / r, nz = sp.getZ(i) / r;
+      const bump = 1 + (vnoise(nx * 2.2 + bi * 7, nz * 2.2 + ny * 2.2) - 0.5) * 0.35;
+      const y = cy + ny * r * bump;
+      pos.push(cx + nx * r * bump, y, cz + nz * r * bump); nor.push(nx, ny, nz);
+      const k = 0.45 + 0.55 * clamp01((y - y0) / (y1 - y0)); col.push(k, k, k);
+      uv.push(su.getX(i), su.getY(i));
+    }
+  });
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  return g;
+}
 {
-  const nT = low ? 260 : 600, trunkG = new THREE.CylinderGeometry(0.12, 0.2, 1, 6); trunkG.translate(0, 0.5, 0);
-  const crownG = new THREE.IcosahedronGeometry(1, 1);
-  const trunks = new THREE.InstancedMesh(trunkG, mat(0x6d5a44, { roughness: 0.9 }), nT), crowns = new THREE.InstancedMesh(crownG, mat(0xffffff, { roughness: 0.85, flatShading: true }), nT);
+  const crownM = mat(0xffffff, { map: crownTex, vertexColors: true, roughness: 0.9 }), barkM = mat(0x6e6152, { roughness: 0.9 });
+  const KINDS = [
+    { // eucalyptus: tall and thin, blue-green
+      trunk: [0.12, 0.2, 0.9], blobs: [[0, 0.5, 0, 0.17], [0.09, 0.62, 0.05, 0.17], [-0.08, 0.72, -0.04, 0.15], [0.03, 0.84, 0.02, 0.13], [-0.05, 0.58, 0.09, 0.14], [0.06, 0.93, -0.03, 0.09]], hsl: [0.31, 0.22, 0.27], w: 0.5,
+    },
+    { // a broad shade tree (avocado, mango)
+      trunk: [0.2, 0.3, 0.45], blobs: [[0, 0.62, 0, 0.32], [0.28, 0.55, 0.1, 0.24], [-0.26, 0.56, -0.08, 0.25], [0.05, 0.56, 0.28, 0.22], [-0.04, 0.58, -0.27, 0.22], [0.02, 0.82, 0.02, 0.22]], hsl: [0.27, 0.42, 0.25], w: 0.3,
+    },
+    { // a bush
+      trunk: null, blobs: [[0, 0.3, 0, 0.32], [0.3, 0.24, 0.05, 0.24], [-0.26, 0.22, -0.06, 0.26], [0.04, 0.22, 0.26, 0.2]], hsl: [0.25, 0.45, 0.26], w: 0.2,
+    },
+  ];
+  const nT = low ? 420 : 1100, trunkG = new THREE.CylinderGeometry(0.5, 1, 1, 7); trunkG.translate(0, 0.5, 0);
+  const meshes = KINDS.map((k) => {
+    const cm = new THREE.InstancedMesh(crownGeo(k.blobs), crownM, nT);
+    const tm = k.trunk ? new THREE.InstancedMesh(trunkG, barkM, nT) : null;
+    cm.setColorAt(0, new THREE.Color()); cm.count = 0; if (tm) tm.count = 0; // colours first: they are sized by the count
+    cm.castShadow = true; cm.receiveShadow = true; scene.add(cm); if (tm) { tm.castShadow = true; scene.add(tm); }
+    return { k, cm, tm };
+  });
   const q = new THREE.Object3D(), c = new THREE.Color();
-  for (let i = 0; i < nT; i++) {
-    let x, z, d; do { x = (rnd() - 0.5) * 520; z = (rnd() - 0.5) * 520; d = Math.hypot(x * 0.75, z); } while (d < 26 || (Math.abs(z) < 9 && d < 70));
-    const y = groundY(x, z), hgt = 4 + rnd() * 7;
-    q.position.set(x, y - 0.2, z); q.rotation.set(0, rnd() * 6, 0); q.scale.set(1, hgt * 0.6, 1); q.updateMatrix(); trunks.setMatrixAt(i, q.matrix);
-    q.position.set(x, y + hgt * 0.62, z); q.scale.set(1.6 + rnd() * 1.6, hgt * 0.38, 1.6 + rnd() * 1.6); q.updateMatrix(); crowns.setMatrixAt(i, q.matrix);
-    c.setHSL(0.26 + rnd() * 0.07, 0.35 + rnd() * 0.2, 0.16 + rnd() * 0.1).convertSRGBToLinear(); crowns.setColorAt(i, c);
+  let placed = 0, tries = 0;
+  while (placed < nT && tries < nT * 30) {
+    tries++;
+    const x = (rnd() - 0.5) * 560, z = (rnd() - 0.5) * 560, d = Math.hypot(x * 0.75, z);
+    if (d < 30 || (Math.abs(z) < 10 && d < 80)) continue;
+    const wood = vnoise(x / 46 + 9, z / 46 - 4), edge = d < 60 ? 0.25 : 0.1;
+    if (!(wood > 0.7 ? rnd() < 0.95 : rnd() < edge)) continue;
+    const y = groundY(x, z);
+    // keep the drone's flight line clear
+    const nearRoute = routeDist(x, z) < 16 && y > 4;
+    if (nearRoute) continue;
+    const kind = wood > 0.7 ? (rnd() < 0.85 ? 0 : 2) : rnd() < 0.35 ? 0 : rnd() < 0.65 ? 1 : 2, M = meshes[kind];
+    const hgt = kind === 0 ? 11 + rnd() * 10 : kind === 1 ? 6 + rnd() * 4 : 2 + rnd() * 1.6, wid = hgt * (kind === 0 ? 0.55 : kind === 1 ? 1.1 : 1.3) * (0.85 + rnd() * 0.3);
+    q.rotation.set(0, rnd() * 6.28, 0);
+    q.position.set(x, y - 0.3, z); q.scale.set(wid, hgt, wid); q.updateMatrix(); M.cm.setMatrixAt(M.cm.count, q.matrix);
+    c.setHSL(M.k.hsl[0] + (rnd() - 0.5) * 0.05, M.k.hsl[1] * (0.8 + rnd() * 0.4), M.k.hsl[2] * (0.85 + rnd() * 0.3)).convertSRGBToLinear(); M.cm.setColorAt(M.cm.count, c);
+    M.cm.count++;
+    if (M.tm) { const t = M.k.trunk; q.scale.set(t[0] * hgt * 0.12, hgt * t[2] * 0.75, t[0] * hgt * 0.12); q.updateMatrix(); M.tm.setMatrixAt(M.tm.count, q.matrix); M.tm.count++; }
+    placed++;
   }
-  trunks.castShadow = crowns.castShadow = true; trunks.receiveShadow = crowns.receiveShadow = true; scene.add(trunks, crowns);
-  const nH = low ? 70 : 150, wallG = new THREE.BoxGeometry(1, 1, 1); wallG.translate(0, 0.5, 0);
-  const gable = new THREE.Shape(); gable.moveTo(-0.5, 0); gable.lineTo(0.5, 0); gable.lineTo(0, 1); gable.closePath();
-  const roofG = new THREE.ExtrudeGeometry(gable, { depth: 1, bevelEnabled: false }); roofG.translate(0, 0, -0.5); roofG.rotateY(Math.PI / 2); // the ridge runs along x
-  const walls = new THREE.InstancedMesh(wallG, mat(0xffffff, { roughness: 0.9, envMapIntensity: 0.35 }), nH), roofs = new THREE.InstancedMesh(roofG, mat(0xffffff, { roughness: 0.6, metalness: 0.3 }), nH);
-  for (let i = 0; i < nH; i++) {
-    let x, z, d; do { x = (rnd() - 0.5) * 460; z = (rnd() - 0.5) * 460; d = Math.hypot(x * 0.75, z); } while (d < 52);
-    const y = groundY(x, z), w = 5 + rnd() * 4, dd = 4 + rnd() * 2, hh = 2.6 + rnd() * 0.6, ry = rnd() * 3;
-    q.rotation.set(0, ry, 0); q.position.set(x, y - 0.6, z); q.scale.set(w, hh + 0.6, dd); q.updateMatrix(); walls.setMatrixAt(i, q.matrix);
-    c.setHSL(0.09 + rnd() * 0.04, 0.3 + rnd() * 0.2, 0.72 + rnd() * 0.12).convertSRGBToLinear(); walls.setColorAt(i, c);
-    q.position.set(x, y + hh, z); q.scale.set(w * 1.08, 1.5, dd * 1.15); q.updateMatrix(); roofs.setMatrixAt(i, q.matrix);
-    const r = rnd(); c.set(r < 0.55 ? 0x8a3326 : r < 0.8 ? 0x9aa3a8 : 0x3c5a7a).convertSRGBToLinear(); roofs.setColorAt(i, c);
+  meshes.forEach((m) => { m.cm.instanceMatrix.needsUpdate = true; if (m.cm.instanceColor) m.cm.instanceColor.needsUpdate = true; if (m.tm) m.tm.instanceMatrix.needsUpdate = true; });
+}
+// villages along the hillsides: plastered houses with hip roofs of iron sheets, windows and a door
+{
+  const facade = canvasTex(256, 128, (g, w, h) => {
+    g.fillStyle = '#f1e9da'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#8c4a2f'; g.fillRect(0, h - 26, w, 26); // the painted band at the bottom
+    g.fillStyle = '#2d3640'; for (const x of [30, 180]) g.fillRect(x, 34, 44, 40); // windows
+    g.fillStyle = '#4a3326'; g.fillRect(108, 40, 38, 88); // the door
+    g.fillStyle = 'rgba(255,255,255,.7)'; for (const x of [30, 180]) { g.fillRect(x + 20, 34, 4, 40); g.fillRect(x, 52, 44, 3); }
+  });
+  const wallG = new THREE.BoxGeometry(1, 1, 1); wallG.translate(0, 0.5, 0);
+  const roofG = new THREE.ConeGeometry(Math.SQRT1_2, 1, 4, 1); roofG.rotateY(Math.PI / 4); roofG.translate(0, 0.5, 0); // a hip roof
+  const nH = low ? 90 : 200;
+  const walls = new THREE.InstancedMesh(wallG, mat(0xffffff, { map: facade, roughness: 0.9, envMapIntensity: 0.35 }), nH);
+  const roofs = new THREE.InstancedMesh(roofG, mat(0xffffff, { map: canvasTex(256, 64, (g, w, h) => { g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); for (let x = 0; x < w; x += 8) { const gr = g.createLinearGradient(x, 0, x + 8, 0); gr.addColorStop(0, 'rgba(255,255,255,.2)'); gr.addColorStop(0.5, 'rgba(0,0,0,.22)'); gr.addColorStop(1, 'rgba(255,255,255,.2)'); g.fillStyle = gr; g.fillRect(x, 0, 8, h); } }), roughness: 0.5, metalness: 0.35 }), nH);
+  walls.setColorAt(0, new THREE.Color()); roofs.setColorAt(0, new THREE.Color()); walls.count = roofs.count = 0; // colours first: they are sized by the count
+  const q = new THREE.Object3D(), c = new THREE.Color();
+  const routePts = dronePath.getSpacedPoints(60).filter((pt) => pt.x < 0);
+  let tries = 0;
+  while (walls.count < nH && tries < 4000) {
+    tries++;
+    // a village centre on a gentle slope, then houses around it, each one turned to follow the hill
+    const cx = (rnd() - 0.5) * 520, cz = (rnd() - 0.5) * 520, cd = Math.hypot(cx * 0.75, cz);
+    if (cd < 60 || cd > 300) continue;
+    const n = 4 + Math.floor(rnd() * 9);
+    for (let k = 0; k < n && walls.count < nH; k++) {
+      const x = cx + (rnd() - 0.5) * 50, z = cz + (rnd() - 0.5) * 50, y = groundY(x, z);
+      const gx = groundY(x + 2, z) - groundY(x - 2, z), gz = groundY(x, z + 2) - groundY(x, z - 2);
+      if (Math.hypot(gx, gz) / 4 > 0.55) continue; // too steep to build
+      if (routePts.some((pt) => Math.hypot(pt.x - x, pt.z - z) < 24)) continue; // nothing right under the drone
+      const w = 6 + rnd() * 4, dd = 4.5 + rnd() * 2, hh = 2.7 + rnd() * 0.5, ry = Math.atan2(gx, gz) + (rnd() < 0.5 ? 0 : Math.PI / 2);
+      q.rotation.set(0, ry, 0); q.position.set(x, y - 1, z); q.scale.set(w, hh + 1, dd); q.updateMatrix(); walls.setMatrixAt(walls.count, q.matrix);
+      c.setHSL(0.08 + rnd() * 0.05, 0.25 + rnd() * 0.3, 0.82 + rnd() * 0.12).convertSRGBToLinear(); walls.setColorAt(walls.count, c);
+      q.position.set(x, y + hh, z); q.scale.set(w * 1.18, 1.4 + rnd() * 0.5, dd * 1.25); q.updateMatrix(); roofs.setMatrixAt(roofs.count, q.matrix);
+      const r = rnd(); c.set(r < 0.5 ? 0x9b3b28 : r < 0.75 ? 0xa9b1b6 : r < 0.9 ? 0x3d5f86 : 0x6f7f4a).convertSRGBToLinear(); roofs.setColorAt(roofs.count, c);
+      walls.count++; roofs.count++;
+    }
   }
-  walls.castShadow = roofs.castShadow = true; walls.receiveShadow = true; scene.add(walls, roofs);
+  walls.castShadow = roofs.castShadow = true; walls.receiveShadow = roofs.receiveShadow = true; scene.add(walls, roofs);
 }
 
 /* ---------- the town: road, zebra crossing, pavements ---------- */
@@ -378,35 +525,99 @@ function child(o = {}) {
 }
 const kid = child({ shirt: 0x6fb2e6, shorts: 0x2a3a5c, bag: 0xf08a24 }); // a primary school uniform, an orange school bag
 
-/* ---------- the delivery drone ---------- */
+/* ---------- the delivery drone ----------
+   A smooth white shell with an orange band, four tapered carbon arms, motor pods, twisted propeller blades
+   (with a soft blur disc, the way a camera sees fast props), curved landing skids, a camera on a gimbal under
+   the nose, and a parcel hanging on a winch line. Its nose points to +z. Built about 1.5 m across. */
 const drone = new THREE.Group(); scene.add(drone);
-const props = [], blurs = [];
+const props = [];
 {
-  const D = new THREE.Group(); D.scale.setScalar(1.7); drone.add(D);
-  const white = phys(0xf5f7fa, { roughness: 0.25 }), carbon = mat(0x1e2226, { roughness: 0.4, metalness: 0.3 }), orange = phys(0xf08a24, { roughness: 0.3 });
-  rbox(D, 0.34, 0.12, 0.44, 0.05, white, 0, 0, 0);
-  rbox(D, 0.24, 0.05, 0.3, 0.025, phys(0x1b2733, { roughness: 0.15 }), 0, 0.07, 0.02); // the top cover
-  box(D, 0.345, 0.025, 0.2, orange, 0, 0, 0.08, false); // an orange stripe
+  const D = new THREE.Group(); D.scale.setScalar(1.25); drone.add(D);
+  const shell = phys(0xf4f6f8, { roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.06 });
+  const glassDark = phys(0x10151b, { roughness: 0.08, metalness: 0.3, clearcoat: 1, clearcoatRoughness: 0.03 });
+  const carbonTex = canvasTex(64, 64, (g, w, h) => {
+    g.fillStyle = '#26292d'; g.fillRect(0, 0, w, h);
+    for (let y = 0; y < h; y += 4) for (let x = 0; x < w; x += 4) { g.fillStyle = (x + y) % 8 ? '#303439' : '#1c1f22'; g.fillRect(x, y, 4, 4); }
+  }, [6, 1]);
+  const carbon = mat(0xffffff, { map: carbonTex, roughness: 0.35, metalness: 0.3 });
+  const darkMetal = mat(0x2a2e33, { metalness: 0.8, roughness: 0.3 }), silver = mat(0xb9c0c7, { metalness: 1, roughness: 0.22 });
+  const orange = phys(0xf08a24, { roughness: 0.28, clearcoat: 1 });
+  // the fuselage: a rounded teardrop, blunt at the nose, flattened
+  const prof = (t0, t1, grow = 1) => {
+    const pts = [];
+    for (let i = 0; i <= 24; i++) {
+      const t = lerp(t0, t1, i / 24), r = 0.14 * Math.pow(Math.sin(Math.PI * Math.pow(t, 1.35)), 0.62) * grow + 1e-4;
+      pts.push(new THREE.Vector2(r, lerp(-0.36, 0.3, t)));
+    }
+    const g = new THREE.LatheGeometry(pts, 40); g.rotateX(Math.PI / 2); g.scale(1, 0.62, 1); return g;
+  };
+  add(D, prof(0, 1), shell);
+  add(D, prof(0.5, 0.56, 1.025), orange, 0, 0, 0, false); // the orange band
+  const canopy = sph(D, 0.1, glassDark, 0, 0.045, 0.09); canopy.scale.set(0.9, 0.5, 1.45); // the dark top cover
+  // obstacle sensors in the nose, a light bar under the tail, two small antennas
+  for (const s of [-1, 1]) { const e = rbox(D, 0.03, 0.022, 0.02, 0.006, glassDark, s * 0.045, 0.0, 0.29, false); e.rotation.y = s * 0.3; }
+  for (const s of [-1, 1]) { const a = cyl(D, 0.003, 0.004, 0.09, darkMetal, s * 0.04, 0.09, -0.22, 6, false); a.rotation.x = -0.5; }
+  // the camera on its gimbal under the nose
+  box(D, 0.05, 0.03, 0.03, darkMetal, 0, -0.07, 0.2, false);
+  sph(D, 0.036, mat(0x1b1e22, { roughness: 0.35, metalness: 0.4 }), 0, -0.1, 0.21);
+  const lens = cyl(D, 0.016, 0.018, 0.016, glassDark, 0, -0.1, 0.244, 16, false); lens.rotation.x = Math.PI / 2;
+  // four arms out to the corners, each with a motor, a spinning propeller and its blur disc
+  const bladeShape = new THREE.Shape();
+  bladeShape.moveTo(0, -0.012); bladeShape.bezierCurveTo(0.06, -0.02, 0.15, -0.016, 0.2, -0.006); bladeShape.quadraticCurveTo(0.208, 0, 0.2, 0.006);
+  bladeShape.bezierCurveTo(0.15, 0.01, 0.06, 0.016, 0, 0.012); bladeShape.closePath();
+  const bladeG = new THREE.ExtrudeGeometry(bladeShape, { depth: 0.003, bevelEnabled: false, curveSegments: 10 });
+  bladeG.rotateX(-Math.PI / 2); // lying flat, along +x
+  { const bp = bladeG.attributes.position; for (let i = 0; i < bp.count; i++) { const x = bp.getX(i), a = lerp(0.42, 0.12, x / 0.2), y = bp.getY(i), z = bp.getZ(i); bp.setY(i, y * Math.cos(a) - z * Math.sin(a)); bp.setZ(i, y * Math.sin(a) + z * Math.cos(a)); } bladeG.computeVertexNormals(); }
+  const bladeM = mat(0x1d2024, { roughness: 0.4, transparent: true, opacity: 0.55 });
+  const blurTex = canvasTex(128, 128, (g, w, h) => {
+    const gr = g.createRadialGradient(64, 64, 6, 64, 64, 64);
+    gr.addColorStop(0, 'rgba(40,44,50,.0)'); gr.addColorStop(0.15, 'rgba(40,44,50,.35)'); gr.addColorStop(0.75, 'rgba(60,64,70,.28)'); gr.addColorStop(0.93, 'rgba(70,74,80,.42)'); gr.addColorStop(1, 'rgba(70,74,80,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    g.strokeStyle = 'rgba(255,255,255,.08)'; for (let i = 0; i < 9; i++) { g.beginPath(); g.arc(64, 64, 18 + i * 5, 0, 7); g.stroke(); }
+  });
+  const motorProf = []; [[0, -0.03], [0.042, -0.03], [0.046, -0.022], [0.046, 0.018], [0.04, 0.028], [0, 0.028]].forEach(([r, y]) => motorProf.push(new THREE.Vector2(r + 1e-4, y)));
+  const motorG = new THREE.LatheGeometry(motorProf, 24);
   for (const [sx, sz] of [[1, 1], [-1, 1], [1, -1], [-1, -1]]) {
-    const a = add(D, new THREE.CylinderGeometry(0.016, 0.016, 0.42, 8), carbon, sx * 0.15, 0.01, sz * 0.15); // an arm, pointing out to the corner
-    a.rotation.order = 'YXZ'; a.rotation.set(Math.PI / 2, Math.atan2(sx, sz), 0);
-    cyl(D, 0.035, 0.035, 0.05, mat(0x2b2f35, { metalness: 0.7, roughness: 0.3 }), sx * 0.3, 0.03, sz * 0.3, 14); // the motor
-    const pr = new THREE.Group(); pr.position.set(sx * 0.3, 0.065, sz * 0.3); D.add(pr);
-    for (const r of [0, Math.PI]) { const b = box(pr, 0.15, 0.004, 0.026, carbon, 0, 0, 0, false); b.geometry.translate(0.075, 0, 0); b.rotation.y = r; b.rotation.x = 0.12; }
+    const ang = Math.atan2(sx, sz), R = 0.42, ex = Math.sin(ang) * R, ez = Math.cos(ang) * R;
+    const arm = add(D, new THREE.CylinderGeometry(0.014, 0.024, 0.32, 12), carbon, Math.sin(ang) * 0.25, 0.005, Math.cos(ang) * 0.25);
+    arm.rotation.order = 'YXZ'; arm.rotation.set(Math.PI / 2, ang, 0);
+    const root = sph(D, 0.032, shell, Math.sin(ang) * 0.1, 0.005, Math.cos(ang) * 0.1); root.scale.set(1, 0.7, 1.3); root.rotation.y = ang; // a fairing where the arm meets the body
+    add(D, motorG, darkMetal, ex, 0.02, ez);
+    cyl(D, 0.038, 0.04, 0.012, silver, ex, 0.054, ez, 20, false); // the spinning bell
+    const pr = new THREE.Group(); pr.position.set(ex, 0.066, ez); D.add(pr);
+    const hub = add(pr, new THREE.ConeGeometry(0.014, 0.022, 14), silver, 0, 0.01, 0, false); void hub;
+    for (const r of [0, Math.PI]) { const b = add(pr, bladeG, bladeM, 0, 0, 0, false); b.rotation.y = r; }
+    const disc = add(pr, new THREE.CircleGeometry(0.205, 40), new THREE.MeshBasicMaterial({ map: blurTex, transparent: true, depthWrite: false, side: THREE.DoubleSide }), 0, 0.002, 0, false);
+    disc.rotation.x = -Math.PI / 2;
     props.push(pr);
-    const blur = add(D, new THREE.CircleGeometry(0.155, 28), new THREE.MeshBasicMaterial({ color: 0x9aa4ad, transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide }), sx * 0.3, 0.066, sz * 0.3, false);
-    blur.rotation.x = -Math.PI / 2; blurs.push(blur);
+    // a small light under each motor: red on the left front, green on the right front, white at the back
+    const navHex = sz > 0 ? (sx > 0 ? 0xff2a2a : 0x2aff6a) : 0xffffff;
+    sph(D, 0.012, mat(navHex, { emissive: C(navHex), emissiveIntensity: 2 }), ex, -0.035, ez, false);
+    D.userData['nav' + sx + sz] = glowDot(D, navHex, 0.16, ex, -0.04, ez);
   }
-  for (const sx of [-1, 1]) { const leg = cyl(D, 0.008, 0.008, 0.13, carbon, sx * 0.11, -0.12, 0, 6); leg.rotation.z = sx * 0.25; box(D, 0.012, 0.012, 0.3, carbon, sx * 0.13, -0.18, 0, false); }
-  // the parcel on a short line
-  cyl(D, 0.003, 0.003, 0.14, mat(0x111111), 0, -0.13, 0, 4, false);
-  const parcel = rbox(D, 0.2, 0.15, 0.2, 0.012, mat(0xc49a6c, { roughness: 0.85 }), 0, -0.27, 0);
-  box(D, 0.205, 0.155, 0.04, mat(0xd8c7a4), 0, -0.27, 0, false); void parcel;
-  drone.userData.navR = glowDot(D, 0xff2a2a, 0.22, -0.3, 0.03, 0.34);
-  drone.userData.navG = glowDot(D, 0x2aff6a, 0.22, 0.3, 0.03, 0.34);
-  drone.userData.strobe = glowDot(D, 0xffffff, 0.35, 0, -0.07, -0.2);
+  // landing skids: two bent legs each side and a long bar
+  const carbonTube = (pts, r) => add(D, new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 20, r, 8), carbon, 0, 0, 0, false);
+  for (const s of [-1, 1]) {
+    for (const zz of [-0.1, 0.1]) carbonTube([V(s * 0.06, -0.04, zz), V(s * 0.11, -0.12, zz * 1.1), V(s * 0.15, -0.22, zz * 1.2)], 0.007);
+    carbonTube([V(s * 0.15, -0.205, -0.2), V(s * 0.15, -0.225, -0.15), V(s * 0.15, -0.225, 0.15), V(s * 0.15, -0.205, 0.2)], 0.008);
+  }
+  // the winch line, a hook and the parcel (it swings a little under the drone)
+  const hang = new THREE.Group(); hang.position.y = -0.07; D.add(hang);
+  cyl(hang, 0.0025, 0.0025, 0.2, mat(0x111111), 0, -0.1, 0, 5, false);
+  const hook = add(hang, new THREE.TorusGeometry(0.012, 0.003, 6, 14), silver, 0, -0.205, 0, false); void hook;
+  const kraft = canvasTex(256, 256, (g, w, h) => {
+    g.fillStyle = '#c59a66'; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 2500; i++) { g.fillStyle = `rgba(${rnd() < 0.5 ? '255,240,210' : '110,70,30'},${rnd() * 0.12})`; g.fillRect(rnd() * w, rnd() * h, 2, 1 + rnd() * 3); }
+    g.fillStyle = 'rgba(214,198,160,.95)'; g.fillRect(w / 2 - 20, 0, 40, h); // packing tape
+    g.fillStyle = '#fbfaf6'; g.fillRect(26, 150, 80, 64); g.fillStyle = '#29323b'; for (let i = 0; i < 4; i++) g.fillRect(34, 162 + i * 12, 40 + (i % 2) * 20, 5); // a delivery label
+    g.fillStyle = '#f08a24'; g.beginPath(); g.moveTo(170, 90); g.lineTo(210, 90); g.lineTo(190, 60); g.fill(); g.fillRect(183, 90, 14, 26); // "this way up"
+  });
+  const parcel = add(hang, new THREE.BoxGeometry(0.24, 0.17, 0.24), mat(0xffffff, { map: kraft, roughness: 0.85 }), 0, -0.3, 0);
+  box(hang, 0.245, 0.006, 0.05, mat(0xd6c6a0, { roughness: 0.5 }), 0, -0.214, 0, false); // tape over the top
+  void parcel;
+  drone.userData.D = D; drone.userData.hang = hang;
+  drone.userData.strobe = glowDot(D, 0xffffff, 0.3, 0, 0.06, -0.3);
 }
-const dronePath = new THREE.CatmullRomCurve3([V(-120, 44, -64), V(-82, 38, -48), V(-46, 27, -34), V(-14, 18, -24), V(8, 11, -17), V(18.5, 6.2, -12.2)]);
 
 /* ---------- models: the robot helper and the self-driving car ---------- */
 const robot = { root: null, mixer: null, acts: {} }, car = { root: null, wheels: [], brake: [], head: [] };
@@ -479,10 +690,13 @@ function update(t, dt) {
   const du = t < HOME[0] ? lerp(0, 0.62, t / HOME[0]) : lerp(0.62, 1, 1 - Math.pow(1 - clamp01((t - HOME[0]) / (HOME[1] - HOME[0] + 0.6)), 2));
   const dp = dronePath.getPointAt(clamp01(du)), dir = dronePath.getTangentAt(clamp01(du));
   drone.position.copy(dp); drone.position.y += Math.sin(t * 2.3) * 0.06;
-  drone.rotation.set(0, Math.atan2(dir.x, dir.z), 0); drone.rotateX(t < HOME[0] ? 0.16 : lerp(0.16, 0.02, clamp01((t - HOME[0]) / 2.5)));
-  props.forEach((p, i) => { p.rotation.y = t * 60 * (i % 2 ? 1 : -1); });
-  drone.userData.navR.material.opacity = 0.9; drone.userData.navG.material.opacity = 0.9;
-  drone.userData.strobe.material.opacity = (t % 1) < 0.08 ? 1 : 0;
+  const ahead = dronePath.getTangentAt(clamp01(du + 0.03)), bend = dir.x * ahead.z - dir.z * ahead.x; // leans into its turns
+  const pitch = t < HOME[0] ? 0.17 : lerp(0.17, 0.02, clamp01((t - HOME[0]) / 2.5)), roll = Math.max(-0.3, Math.min(0.3, -bend * 6)) + Math.sin(t * 1.3) * 0.02;
+  drone.rotation.set(0, Math.atan2(dir.x, dir.z), 0); drone.rotateX(pitch); drone.rotateZ(roll);
+  props.forEach((p, i) => { p.rotation.y = t * 47 * (i % 3 ? 1 : -1); });
+  const hang = drone.userData.hang; hang.rotation.x = -pitch * 0.8 + Math.sin(t * 2.1) * 0.06; hang.rotation.z = -roll + Math.sin(t * 1.6) * 0.04; // the parcel hangs down and sways
+  Object.keys(drone.userData.D.userData).forEach((k) => { drone.userData.D.userData[k].material.opacity = 0.85; });
+  drone.userData.strobe.material.opacity = (t % 1) < 0.07 ? 1 : 0;
 
   // the smart home's lights come on by themselves; the robot walks to the gate and waves
   setHomeLights(smooth(HOME[0] + 0.9, HOME[0] + 2.0, t));
@@ -525,9 +739,13 @@ function update(t, dt) {
   // the camera
   if (t < DRONE[1]) {
     const f = ease(t / DRONE[1]);
-    camP.set(lerp(-3.6, -8, f), lerp(1.4, 3.2, f), lerp(4.2, 9, f)).add(dp);
-    camT.copy(dp).add(tmp.set(lerp(1.2, 4, f), lerp(-0.6, -1.6, f), lerp(-0.6, -2, f)));
-    sunAt(dp, 18);
+    // a chase shot: from just behind the drone, looking down the valley, swinging out to its side
+    const fw = tmp.set(dir.x, 0, dir.z).normalize(), rx = -fw.z, rz = fw.x; // forward, and right of the drone
+    const back = lerp(-2.6, 0.6, f), side = lerp(1.2, 4.2, f), up = lerp(0.7, 1.2, f);
+    camP.set(dp.x + fw.x * back + rx * side, dp.y + up, dp.z + fw.z * back + rz * side);
+    const lead = lerp(2.2, 0.6, f) * (aspect < 1.2 ? 0.1 : 1); // on a tall phone screen, look right at the drone so it stays in the picture
+    camT.set(dp.x + fw.x * lead, dp.y - lerp(0.5, 0.3, f), dp.z + fw.z * lead);
+    sunAt(dp, 70); // a wide shadow area: every tree and house in the valley stands on its shadow
   } else if (t < HOME[1]) {
     const f = ease((t - HOME[0]) / (HOME[1] - HOME[0]));
     camP.set(lerp(22.6, 21.2, f), lerp(2.2, 1.6, f), lerp(1.6, -1.0, f));
