@@ -98,7 +98,7 @@ h1, h2, h3 { font-family: var(--font-display); line-height: 1.1; margin: 0; }
     <ol class="story-steps" id="storySteps" aria-label="Jump to a lesson in the story"></ol>
   </section>
 <script>
-window.KK_V = '20261011h';
+window.KK_V = '20261012a';
 window.kkThree = () => window.__kkThree || (window.__kkThree = window.THREE ? Promise.resolve() : new Promise((ok, no) => {
   const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc);
 }));
@@ -116,6 +116,7 @@ window.kkThree = () => window.__kkThree || (window.__kkThree = window.THREE ? Pr
     l3: ['Lesson 3', 'Teach it to listen', 'Add a button. Press it and the cars get red, so the walker can cross.'],
     l4: ['Lesson 4', 'A fair crossing', 'A tap is remembered: WAIT lights up, the green finishes, then people cross safely.'],
     end: ['Your turn', 'Build it yourself', 'Every wire, hole and line of code comes with a “why”.'],
+    future: ['The future', 'A world of smart machines', 'Drones, robots, smart homes and self-driving cars. Someone has to build them.'],
   };
   // What the narrator says (🔊 Sound on). Not a walkthrough of the picture: why this matters, for parents and for kids.
   const NARR = {
@@ -137,12 +138,14 @@ window.kkThree = () => window.__kkThree || (window.__kkThree = window.THREE ? Pr
     sound = !sound; soundBtn.setAttribute('aria-pressed', String(sound)); soundBtn.textContent = sound ? '🔊 Sound off' : '🔈 Sound on';
     if (sound) speak(lastId); else if (window.KKVoice) KKVoice.stop();
   });
-  function setChapter(id, k) {
-    const c = CAPS[id];
-    lastId = id; speak(id);
+  function caption(c) {
     document.getElementById('storyChip').textContent = c[0];
     document.getElementById('storyTitle').textContent = c[1];
     document.getElementById('storySub').textContent = c[2];
+  }
+  function setChapter(id, k) {
+    lastId = id; speak(id);
+    caption(CAPS[id]);
     endCard.hidden = id !== 'end';
     stage.classList.toggle('ended', id === 'end');
     steps.querySelectorAll('button').forEach((b) => b.setAttribute('aria-current', String(+b.dataset.k === k)));
@@ -154,9 +157,10 @@ window.kkThree = () => window.__kkThree || (window.__kkThree = window.THREE ? Pr
     try {
       await window.kkThree();
       const v = '?v=' + window.KK_V; await load('assets/voice/voice.js' + v); await load('assets/road/model-road.js' + v); await load('assets/road/pedestrians.js' + v); await load('assets/story/story-scene.js' + v);
+      try { await load('assets/story/future-world.js' + v); } catch (e) { /* the story starts at the ESP32 instead */ }
       const holder = document.createElement('div'); holder.style.cssText = 'position:absolute;inset:0';
       stage.insertBefore(holder, stage.querySelector('.story-cap'));
-      story = window.KKStory.mount({ host: holder, base: '', reduceMotion: reduce, onChapter: setChapter, hold: () => sound && window.KKVoice && KKVoice.speaking, onTime: (k, f) => { bar.style.width = (f * 100).toFixed(1) + '%'; } });
+      story = window.KKStory.mount({ host: holder, base: '', reduceMotion: reduce, onChapter: setChapter, onScene: (n) => caption(n === 'future' ? CAPS.future : CAPS[lastId] || CAPS.l0), hold: () => sound && window.KKVoice && KKVoice.speaking, onTime: (k, f) => { bar.style.width = (f * 100).toFixed(1) + '%'; } });
       if (!story) { holder.remove(); return; } // no 3D on this device: the picture stays
       stage.classList.add('live');
       pauseBtn.hidden = reduce; soundBtn.hidden = !window.KKVoice;

@@ -95,6 +95,10 @@ https://nkiliyumwami.github.io/iot-kids-course/. Read this whole file and `ROADM
 - Must work at phone width (400 px) with no sideways scrolling.
 - The home page story (`assets/story/story-scene.js`) plays lessons 0–4 in one 3D scene. Its workbench is a copy of lesson 4's
   scene code. When a new lesson adds a part learners should see in the story, add a chapter there too (and a caption in `index.html`).
+- The story opens with a short flight through a future Rwandan town (`assets/story/future-world.js`): a delivery drone over
+  the hills, a robot at a smart home, a self-driving car stopping for a child at a zebra crossing, then a white flash into the
+  ESP32. It is its own scene in metres with filmic colour (ACES, sRGB); the workbench keeps its own look. Keep it generic:
+  no company names, logos or number plates. Models and their licences are listed in `assets/story/CREDITS.md`.
 - Scripts only from cdnjs / jsDelivr (three.js r128 + OrbitControls 0.128.0). No other external code.
 - **Try it on my real board.** Every lesson with a MicroPython program gets the "🔌 Try it on my real board" panel:
   load `../../assets/board-link.js`, `prepare-board.js`, `run-panel.js` and `board-drawer.js` before `</body>`,
