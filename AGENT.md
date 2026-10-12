@@ -99,6 +99,9 @@ https://nkiliyumwami.github.io/iot-kids-course/. Read this whole file and `ROADM
   the hills, a robot at a smart home, a self-driving car stopping for a child at a zebra crossing, then a white flash into the
   ESP32. It is its own scene in metres with filmic colour (ACES, sRGB); the workbench keeps its own look. Keep it generic:
   no company names, logos or number plates. Models and their licences are listed in `assets/story/CREDITS.md`.
+- Hero models for the story (drone, pupils, smart home, banana plants) are Blender scripts in `tools/blender/` (headless `bpy`):
+  metres, front +Z in three.js, named joints and parts for the code to animate, baked contact shadows, Draco, about 20k
+  triangles each. Change the script and rebuild rather than editing the .glb. The code-built versions stay as a fallback.
 - Scripts only from cdnjs / jsDelivr (three.js r128 + OrbitControls 0.128.0). No other external code.
 - **Try it on my real board.** Every lesson with a MicroPython program gets the "🔌 Try it on my real board" panel:
   load `../../assets/board-link.js`, `prepare-board.js`, `run-panel.js` and `board-drawer.js` before `</body>`,

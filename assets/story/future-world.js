@@ -426,7 +426,7 @@ function banana(x, z, h = 2.6, s0 = 0) {
   for (let i = 0; i < 9; i++) { const l = new THREE.Mesh(leafGeos[i % 3], leafM); l.castShadow = true; l.position.y = h - 0.05 + (i % 2) * 0.08; l.rotation.set(0, (i / 9) * Math.PI * 2 + s0, 0.35 + (i % 4) * 0.14); g.add(l); }
   return g;
 }
-[[-24, -8.5], [-11, -9], [-8, 9.5], [-26, 9], [12, -9.5], [28, -9.5], [15, 9.5], [-40, -9], [31, 8.5], [24, -21], [12, -21]].forEach(([x, z], i) => banana(x, z, 2.3 + (i % 3) * 0.4, i));
+const bananas = [[-24, -8.5], [-11, -9], [-8, 9.5], [-26, 9], [12, -9.5], [28, -9.5], [15, 9.5], [-40, -9], [31, 8.5], [24, -21], [12, -21]].map(([x, z], i) => banana(x, z, 2.3 + (i % 3) * 0.4, i));
 
 /* ---------- the smart home: solar panels, lights that switch themselves on, a robot helper ---------- */
 const HOMEP = V(20, 0, -15);
@@ -640,6 +640,87 @@ const seenTag = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(256, 
 }), transparent: true, opacity: 0, depthTest: false, toneMapped: false }));
 seenTag.scale.set(0.9, 0.225, 1); seenTag.renderOrder = 6; scene.add(seenTag);
 
+/* ---------- the Blender-built models (tools/blender/*.py) ----------
+   The drone, the two pupils, the smart home and the banana plants were modelled and shaded in Blender
+   (soft bevels, baked contact shadows). Each one replaces the code-built version above when it arrives;
+   if a file is missing, the code-built one simply stays. */
+// a jointed child: the same walk and wave as the code-built one, on the model's joints
+function wireChild(root) {
+  const n = (k) => root.getObjectByName(k);
+  const body = n('Body'), head = n('Head'), base = body.position.y;
+  const J = { L: { sh: n('Shoulder_L'), el: n('Elbow_L'), hp: n('Hip_L'), kn: n('Knee_L') }, R: { sh: n('Shoulder_R'), el: n('Elbow_R'), hp: n('Hip_R'), kn: n('Knee_R') } };
+  root.traverse((m) => { if (m.isMesh) m.frustumCulled = false; });
+  const pose = (t, walk = 0, wave = 0, speed = 1.6) => {
+    const p = t * Math.PI * 2 * speed, sw = Math.sin(p) * 0.55 * walk;
+    J.L.hp.rotation.x = -sw; J.R.hp.rotation.x = sw;
+    J.L.kn.rotation.x = Math.max(0, Math.sin(p - 1.4)) * 0.9 * walk; J.R.kn.rotation.x = Math.max(0, Math.sin(p + Math.PI - 1.4)) * 0.9 * walk;
+    J.L.sh.rotation.x = sw * 0.8; J.R.sh.rotation.x = -sw * 0.8 * (1 - wave);
+    J.L.el.rotation.x = -0.2 - walk * 0.3; J.R.el.rotation.x = (-0.2 - walk * 0.3) * (1 - wave);
+    J.L.sh.rotation.z = 0.06; J.R.sh.rotation.z = lerp(-0.06, -2.75, wave);
+    J.R.el.rotation.z = wave * Math.sin(t * 9) * 0.45;
+    body.position.y = base + Math.abs(Math.sin(p)) * 0.035 * walk;
+    head.rotation.z = Math.sin(p) * 0.03 * walk + wave * Math.sin(t * 2.2) * 0.06;
+  };
+  pose(0);
+  return { g: root, pose };
+}
+const girl = { g: new THREE.Group(), pose() {} };
+const upgrade = libs.then(() => {
+  const gl = new THREE.GLTFLoader(), dr = new THREE.DRACOLoader(); dr.setDecoderPath(LIB + 'libs/draco/gltf/'); gl.setDRACOLoader(dr);
+  const load = (name) => gl.loadAsync(BASE + 'story/models/' + name + '.glb').then((g) => {
+    g.scene.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+    return g.scene;
+  });
+  const hideMeshes = (g) => g.traverse((m) => { if (m.isMesh) m.visible = false; });
+  const jobs = [
+    load('drone').then((root) => {
+      const D = drone.userData.D; hideMeshes(D); // the code-built drone steps aside; its lights stay
+      drone.add(root);
+      const disc = D.children.find((c) => c.isGroup && c.children.some((k) => k.material && k.material.map)); // a blur disc to copy
+      props.length = 0;
+      ['FL', 'FR', 'RL', 'RR'].forEach((k) => {
+        const pr = root.getObjectByName('Prop_' + k); props.push(pr);
+        const bd = new THREE.Mesh(new THREE.CircleGeometry(0.26, 40), new THREE.MeshBasicMaterial({ map: disc ? disc.children.find((c) => c.material && c.material.map).material.map : null, transparent: true, depthWrite: false, side: THREE.DoubleSide }));
+        bd.rotation.x = -Math.PI / 2; bd.position.y = 0.002; pr.add(bd);
+      });
+      root.traverse((m) => {
+        if (!m.isMesh) return;
+        if (/Blade/.test(m.material.name)) { m.material.transparent = true; m.material.opacity = 0.55; }
+        if (/Parcel/.test(m.material.name)) m.material.color = C(0xd9a86c); // warmer cardboard
+      });
+      drone.userData.hang = root.getObjectByName('Hang');
+    }),
+    load('child_a').then((root) => { scene.remove(kid.g); const w = wireChild(root); scene.add(w.g); kid.g = w.g; kid.pose = w.pose; }),
+    load('child_b').then((root) => { const w = wireChild(root); scene.add(w.g); girl.g = w.g; girl.pose = w.pose; }),
+    load('smart_house').then((root) => {
+      root.position.set(HOMEP.x, 0, HOMEP.z); scene.add(root);
+      root.traverse((m) => {
+        if (!m.isMesh) return;
+        const mats = Array.isArray(m.material) ? m.material : [m.material];
+        mats.forEach((mm) => {
+          if (/Plaster|Trim|Frame|Concrete|Band/.test(mm.name)) mm.envMapIntensity = 0.3; // white walls stay white under a blue sky
+          if (/Plaster|Band/.test(mm.name)) { mm.vertexColors = false; mm.needsUpdate = true; } // big flat walls: no baked shading smeared across them
+        });
+      });
+      home.g.children.forEach((c) => { if (c.isMesh) c.visible = false; });
+      const glowM = (name, hex) => { const o = root.getObjectByName(name); o.material = o.material.clone(); o.material.emissive = C(hex); o.material.emissiveIntensity = 0; return o.material; };
+      home.wins = [glowM('Window_L', 0xffc477), glowM('Window_R', 0xffc477), glowM('Porch_Lamp', 0xffd28a)];
+      home.glows.forEach((sp) => { sp.position.y = 1.75; sp.position.z = home.D / 2 + 0.25; });
+      home.porch.position.set(0.9, 2.3, home.D / 2 + 0.25);
+      homeLights = -1;
+    }),
+    load('banana').then((root) => {
+      const A = root.getObjectByName('Banana_A'), B = root.getObjectByName('Banana_B');
+      bananas.forEach((g, i) => {
+        g.children.forEach((c) => { c.visible = false; });
+        const m = (i % 3 === 1 ? B : A).clone(), h = 2.3 + (i % 3) * 0.4;
+        m.position.set(0, 0, 0); m.rotation.y = i * 1.9; m.scale.setScalar(i % 3 === 1 ? h / 2.0 * 0.9 : h / 2.6);
+        g.add(m);
+      });
+    }),
+  ];
+  return Promise.all(jobs.map((j) => j.catch(() => {})));
+}).catch(() => {});
 const ready = libs.then(() => {
   const gltf = new THREE.GLTFLoader(), draco = new THREE.DRACOLoader(); draco.setDecoderPath(LIB + 'libs/draco/gltf/'); gltf.setDRACOLoader(draco);
   const shadows = (root) => root.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
@@ -670,7 +751,7 @@ const ready = libs.then(() => {
     carRig.add(root); car.root = root;
   });
   return Promise.all([a, b]);
-}).catch(() => {});
+}).catch(() => {}).then(() => upgrade);
 
 /* ---------- the camera, beat by beat ---------- */
 const camP = V(), camT = V(), tmp = V();
@@ -732,6 +813,10 @@ function update(t, dt) {
   kid.g.rotation.y = lerp(0, 0.55, turn);
   kid.pose(Math.max(0, kt), walking ? 1 : 0, smooth(walkDur + 0.15, walkDur + 0.5, kt), 2.1);
   kid.g.visible = t > CAR[0] - 0.8;
+  // a classmate waits on this pavement, watches the car stop, then waves too
+  girl.g.position.set(-1.25, KERB + 0.02, 4.7); girl.g.visible = kid.g.visible;
+  girl.g.rotation.y = lerp(Math.PI * 0.82, 0.35, smooth(walkDur - 0.3, walkDur + 0.3, kt));
+  girl.pose(Math.max(0, kt) + 0.4, 0, smooth(walkDur + 0.3, walkDur + 0.7, kt), 1.6);
   const seen = carOn && t > CAR_STOP - 1.4 && kt < walkDur - 0.3;
   seenBox.position.set(kx, curb + 0.78, kz); seenBox.material.opacity = seen ? 0.95 : 0;
   seenTag.position.set(kx, curb + 1.72, kz); seenTag.material.opacity = seen ? 1 : 0;
