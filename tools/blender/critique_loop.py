@@ -10,8 +10,8 @@ Each iteration:
   4. applies the edits (only to child.py), rebuilds, and repeats until the critique passes, the iteration cap
      (4) is hit, or the budget cap would be exceeded.
 
-The API key is read ONLY from ~/.kundakode/anthropic_key (outside the repo) and passed explicitly to the client.
-It is never printed, logged or written anywhere. ANTHROPIC_API_KEY is not used.
+The API key is read ONLY from the environment variable KUNDAKODE_API_KEY and passed explicitly to the client
+as api_key. It is never printed, logged or written anywhere. ANTHROPIC_API_KEY is never used.
 
 Every response's token usage is priced and appended to <work>/ledger.json (so the cap holds across restarts),
 and the running cost is printed after each call. Before each call the worst case of that call is reserved:
@@ -20,7 +20,7 @@ if spent + reserve would pass the cap, the loop stops without calling.
 Usage:
   python critique_loop.py --bpy /path/to/python-with-bpy --work /tmp/kk-critique [--three /path/to/three/package]
                           [--cap 10] [--iterations 4] [--dry-run]
---dry-run renders and builds the request but never calls the API and never reads the key.
+--dry-run renders and builds the request but never calls the API and never reads KUNDAKODE_API_KEY.
 """
 import argparse, base64, io, json, os, shutil, subprocess, sys, time
 from pathlib import Path
@@ -28,7 +28,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
 CHILD = HERE / 'child.py'
-KEY_FILE = Path.home() / '.kundakode' / 'anthropic_key'
+KEY_VAR = 'KUNDAKODE_API_KEY'  # the only place the key comes from (never ANTHROPIC_API_KEY)
 MODEL = 'claude-opus-5-5'
 # $ per million tokens: input, output, cache read. Cache writes are 1.25 x input.
 PRICES = {
@@ -227,9 +227,11 @@ def main():
     client = None
     if not args.dry_run:
         import anthropic
-        if not KEY_FILE.is_file():
-            sys.exit(f'No key file at {KEY_FILE}. Nothing was called.')
-        client = anthropic.Anthropic(api_key=KEY_FILE.read_text().strip(), max_retries=2)  # the key is never printed or stored
+        key = os.environ.get(KEY_VAR, '').strip()
+        if not key:
+            sys.exit(f'{KEY_VAR} is not set. Nothing was called.')
+        client = anthropic.Anthropic(api_key=key, max_retries=2)  # explicit key; never printed, logged or stored
+        del key
 
     history = []
     print(f'Budget cap ${args.cap:.2f}; already spent ${spent(ledger):.4f} (ledger {ledger_path})', flush=True)
