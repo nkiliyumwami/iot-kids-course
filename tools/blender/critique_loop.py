@@ -39,38 +39,48 @@ PRICES = {
     'claude-fable-5': (10.0, 50.0, 1.00),
 }
 WORST = (10.0, 50.0)  # the most a fallback model could charge per MTok
-MAX_TOKENS = 16000
+MAX_TOKENS = 64000  # streaming; thinking counts against it (16000 cut round 3 of the first pilot off mid-reply)
+MAX_EDITS = 6       # small batches, so a reply always fits
+TRI_CAP = 22000
 
 CHECKLIST = [
-    'Friendly, appealing kid proportions (consider a slightly larger head)',
-    'No visible joint seams at knees and elbows; smoother limbs',
+    'Friendly, appealing proportions for a stylised 10-year-old',
+    'One smooth body: no seams, creases or tearing at shoulders, elbows, hips and knees, standing, walking or waving',
     'Readable hands, not blocks',
-    'The waving pose looks natural, not stiff',
+    'A natural wave: the arm bends at the elbow, slight head and body movement, a relaxed idle arm',
+    'A relaxed, natural idle pose',
     'Faces stay readable under scene lighting: skin tone must not go so dark that eyes and mouth disappear',
+    "Clothing reads clearly (boy: light blue shirt, navy shorts; girl: white shirt, green skirt; school socks and shoes)",
     "Still matches the story's soft, toy-like style",
 ]
 
 SYSTEM = """You are a senior character artist reviewing two stylised 3D characters for a free coding course for
 children aged 10-15 in Rwanda (IoT for Young Makers by KundaKode). They are primary-school pupils who appear in the
-home page's 3D story: a boy (variant 'a': blue shirt, navy shorts, orange school bag) and a girl (variant 'b': white
-blouse, green pleated skirt, hair puffs, blue bag). They are built by a headless Blender (bpy) script, child.py,
-which you can change only through exact search/replace edits.
+home page's 3D story: a boy (variant 'a': light blue shirt, navy shorts, orange school bag) and a girl (variant 'b':
+white shirt, green pleated skirt, hair puffs, blue bag), both with white school socks and shoes. They are built by a
+headless Blender (bpy) script, child.py, which you can change only through exact search/replace edits.
+
+How child.py works: soft volumes (capsules, ellipsoids, the head sphere) are fused by a voxel remesh into ONE continuous
+body mesh, smoothed, decimated to the triangle budget (BUDGET), cut cleanly at the clothing borders and coloured per
+face. Clothes, shoes, face, hair and the bag are separate layers. An armature (bones in BONES) carries everything with
+skin weights computed in the script. POSE holds the idle and wave numbers; it is exported in the model and the story
+(three.js) and the review renders both animate the bones with it (kid_pose.py), so changing POSE changes the motion
+you see in the wave and idle renders.
 
 Hard rules for every edit:
 - Edit child.py only. Keep it runnable by itself in Blender 5.2 headless (bpy), using the helpers shown in lib.py.
-- Keep the node contract the story code animates: object names Child, Body, Torso, Head, Shoulder_L, Shoulder_R,
-  Elbow_L, Elbow_R, Hip_L, Hip_R, Knee_L, Knee_R; the same hierarchy; pivots (origins) at the joints; the child faces
-  -Y in Blender; _L is the child's left (+X). Keep the export() call, the AO bake and the TRIANGLES print.
-- Keep each model under about 22,000 triangles.
+- Keep the rig contract: bone names Body, Spine, Chest, Neck, Head, Shoulder_L/R, Elbow_L/R, Hand_L/R, Hip_L/R,
+  Knee_L/R, Foot_L/R with the same parents; the armature object named Child; the child faces -Y in Blender; _L is the
+  child's left (+X); the POSE keys (you may change their values). Keep the export call and the TRIANGLES print.
+- Keep each model under 22,000 triangles (BUDGET may not go above 21,600).
 - Keep assets generic: no logos, brands, letters or text on clothing or bags.
-- Do not change the girl's clothing type (she wears a skirt in variant 'b'); leave that decision to the course owner.
+- Do not change the girl's clothing type (she wears a skirt).
 - Keep the soft, rounded, toy-like style of the rest of the story (no realism, no sharp edges).
-- Each edit's `old` must be copied exactly from the current child.py and occur exactly once in it; keep edits small
-  and focused. Prefer a few high-impact edits per round over many small ones.
+- Return at most 6 edits per round. Each edit's `old` must be copied exactly from the current child.py, occur exactly
+  once in it, and be short (a few lines). Prefer the few highest-impact edits.
 
-The waving pose itself is set in the story's JavaScript (shoulder rotated 2.75 rad outward, elbow swinging), not in
-child.py; the renders reproduce it. If the pose needs a change that geometry cannot fix (shoulder pivot position,
-arm length, hand shape can be fixed in child.py), describe it in pose_notes instead of editing.
+If something needs a change outside child.py (the motion formula in kid_pose.py / the story code), describe it in
+pose_notes instead of editing.
 
 Judge each checklist item for each child. Set passes = true only if every item passes for both children."""
 
@@ -111,6 +121,8 @@ def build(args, out):
         if code != 0 or not tri or not (out / f'child_{v}.glb').exists():
             return False, tris, text[-3000:]
         tris[v] = int(tri[-1].split()[1])
+        if tris[v] > TRI_CAP:
+            return False, tris, f'child_{v}.glb has {tris[v]} triangles, over the {TRI_CAP} limit.'
     return True, tris, log
 
 
@@ -150,7 +162,7 @@ def render(args, it_dir):
 
 
 IMAGES = [('boy_front', 'Boy, front, standing'), ('boy_wave34', 'Boy, 3/4 view, waving (the story pose)'),
-          ('boy_side', 'Boy, side'), ('boy_face', 'Boy, face close-up'),
+          ('boy_side', 'Boy, side'), ('boy_face', 'Boy, face close-up'), ('boy_walk', 'Boy, side, mid-stride (the walk)'),
           ('girl_front', 'Girl, front, standing'), ('girl_wave34', 'Girl, 3/4 view, waving (the story pose)'),
           ('girl_side', 'Girl, side'), ('girl_face', 'Girl, face close-up'),
           ('story_wide', 'Both in the real story scene and lighting (girl left, boy right), waving'),
@@ -176,8 +188,9 @@ def request(it_dir, history, tris):
         f'\n\nTriangle counts now: boy {tris.get("a")}, girl {tris.get("b")}.' +
         f'\n\nEarlier rounds:\n{hist}' +
         '\n\nlib.py (helpers, read-only):\n```python\n' + (HERE / 'lib.py').read_text() + '\n```' +
+        '\n\nkid_pose.py (the motion formula, read-only):\n```python\n' + (HERE / 'kid_pose.py').read_text() + '\n```' +
         '\n\nchild.py (the file you can edit):\n```python\n' + CHILD.read_text() + '\n```' +
-        '\n\nReview the renders against the checklist and return prioritized issues and exact search/replace edits to child.py.'})
+        f'\n\nReview the renders against the checklist and return prioritized issues and at most {MAX_EDITS} exact search/replace edits to child.py.'})
     return [{'role': 'user', 'content': content}]
 
 
@@ -273,6 +286,10 @@ def main():
         ledger_path.write_text(json.dumps(ledger, indent=1))
         print(f'Round {i}: {resp.usage.input_tokens} in / {resp.usage.output_tokens} out tokens on {served}: ${cost:.4f}. '
               f'Running total ${spent(ledger):.4f} of ${args.cap:.2f}.', flush=True)
+        if resp.stop_reason == 'max_tokens':  # cut off: nothing applied; ask for a smaller batch next round
+            print(f'Round {i}: the reply was cut off (max_tokens); nothing applied, asking for fewer, smaller edits.', flush=True)
+            history.append(f'Round {i}: your reply was cut off before it finished. Return fewer, shorter edits.')
+            continue
         if resp.stop_reason != 'end_turn':
             print(f'Stopping: stop_reason = {resp.stop_reason}.', flush=True)
             break
@@ -282,11 +299,11 @@ def main():
             f.write(f'\n## Round {i}\n\nPasses: {data["passes"]}\n\n' +
                     ''.join(f'- [{"x" if c["pass"] else " "}] {c["criterion"]} ({c["child"]}): {c["note"]}\n' for c in data['criteria']) +
                     '\nIssues:\n' + ''.join(f'{x["priority"]}. ({x["child"]}) {x["issue"]}\n' for x in sorted(data['issues'], key=lambda x: x['priority'])) +
-                    ('\nPose notes (not applied, the pose lives in future-world.js):\n' + ''.join(f'- {p}\n' for p in data['pose_notes']) if data['pose_notes'] else ''))
+                    ('\nPose notes (not applied, outside child.py):\n' + ''.join(f'- {p}\n' for p in data['pose_notes']) if data['pose_notes'] else ''))
         if data['passes']:
             print('The critique passes. Done.', flush=True)
             break
-        applied, skipped = apply_edits(data['edits'])
+        applied, skipped = apply_edits(data['edits'][:MAX_EDITS])
         with report.open('a') as f:
             f.write('\nEdits applied:\n' + ''.join(f'- {e["reason"]}\n' for e in applied) +
                     ('Edits skipped:\n' + ''.join(f'- {e["reason"]} ({e["why_skipped"]})\n' for e in skipped) if skipped else ''))

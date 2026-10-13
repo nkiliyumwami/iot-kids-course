@@ -668,6 +668,54 @@ function wireChild(root) {
   pose(0);
   return { g: root, pose };
 }
+// a skinned child (one body mesh on an armature, tools/blender/child.py): idle, walk and a natural wave.
+// The same formula as tools/blender/kid_pose.py; the numbers come from the model (POSE in child.py, glTF extras kk_pose).
+// Each bone turns about the child's own axes (x: to its left, y: up, z: forward) as if its parent were at rest:
+// local = P^-1 * E * B, with P the parent's rest orientation and B the bone's.
+function wireSkinned(root) {
+  const D = { rest_arm: 0.19, idle_arm: 0.08, idle_elbow: 0.22, idle_sway: 0.035, breathe: 0.02, look: 0.1, weight_shift: 0.02,
+    wave_raise: 2.3, wave_forward: 0.28, wave_bend: 0.38, wave_swing: 0.3, wave_rate: 9, wave_wrist: 0.18, wave_head_tilt: 0.11, wave_lean: 0.045, wave_bob: 0.04 };
+  let rig = null; root.traverse((o) => { if (!rig && o.userData && o.userData.kk_pose) rig = o; });
+  let P = D; try { P = Object.assign({}, D, rig ? JSON.parse(rig.userData.kk_pose) : {}); } catch (e) { /* the defaults */ }
+  root.traverse((m) => { if (m.isMesh) m.frustumCulled = false; });
+  root.updateMatrixWorld(true);
+  const rootQ = new THREE.Quaternion(); root.getWorldQuaternion(rootQ); const rootQi = rootQ.clone().invert();
+  const J = {};
+  ['Body', 'Spine', 'Chest', 'Head', 'Shoulder_L', 'Elbow_L', 'Hand_L', 'Shoulder_R', 'Elbow_R', 'Hand_R', 'Hip_L', 'Knee_L', 'Hip_R', 'Knee_R'].forEach((k) => {
+    const b = root.getObjectByName(k); if (!b) return;
+    const pq = new THREE.Quaternion(); b.parent.getWorldQuaternion(pq); pq.premultiply(rootQi); // the parent's rest, in the child's space
+    J[k] = { b, rest: b.quaternion.clone(), pos: b.position.clone(), P: pq, Pi: pq.clone().invert(), up: new THREE.Vector3(0, 1, 0).applyQuaternion(pq.clone().invert()) };
+  });
+  const X = new THREE.Vector3(1, 0, 0), Y = new THREE.Vector3(0, 1, 0), Z = new THREE.Vector3(0, 0, 1);
+  const qx = new THREE.Quaternion(), qy = new THREE.Quaternion(), qz = new THREE.Quaternion(), E = new THREE.Quaternion();
+  const set = (k, x, y, z) => {
+    const j = J[k]; if (!j) return;
+    E.copy(qy.setFromAxisAngle(Y, y)).multiply(qx.setFromAxisAngle(X, x)).multiply(qz.setFromAxisAngle(Z, z)); // z first, then x, then y
+    j.b.quaternion.copy(j.Pi).multiply(E).multiply(j.P).multiply(j.rest);
+  };
+  const pose = (t, walk = 0, wave = 0, speed = 1.6) => {
+    const p = t * Math.PI * 2 * speed, sw = Math.sin(p) * 0.55 * walk, idle = 1 - walk;
+    const inward = P.rest_arm - P.idle_arm, sway = idle * P.idle_sway * Math.sin(t * 1.3), r = P.wave_rate;
+    const knee = (ph) => Math.max(0, Math.sin(ph)) * 0.9 * walk;
+    set('Body', 0, 0, idle * P.weight_shift * Math.sin(t * 0.8));
+    set('Spine', 0, 0, -wave * P.wave_lean);
+    set('Chest', idle * P.breathe * Math.sin(t * 1.7), 0, 0);
+    set('Head', wave * P.wave_bob * Math.sin(t * r * 0.5), idle * (1 - wave) * P.look * Math.sin(t * 0.45),
+      wave * P.wave_head_tilt + idle * 0.02 * Math.sin(t * 0.9) + Math.sin(p) * 0.03 * walk);
+    set('Shoulder_L', sw * 0.8 + sway * 0.5, 0, -inward + sway);
+    set('Elbow_L', -(P.idle_elbow + walk * 0.3), 0, 0);
+    set('Hand_L', 0, 0, -0.05);
+    set('Shoulder_R', lerp(-sw * 0.8 - sway * 0.5, P.wave_forward, wave), 0, lerp(inward - sway, -P.wave_raise, wave));
+    set('Elbow_R', -(P.idle_elbow + walk * 0.3) * (1 - wave), 0, -wave * (P.wave_bend + P.wave_swing * Math.sin(t * r)));
+    set('Hand_R', 0, 0, 0.05 * (1 - wave) - wave * P.wave_wrist * Math.sin(t * r - 0.7));
+    set('Hip_L', -sw, 0, 0); set('Hip_R', sw, 0, 0);
+    set('Knee_L', knee(p - 1.4), 0, 0); set('Knee_R', knee(p + Math.PI - 1.4), 0, 0);
+    if (J.Body) J.Body.b.position.copy(J.Body.pos).addScaledVector(J.Body.up, Math.abs(Math.sin(p)) * 0.035 * walk);
+  };
+  pose(0);
+  return { g: root, pose };
+}
+const wireKid = (root) => (root.getObjectByName('Hand_L') ? wireSkinned(root) : wireChild(root)); // the skinned rig, or the older jointed one
 const girl = child({ skin: SKIN[1], shirt: 0xf4f0e2, skirt: 0x2f6b45, bag: 0x2b7fd8, shoes: 0x5a2e1a, puffs: true }); // white blouse, green pleated skirt, a blue bag
 const upgrade = libs.then(() => {
   const gl = new THREE.GLTFLoader(), dr = new THREE.DRACOLoader(); dr.setDecoderPath(LIB + 'libs/draco/gltf/'); gl.setDRACOLoader(dr);
@@ -694,8 +742,8 @@ const upgrade = libs.then(() => {
       });
       drone.userData.hang = root.getObjectByName('Hang');
     }),
-    load('child_a').then((root) => { scene.remove(kid.g); const w = wireChild(root); scene.add(w.g); kid.g = w.g; kid.pose = w.pose; }),
-    load('child_b').then((root) => { scene.remove(girl.g); const w = wireChild(root); scene.add(w.g); girl.g = w.g; girl.pose = w.pose; }),
+    load('child_a').then((root) => { scene.remove(kid.g); const w = wireKid(root); scene.add(w.g); kid.g = w.g; kid.pose = w.pose; }),
+    load('child_b').then((root) => { scene.remove(girl.g); const w = wireKid(root); scene.add(w.g); girl.g = w.g; girl.pose = w.pose; }),
     load('smart_house').then((root) => {
       root.position.set(HOMEP.x, 0, HOMEP.z); scene.add(root);
       root.traverse((m) => {
