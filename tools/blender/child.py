@@ -25,16 +25,16 @@ SKIRT = 'skirt' in V  # variant b wears a pleated skirt, variant a shorts
 # the motion, in radians and seconds (see the module docstring). Angles are about the child's own axes:
 # x = side to side (a forward/back swing), z = front to back (raise to the side), y = up (turn).
 POSE = dict(
-    rest_arm=0.19,        # the modelled arm angle out from the body
-    idle_arm=0.08,        # the relaxed arm angle out from the body
+    rest_arm=0.24,        # the modelled arm angle out from the body
+    idle_arm=0.12,        # the relaxed arm angle out from the body
     idle_elbow=0.22,      # a soft bend at the elbow when the arm hangs
     idle_sway=0.035,      # the arms swing a little while standing
     breathe=0.02,         # chest rise and fall
     look=0.1,             # the head looks around a little while standing
     weight_shift=0.02,    # the hips shift from foot to foot
-    wave_raise=2.3,       # the shoulder lifts the arm up and out (not straight up)
-    wave_forward=0.28,    # and a little forward, so the palm faces the viewer
-    wave_bend=0.38,       # the elbow stays bent...
+    wave_raise=1.95,      # the shoulder lifts the arm up and out (not straight up)
+    wave_forward=0.3,     # and a little forward, so the palm faces the viewer
+    wave_bend=0.75,       # the elbow stays bent...
     wave_swing=0.3,       # ...and the forearm swings around that bend
     wave_rate=9.0,        # wave speed (radians per second)
     wave_wrist=0.18,      # the hand follows a little behind the forearm
@@ -174,8 +174,8 @@ def torso_shape(p):
     zz = p.z if z < 0.34 else HIP + 0.37 + (p.z - HIP - 0.37) * 0.45  # flatter shoulders
     return Vector((p.x * sx, p.y * sy, max(zz, HIP + 0.0)))
 deform(torso, torso_shape); vol.append(torso)
-vol.append(ellipsoid((0, 0, HIP + 0.04), (0.148, 0.112, 0.12)))          # the hips
-vol.append(capsule(0.05, (0, 0, HIP + 0.36), (0, 0, NECK_Z + 0.03)))       # the neck
+vol.append(ellipsoid((0, 0, HIP + 0.04), (0.148, 0.098, 0.12)))          # the hips
+vol.append(capsule(0.09, (0, 0, HIP + 0.36), (0, 0, NECK_Z + 0.03), r1=0.078))      # the neck: sturdier, tapering up
 skull = prim('uv_sphere', loc=HC0, radius=0.125, segments=40, ring_count=24)
 def head_shape(p):
     d = p - HC0
@@ -214,7 +214,7 @@ for o in head_vol:
     deform(o, lambda p: piv + (p - piv) * HEAD_S)
 body = join(vol + head_vol, 'Body_mesh')
 rm = body.modifiers.new('fuse', 'REMESH'); rm.mode = 'VOXEL'; rm.voxel_size = 0.0055
-sm = body.modifiers.new('soft', 'LAPLACIANSMOOTH'); sm.iterations = 8; sm.lambda_factor = 0.6; sm.use_volume_preserve = True
+sm = body.modifiers.new('soft', 'LAPLACIANSMOOTH'); sm.iterations = 4; sm.lambda_factor = 0.2; sm.use_volume_preserve = True
 apply_mods(body)
 
 # ---------- face, hair, clothes and kit: layers on top of the body ----------
@@ -229,8 +229,8 @@ for s in (-1, 1):
     head_parts.append(smooth(prim('uv_sphere', loc=(ex, HC0.y - 0.111, ez - 0.002), radius=0.017, segments=18, ring_count=12, scale=(1, 0.5, 1.1), mat=IRIS)))
     head_parts.append(smooth(prim('uv_sphere', loc=(ex, HC0.y - 0.117, ez - 0.002), radius=0.009, segments=14, ring_count=10, scale=(1, 0.5, 1.1), mat=PUPIL)))
     head_parts.append(smooth(prim('uv_sphere', loc=(ex + 0.006, HC0.y - 0.121, ez + 0.007), radius=0.0045, segments=10, ring_count=6, mat=SHINE)))
-    brow = prim('torus', major_segments=20, minor_segments=6, loc=(ex, HC0.y - 0.108, ez + 0.045), major_radius=0.026, minor_radius=0.0045, rot=(math.radians(90), 0, 0), mat=BROW)
-    deform(brow, lambda p, ez=ez: p if p.z > ez + 0.05 else Vector((p.x, p.y, ez + 0.05)))
+    brow = prim('torus', major_segments=20, minor_segments=6, loc=(ex, HC0.y - 0.106, ez + 0.036), major_radius=0.026, minor_radius=0.005, rot=(math.radians(90), 0, 0), mat=BROW)
+    delete_verts(brow, lambda p, ez=ez: p.z < ez + 0.044)
     head_parts.append(smooth(brow))
 smile = prim('torus', major_segments=28, minor_segments=8, loc=(0, HC0.y - 0.108, HC0.z - 0.052), major_radius=0.032, minor_radius=0.0065, rot=(math.radians(90), 0, 0), mat=LIP)
 delete_verts(smile, lambda p: p.z > HC0.z - 0.052 - 0.004)
@@ -263,7 +263,7 @@ for o in head_parts:
         deform(o, lambda p: HC + (p - HC) * 1.03)
 
 # the shirt: collar, buttons, pocket and short sleeves
-add(ring((0, -0.004, HIP + 0.44), (0, -0.25, 1), 0.058, 0.013, SHIRT, sy=0.9), 'skin')
+add(ring((0, -0.004, HIP + 0.425), (0, -0.25, 1), 0.096, 0.014, SHIRT, sy=0.97), 'skin')  # hugs the base of the neck
 for s in (-1, 1):
     f = prim('cube', loc=(s * 0.033, -0.088, HIP + 0.418), scale=(0.034, 0.008, 0.026), rot=(math.radians(-25), 0, s * math.radians(30)), mat=SHIRT)
     bevel(f, 0.006, 2); add(smooth(f), 'Chest')
@@ -274,8 +274,8 @@ if not SKIRT:
 SLEEVE = 0.085  # how far the sleeve reaches down the upper arm
 for s in (-1, 1):
     sh, el, wr, tip, d = arm(s)
-    add(tube(0.062, 0.057, sh - d * 0.02, sh + d * SLEEVE, SHIRT, sy=0.95), 'sleeve')
-    add(ring(sh + d * SLEEVE, d, 0.055, 0.006, SHIRT, sy=0.95), 'sleeve')
+    add(tube(0.053, 0.061, sh + d * 0.045, sh + d * SLEEVE, SHIRT, sy=0.95), 'sleeve')
+    add(ring(sh + d * SLEEVE, d, 0.058, 0.006, SHIRT, sy=0.95), 'sleeve')
 
 # shorts or a skirt, with a waistband
 add(ring((0, 0, HIP + 0.125), (0, 0, 1), 0.149, 0.012, BOTTOMS, sy=0.78), 'skin')
@@ -287,7 +287,7 @@ if SKIRT:  # a pleated school skirt
 else:
     for s in (-1, 1):
         hp, kn, an, toe = leg(s)
-        add(tube(0.076, 0.079, hp + Vector((0, 0, 0.03)), Vector((hp.x, 0, HEM)), BOTTOMS, sy=0.92), 'skin')
+        add(tube(0.11, 0.07, Vector((hp.x * 0.5, 0, HIP + 0.115)), Vector((hp.x, 0, HEM)), BOTTOMS, sy=1.12), 'skin')
 
 # socks (a rolled top) and shoes
 SOCK_TOP = 0.17
@@ -306,7 +306,7 @@ bag = prim('cube', loc=(0, 0.16, HIP + 0.27), scale=(0.13, 0.065, 0.16), mat=BAG
 pk = prim('cube', loc=(0, 0.228, HIP + 0.21), scale=(0.095, 0.022, 0.07), mat=BAG); bevel(pk, 0.02, 3); add(smooth(pk), 'Chest')
 zp = prim('cube', loc=(0, 0.235, HIP + 0.275), scale=(0.08, 0.008, 0.004), mat=BAGD); add(smooth(zp), 'Chest')
 for s in (-1, 1):
-    add(curve_strap([(s * 0.09, 0.112, HIP + 0.3), (s * 0.095, 0.075, HIP + 0.378), (s * 0.1, -0.03, HIP + 0.388), (s * 0.105, -0.104, HIP + 0.32), (s * 0.1, -0.11, HIP + 0.2)], 0.011, BAGD), 'Chest')
+    add(curve_strap([(s * 0.095, 0.1, HIP + 0.3), (s * 0.098, 0.06, HIP + 0.418), (s * 0.098, -0.03, HIP + 0.43), (s * 0.105, -0.07, HIP + 0.405), (s * 0.118, -0.086, HIP + 0.33), (s * 0.122, -0.077, HIP + 0.2)], 0.011, BAG), 'Chest')
 for o in acc:
     apply_mods(o)
 
@@ -320,6 +320,8 @@ def nearest_bone(p):
         dn = (p - (h + ab * u)).length / r
         if dn < best:
             best, bn = dn, n
+    if bn.startswith('Shoulder') and abs(p.x) < 0.148 and p.z < HIP + 0.33:
+        bn = 'Chest'  # the armpit web belongs to the torso: it stays shirt and stretches instead of dragging skin
     return bn, best
 
 def arm_u(p, s):
@@ -380,13 +382,16 @@ def body_weights(p):
     """Smooth weights from the bones near p: the nearest bone, its parent and its children only, so a hand
     hanging by the hip never follows the leg."""
     bn, _ = nearest_bone(p)
+    ch = CHAIN[bn]
+    if bn.startswith('Shoulder') and arm_u(p, 1 if bn.endswith('L') else -1) > SLEEVE * 0.6:
+        ch = ch - {'Chest'}  # the bare upper arm follows the arm only, so a raised arm never drags skin over the shirt
     ws = {}
-    for n in CHAIN[bn]:
+    for n in ch:
         h, t, par, r = BONES[n]
         ab = t - h
         u = max(0.0, min(1.0, (p - h).dot(ab) / ab.length_squared))
         dn = max((p - (h + ab * u)).length / r, 0.25)
-        ws[n] = dn ** -6
+        ws[n] = dn ** -6 * (0.3 if bn == 'Chest' and n.startswith('Shoulder') else 1.0)
     top = sorted(ws.items(), key=lambda kv: -kv[1])[:3]
     tot = sum(w for _, w in top)
     return {n: w / tot for n, w in top}
@@ -397,7 +402,7 @@ W = [body_weights(body.matrix_world @ v.co) for v in me.vertices]
 nbr = [[] for _ in me.vertices]
 for e in me.edges:
     a, b = e.vertices; nbr[a].append(b); nbr[b].append(a)
-for _ in range(4):
+for _ in range(8):
     NW = []
     for i, w in enumerate(W):
         acc_w = dict(w)
@@ -426,7 +431,7 @@ for i, v in enumerate(me.vertices):
 kd.balance()
 meshes = [body] + list(acc)
 bpy.context.view_layer.update()
-bake_ao(meshes, rays=24, dist=0.12, strength=0.7)
+bake_ao(meshes, rays=64, dist=0.07, strength=0.28)
 skin_to_rig(body, W)
 for o, how in acc.items():
     ws = []
