@@ -11,12 +11,13 @@ out = sys.argv[-2] if len(sys.argv) > 2 else os.path.join(HERE, 'out', 'child.gl
 variant = sys.argv[-1] if len(sys.argv) > 2 else 'a'
 V = {
     'a': dict(skin=0x5b3a24, shirt=0x8cc4ee, shorts=0x253556, bag=0xf08a24, hair='short', shoes=0x1d1d1f),
-    'b': dict(skin=0x4a2e1c, shirt=0xf4f0e2, shorts=0x2f6b45, bag=0x2b7fd8, hair='puffs', shoes=0x5a2e1a, skirt=True),
+    'b': dict(skin=0x4a2e1c, shirt=0xf4f0e2, skirt=0x2f6b45, bag=0x2b7fd8, hair='puffs', shoes=0x5a2e1a),
 }[variant]
 reset()
 SKIN = material('Skin', V['skin'], rough=0.55)
 SHIRT = material('Shirt', V['shirt'], rough=0.85)
-SHORTS = material('Shorts', V['shorts'], rough=0.85)
+SKIRT = 'skirt' in V  # variant b wears a pleated skirt, variant a shorts
+BOTTOMS = material('Skirt', V['skirt'], rough=0.85) if SKIRT else material('Shorts', V['shorts'], rough=0.85)
 SOCK = material('Sock', 0xf2f2f2, rough=0.9)
 SHOE = material('Shoe', V['shoes'], rough=0.45, coat=0.4)
 SOLE = material('Sole', 0xf4f4f4, rough=0.6)
@@ -68,14 +69,16 @@ def curve_strap(pts, r, mat):
     return smooth(o)
 
 HIP = 0.66
-# ---------- hips and shorts (Body) ----------
-hips = prim('cylinder', loc=(0, 0, HIP + 0.05), radius=0.15, depth=0.2, vertices=32, scale=(1, 0.76, 1), mat=SHORTS)
+# ---------- hips and shorts or skirt (Body) ----------
+# the hips: the shorts' seat for variant a; for the skirt, its waist and lining (it closes the waist under the band
+# and hides the shirt's hem from below)
+hips = prim('cylinder', loc=(0, 0, HIP + 0.05), radius=0.15, depth=0.2, vertices=32, scale=(1, 0.76, 1), mat=BOTTOMS)
 bevel(hips, 0.035, 4); smooth(hips)
-if V.get('skirt'):  # a pleated school skirt
-    sk = prim('cone', loc=(0, 0, HIP - 0.04), radius1=0.215, radius2=0.15, depth=0.3, vertices=48, end_fill_type='NOTHING', mat=SHORTS)
+if SKIRT:  # a pleated school skirt
+    sk = prim('cone', loc=(0, 0, HIP - 0.04), radius1=0.215, radius2=0.15, depth=0.3, vertices=48, end_fill_type='NOTHING', mat=BOTTOMS)
     deform(sk, lambda p: Vector((p.x * (1 + 0.035 * math.sin(math.atan2(p.y, p.x) * 16)), p.y * 0.85 * (1 + 0.035 * math.sin(math.atan2(p.y, p.x) * 16)), p.z)))
     sk.modifiers.new('sol', 'SOLIDIFY').thickness = 0.01; smooth(sk); hips = join([hips, sk])
-band = prim('torus', major_segments=28, minor_segments=8, loc=(0, 0, HIP + 0.14), major_radius=0.148, minor_radius=0.012, scale=(1, 0.78, 1), mat=SHORTS); smooth(band)
+band = prim('torus', major_segments=28, minor_segments=8, loc=(0, 0, HIP + 0.14), major_radius=0.148, minor_radius=0.012, scale=(1, 0.78, 1), mat=BOTTOMS); smooth(band)
 body = join([hips, band], 'Body'); set_origin(body, (0, 0, HIP))
 
 # ---------- torso: shirt with collar, buttons and a pocket, neck, school bag ----------
@@ -182,7 +185,7 @@ for s, tag in ((1, 'L'), (-1, 'R')):
 legs = {}
 for s, tag in ((1, 'L'), (-1, 'R')):
     x = s * 0.076
-    short_leg = None if V.get('skirt') else tube(0.074, 0.078, HIP + 0.02, HIP - 0.15, x, SHORTS, sy=0.92)
+    short_leg = None if SKIRT else tube(0.074, 0.078, HIP + 0.02, HIP - 0.15, x, BOTTOMS, sy=0.92)
     thigh = capsule(0.056, (x, 0, HIP), (x, 0, HIP - 0.305), SKIN)  # ends on the knee pivot
     hp = join([short_leg, thigh], 'Hip_' + tag); set_origin(hp, (x, 0, HIP))
     shin = capsule(0.056, (x, 0, HIP - 0.305), (x, 0, 0.1), SKIN)  # starts on the knee pivot with the thigh's exact radius: both caps are one sphere, no lip or crease
