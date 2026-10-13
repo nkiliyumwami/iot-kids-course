@@ -37,6 +37,13 @@ def capsule(r, p0, p1, mat, seg=16):
     o = prim('uv_sphere', loc=(0, 0, 0), radius=r, segments=seg, ring_count=10, mat=mat)
     for v in o.data.vertices:
         v.co.z += L / 2 if v.co.z > 0 else -L / 2
+    n = int(L / 0.06)  # extra rings along long limbs: smooth shading, and baked AO fades at joints instead of banding
+    if n > 1:
+        import bmesh
+        bm = bmesh.new(); bm.from_mesh(o.data)
+        for i in range(1, n):
+            bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], plane_co=(0, 0, -L / 2 + L * i / n), plane_no=(0, 0, 1))
+        bm.to_mesh(o.data); bm.free(); o.data.update()
     q = (p1 - p0).normalized().to_track_quat('Z', 'Y')
     o.rotation_mode = 'QUATERNION'; o.rotation_quaternion = q; o.location = (p0 + p1) / 2
     apply_tf(o); select_only([o]); bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
@@ -119,7 +126,7 @@ select_only([smile]); bpy.ops.object.mode_set(mode='EDIT'); bpy.ops.mesh.select_
 for v in smile.data.vertices:
     v.select = v.co.z > -0.004
 bpy.ops.object.mode_set(mode='EDIT'); bpy.ops.mesh.delete(type='VERT'); bpy.ops.object.mode_set(mode='OBJECT')
-deform(smile, lambda p: Vector((p.x, p.y - 0.012 * (1 - (p.x / 0.035) ** 2), p.z)))  # follows the round face
+deform(smile, lambda p: Vector((p.x, p.y + 0.0185 - 0.41 * (p.z - HC.z + 0.084), p.z)))  # sits on the receding chin: set back at the low centre, less at the raised ends
 parts.append(smooth(smile))
 if V['hair'] == 'short':
     hair = prim('uv_sphere', loc=HC + Vector((0, 0.004, 0.006)), radius=0.132, segments=32, ring_count=18, mat=HAIR)
@@ -151,6 +158,7 @@ else:  # two puffs of hair
     cap.modifiers.new('sol', 'SOLIDIFY').thickness = 0.005
     parts.append(smooth(cap))
 head = join(parts, 'Head'); set_origin(head, (0, 0, HIP + 0.49))
+head.scale = (1.22, 1.22, 1.22); apply_tf(head)  # a bigger, friendlier kid head, scaled from the neck pivot
 
 # ---------- arms ----------
 SH_Z = HIP + 0.385
@@ -159,12 +167,15 @@ for s, tag in ((1, 'L'), (-1, 'R')):
     x = s * 0.185
     sleeve = capsule(0.058, (x, 0, SH_Z - 0.01), (x, 0, SH_Z - 0.08), SHIRT)
     deform(sleeve, lambda p, x=x: Vector((x + (p.x - x) * 1.0, p.y * 0.95, p.z)))
-    upper = capsule(0.041, (x, 0, SH_Z), (x, 0, SH_Z - 0.2), SKIN)
+    upper = capsule(0.04, (x, 0, SH_Z), (x, 0, SH_Z - 0.205), SKIN)  # ends on the elbow pivot: upper and forearm caps share a centre (sealed ball joint)
     sh = join([sleeve, upper], 'Shoulder_' + tag); set_origin(sh, (x, 0, SH_Z))
-    fore = capsule(0.037, (x, 0, SH_Z - 0.21), (x, -0.005, SH_Z - 0.38), SKIN)
-    palm = prim('uv_sphere', loc=(x, -0.008, SH_Z - 0.43), radius=0.045, segments=18, ring_count=12, scale=(0.62, 0.9, 1.15), mat=SKIN); smooth(palm)
-    thumb = capsule(0.013, (x - s * 0.018, -0.03, SH_Z - 0.41), (x - s * 0.012, -0.045, SH_Z - 0.45), SKIN)
-    el = join([fore, palm, thumb], 'Elbow_' + tag); set_origin(el, (x, 0, SH_Z - 0.205))
+    hx = x + s * 0.024  # the hand hangs a little away from the hip and the skirt
+    fore = capsule(0.04, (x, 0, SH_Z - 0.205), (x + s * 0.02, -0.004, SH_Z - 0.385), SKIN)
+    # a soft mitten hand, palm facing forward so it reads from the front and in the wave: palm, three fingers, thumb
+    palm = prim('uv_sphere', loc=(hx, -0.006, SH_Z - 0.425), radius=0.04, segments=18, ring_count=12, scale=(0.95, 0.62, 1.05), mat=SKIN); smooth(palm)
+    fingers = [capsule(0.012, (hx + dx, -0.006, SH_Z - 0.44), (hx + dx * 1.3, -0.009, SH_Z - 0.476), SKIN, seg=8) for dx in (-0.022, 0.0, 0.022)]
+    thumb = capsule(0.0135, (hx + s * 0.028, -0.01, SH_Z - 0.412), (hx + s * 0.048, -0.016, SH_Z - 0.444), SKIN, seg=10)
+    el = join([fore, palm, thumb] + fingers, 'Elbow_' + tag); set_origin(el, (x, 0, SH_Z - 0.205))
     arms[tag] = (sh, el)
 
 # ---------- legs ----------
@@ -172,14 +183,14 @@ legs = {}
 for s, tag in ((1, 'L'), (-1, 'R')):
     x = s * 0.076
     short_leg = None if V.get('skirt') else tube(0.074, 0.078, HIP + 0.02, HIP - 0.15, x, SHORTS, sy=0.92)
-    thigh = capsule(0.054, (x, 0, HIP), (x, 0, HIP - 0.3), SKIN)
+    thigh = capsule(0.056, (x, 0, HIP), (x, 0, HIP - 0.305), SKIN)  # ends on the knee pivot
     hp = join([short_leg, thigh], 'Hip_' + tag); set_origin(hp, (x, 0, HIP))
-    shin = capsule(0.047, (x, 0, HIP - 0.31), (x, 0, 0.1), SKIN)
-    sock = tube(0.051, 0.049, 0.16, 0.07, x, SOCK)
-    shoe = prim('cube', loc=(x, -0.03, 0.045), scale=(0.05, 0.1, 0.035), mat=SHOE)
+    shin = capsule(0.056, (x, 0, HIP - 0.305), (x, 0, 0.1), SKIN)  # starts on the knee pivot with the thigh's exact radius: both caps are one sphere, no lip or crease
+    sock = tube(0.063, 0.061, 0.16, 0.07, x, SOCK)
+    shoe = prim('cube', loc=(x, -0.03, 0.045), scale=(0.058, 0.1, 0.035), mat=SHOE)
     deform(shoe, lambda p, x=x: Vector((p.x, p.y, p.z - (0.012 if p.y < -0.09 else 0))))
     bevel(shoe, 0.02, 3); smooth(shoe)
-    sole = prim('cube', loc=(x, -0.03, 0.008), scale=(0.048, 0.098, 0.008), mat=SOLE); bevel(sole, 0.008, 2); smooth(sole)
+    sole = prim('cube', loc=(x, -0.03, 0.008), scale=(0.056, 0.098, 0.008), mat=SOLE); bevel(sole, 0.008, 2); smooth(sole)
     lace = prim('cube', loc=(x, -0.065, 0.074), scale=(0.022, 0.03, 0.004), rot=(math.radians(-20), 0, 0), mat=SOLE); smooth(lace)
     kn = join([shin, sock, shoe, sole, lace], 'Knee_' + tag); set_origin(kn, (x, 0, HIP - 0.305))
     legs[tag] = (hp, kn)
