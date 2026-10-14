@@ -1,0 +1,2475 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hello, Wi-Fi · KundaKode</title>
+<script src="../../assets/brand.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Layout: a lab bench. The 3D workbench fills the left, the lesson card sits on the right; they stack on phones. */
+:root {
+  --bg: #E3EBF0;
+  --surface: #FFFFFF;
+  --surface-2: #F1F5F8;
+  --ink: #15202A;
+  --muted: #526170;
+  --line: #D2DCE3;
+  --accent: #0A7480;
+  --accent-strong: #075A63;
+  --accent-soft: #DAEEF0;
+  --red: #C93131;
+  --amber: #A86D00;
+  --amber-lamp: #FFB400;
+  --green: #16834A;
+  --hl: #F2B705;
+  --ground: #2E3136;
+  --code-bg: #13202A;
+  --code-ink: #E3ECF1;
+  --code-dim: #8BA0AE;
+  --code-hl: #24404F;
+  --font-display: 'Baloo 2', 'Trebuchet MS', system-ui, sans-serif;
+  --font-body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --font-code: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--hl); outline-offset: 2px; }
+
+.app {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+  padding: 12px 16px 16px;
+  gap: 12px;
+}
+
+/* ---------- header ---------- */
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 20px;
+}
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 26px;
+  line-height: 1.05;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.brand p { margin: 0; color: var(--muted); font-size: 13px; }
+.home-link { display: inline-block; font-size: 13px; font-weight: 800; color: var(--accent-strong); text-decoration: none; margin-bottom: 2px; }
+.home-link:hover { text-decoration: underline; }
+.stages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+}
+.stage-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 4px 12px 4px 4px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--muted);
+}
+.stage-pill b {
+  display: grid;
+  place-items: center;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  font-family: var(--font-display);
+  font-size: 14px;
+  color: var(--muted);
+}
+.stage-pill.done { color: var(--ink); }
+.stage-pill.done b { background: var(--accent-soft); color: var(--accent-strong); }
+.stage-pill.current { border-color: var(--accent); color: var(--ink); background: var(--accent-soft); }
+.stage-pill.current b { background: var(--accent); color: #fff; }
+.progress { display: flex; align-items: center; gap: 10px; min-width: 200px; }
+.progress .bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.progress .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .4s; }
+.progress span { font-weight: 700; font-size: 13px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* ---------- main ---------- */
+main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 410px);
+  gap: 14px;
+  min-height: 0;
+}
+.viewport {
+  position: relative;
+  min-height: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #F3F7FA;
+  border: 1px solid var(--line);
+}
+#scene, #scene canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#scene canvas { touch-action: none; cursor: grab; }
+#scene canvas:active { cursor: grabbing; }
+.labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+
+.lbl { position: absolute; left: 0; top: 0; width: 0; height: 0; --lift: 10px; will-change: transform; color: var(--ink); }
+.lbl > span {
+  position: absolute;
+  left: 0; bottom: var(--lift);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: rgba(255,255,255,.94);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 2px 8px;
+  font-weight: 800;
+  font-size: 12.5px;
+  box-shadow: 0 2px 8px rgba(21,32,42,.12);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.lbl::after {
+  content: '';
+  position: absolute;
+  left: -1px; bottom: 0;
+  width: 2px; height: var(--lift);
+  background: rgba(21,32,42,.45);
+}
+.lbl .dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid rgba(0,0,0,.25); }
+.lbl.lamp.on > span { color: #fff; border-color: transparent; }
+.lbl.lamp.on.red > span { background: var(--red); }
+.lbl.lamp.on.yellow > span { background: var(--amber-lamp); color: var(--ink); }
+.lbl.lamp.on.green > span { background: var(--green); }
+.lbl.pin > span { font-family: var(--font-code); font-size: 11.5px; padding: 1px 6px; }
+.lbl.pin.high > span { background: var(--hl); border-color: transparent; }
+.lbl.callout > span { background: var(--ink); color: #fff; border-color: transparent; font-size: 13px; }
+.lbl.callout::after { background: var(--ink); }
+.lbl.callout.gold > span { background: var(--hl); color: var(--ink); }
+.lbl.callout.blue > span { background: #2F6FDE; }
+.lbl.callout.ground > span { background: var(--ground); }
+
+.status {
+  position: absolute;
+  top: 12px; left: 12px;
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 8px 14px 8px 8px;
+  box-shadow: 0 4px 14px rgba(21,32,42,.1);
+}
+.lamps {
+  display: grid; gap: 4px;
+  background: #2B3038;
+  padding: 5px;
+  border-radius: 10px;
+}
+.lamps i { width: 14px; height: 14px; border-radius: 50%; background: #4A515B; }
+.lamps i[data-k="sun"] { width: 26px; height: 26px; transition: background .15s, box-shadow .15s; }
+.lamps i.on[data-k="red"] { background: #FF4141; box-shadow: 0 0 10px #FF4141; }
+.lamps i.on[data-k="yellow"] { background: var(--amber-lamp); box-shadow: 0 0 10px var(--amber-lamp); }
+.lamps i.on[data-k="green"] { background: #22D36B; box-shadow: 0 0 10px #22D36B; }
+.st-text { display: grid; line-height: 1.2; }
+.st-text b { font-family: var(--font-display); font-size: 20px; letter-spacing: .04em; }
+.st-text small { color: var(--muted); font-weight: 700; font-size: 12.5px; }
+.st-count {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 30px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  min-width: 2.2ch;
+  text-align: right;
+}
+.st-count small { font-size: 14px; color: var(--muted); margin-left: 2px; }
+.st-badge {
+  font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  background: var(--hl); color: var(--ink); border-radius: 6px; padding: 1px 6px;
+}
+
+.reset-view {
+  position: absolute;
+  top: 12px; right: 12px;
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--accent);
+  color: #fff;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-weight: 800;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(10,116,128,.35);
+}
+.reset-view:hover { background: var(--accent-strong); }
+.reset-view svg { width: 18px; height: 18px; }
+
+.presser {
+  position: absolute;
+  left: 50%; bottom: 40px; transform: translateX(-50%);
+  display: inline-flex; align-items: center; gap: 10px;
+  border: 2px solid var(--accent-strong); background: var(--accent); color: #fff;
+  border-radius: 999px; padding: 10px 22px;
+  font-family: var(--font-display); font-weight: 800; font-size: 17px;
+  white-space: nowrap; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none;
+  box-shadow: 0 6px 16px rgba(21,32,42,.25);
+}
+.presser i { width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: inset 0 -3px 0 rgba(0,0,0,.18); transition: transform .1s; }
+.presser.down { background: var(--hl); color: var(--ink); border-color: var(--hl); box-shadow: 0 2px 6px rgba(21,32,42,.25); }
+.presser.down i { transform: translateY(2px) scale(.9); background: var(--ink); }
+.pinread { display: flex; align-items: center; justify-content: center; gap: 14px; background: var(--surface-2); border-radius: 12px; padding: 8px 10px; text-align: center; }
+.pinread div { display: grid; line-height: 1.15; }
+.pinread small { font-size: 12px; font-weight: 800; color: var(--muted); }
+.pinread b { font-family: var(--font-display); font-size: 26px; font-variant-numeric: tabular-nums; }
+.pinread span { font-size: 22px; color: var(--muted); }
+.sw-diagram { width: 100%; max-width: 340px; display: block; margin: 0 auto; }
+.sw-diagram .wires { stroke: #8A929A; transition: stroke .15s; }
+.sw-diagram .bridge { fill: #C9CED4; stroke: #7A828A; transition: fill .15s; }
+.sw-diagram .plunger { transform: translateY(-30px); transition: transform .12s; }
+.sw-diagram.on .plunger { transform: translateY(0); }
+.sw-diagram.on .wires { stroke: var(--hl); }
+.sw-diagram.on .bridge { fill: var(--hl); }
+.sw-diagram text { font-family: var(--font-body); font-weight: 800; font-size: 11px; fill: var(--muted); }
+
+.slider-row { display: flex; align-items: center; gap: 12px; }
+.slider-row input { flex: 1; accent-color: var(--green); min-width: 0; height: 28px; }
+.slider-val { font-family: var(--font-display); font-weight: 800; font-size: 20px; color: var(--green); min-width: 3.4ch; text-align: right; font-variant-numeric: tabular-nums; }
+.var-row { display: grid; gap: 4px; margin-bottom: 8px; }
+.trace { display: flex; flex-wrap: wrap; gap: 4px; margin: 10px 0; min-height: 30px; }
+.trace i { font-style: normal; font-family: var(--font-mono); font-weight: 800; width: 26px; height: 30px; display: inline-grid; place-items: center; border-radius: 6px; color: #fff; }
+.trace i.hi { background: #2F6FDE; }
+.trace i.lo { background: #5b6370; }
+.st-count { max-width: 40vw; }
+@media (max-width: 500px) { .st-count { font-size: 0.8em; } }
+pre.code.linecode { white-space: pre-wrap; overflow-wrap: anywhere; padding: 8px 12px; border-radius: 10px; background: var(--code-bg); color: var(--code-ink); max-height: none; overflow-x: auto; }
+.seg { display: flex; gap: 8px; flex-wrap: wrap; }
+.seg button { flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 2px solid var(--line); background: var(--surface); border-radius: 12px; padding: 8px 6px; font-weight: 800; cursor: pointer; }
+.seg button[aria-pressed="true"] { border-color: var(--ink); background: #FFF6D6; }
+
+.live {
+  position: absolute;
+  left: 50%; top: 70px;
+  transform: translateX(-50%);
+  max-width: calc(100% - 24px);
+  background: var(--ink); color: #fff;
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-weight: 700; font-size: 14px;
+  text-align: center;
+  box-shadow: 0 6px 16px rgba(21,32,42,.25);
+}
+.hint {
+  position: absolute; left: 12px; bottom: 10px; margin: 0;
+  font-size: 12px; font-weight: 700; color: var(--muted);
+  pointer-events: none;
+}
+
+.info {
+  position: absolute;
+  right: 12px; bottom: 40px;
+  width: min(330px, calc(100% - 24px));
+  background: var(--surface);
+  border: 2px solid var(--hl);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 10px 26px rgba(21,32,42,.18);
+}
+.info h3 { font-family: var(--font-display); font-size: 19px; margin: 0 28px 2px 0; line-height: 1.2; }
+.info p { margin: 4px 0 0; }
+.info .purpose { font-weight: 800; }
+.info .more { color: var(--muted); font-size: 14px; }
+.info .close {
+  position: absolute; top: 8px; right: 8px;
+  width: 28px; height: 28px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--surface-2);
+  cursor: pointer; font-weight: 800;
+}
+
+/* ---------- lesson panel ---------- */
+.panel {
+  display: flex; flex-direction: column;
+  min-height: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+}
+.panel-body { flex: 1; overflow: auto; padding: 16px; display: grid; gap: 14px; align-content: start; min-height: 0; }
+.guide { display: grid; grid-template-columns: 58px minmax(0,1fr); gap: 10px; align-items: start; }
+.guide svg { width: 58px; height: 70px; }
+.bubble {
+  position: relative;
+  background: var(--surface-2);
+  border-radius: 14px;
+  padding: 10px 14px 12px;
+}
+.bubble::before {
+  content: ''; position: absolute; left: -8px; top: 22px;
+  border: 8px solid transparent; border-left: 0; border-right-color: var(--surface-2);
+}
+.eyebrow { margin: 0; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.bubble h2 { font-family: var(--font-display); font-size: 23px; line-height: 1.15; margin: 2px 0 6px; text-wrap: balance; }
+.bubble p.text { margin: 0; font-size: 16px; }
+.term { font-weight: 800; color: var(--accent-strong); }
+
+.card { border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+.card h4 { margin: 0 0 8px; font-size: 13px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.list li { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 10px; }
+.list li.on { background: var(--accent-soft); }
+.chip-lamp { width: 16px; height: 16px; border-radius: 50%; flex: none; }
+.chip-lamp.red { background: var(--red); }
+.chip-lamp.yellow { background: var(--amber-lamp); }
+.chip-lamp.green { background: var(--green); }
+.list .secs { margin-left: auto; font-weight: 800; font-variant-numeric: tabular-nums; }
+.check {
+  width: 22px; height: 22px; border-radius: 50%; flex: none;
+  border: 2px solid var(--line); display: grid; place-items: center; font-size: 13px; font-weight: 900; color: transparent;
+}
+.done .check { background: var(--green); border-color: var(--green); color: #fff; }
+.list li.now { background: #FFF6D6; outline: 2px solid var(--hl); }
+.list li.part-item { cursor: pointer; border: 0; background: none; width: 100%; text-align: left; }
+.list li.part-item:hover { background: var(--surface-2); }
+.mono { font-family: var(--font-code); font-size: 13px; }
+.note { font-size: 14px; color: var(--muted); margin: 0; }
+.note.safety { background: #FFF6D6; border-radius: 10px; padding: 8px 10px; color: var(--ink); }
+.legend { display: grid; gap: 6px; font-size: 14px; }
+.legend div { display: flex; gap: 8px; align-items: center; }
+.sw { width: 26px; height: 10px; border-radius: 3px; flex: none; }
+
+/* code */
+.code-card { border-radius: 14px; overflow: hidden; background: var(--code-bg); color: var(--code-ink); }
+.code-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 8px 10px 8px 14px; background: #0D171F; }
+.code-head span { font-family: var(--font-code); font-size: 12.5px; color: var(--code-dim); }
+.code-btns { display: flex; gap: 6px; }
+.code-btns button {
+  border: 1px solid #36505F; background: #1C2E3A; color: var(--code-ink);
+  border-radius: 8px; padding: 4px 10px; font-weight: 800; font-size: 13px; cursor: pointer;
+}
+.code-btns button.on { background: var(--hl); color: var(--ink); border-color: var(--hl); }
+pre.code {
+  margin: 0;
+  padding: 8px 0;
+  font-family: var(--font-code);
+  font-size: 12.5px;
+  line-height: 1.6;
+  max-height: 44vh;
+  overflow: auto;
+  position: relative;
+}
+pre.code .ln { display: block; padding: 0 12px 0 0; white-space: pre; border-left: 4px solid transparent; }
+pre.code .ln::before { content: attr(data-n); display: inline-block; width: 3.2ch; margin-right: 1.2ch; text-align: right; color: #4E6676; }
+pre.code .ln.hl { background: var(--code-hl); border-left-color: var(--hl); }
+pre.code .ln.hl.key { background: #2E5468; }
+pre.code .c { color: #8FA8B5; font-style: italic; }
+pre.code .kw { color: #7FD3E0; }
+pre.code .fn { color: #FFD479; }
+pre.code .k2 { color: #FF9BB0; font-weight: 600; }
+pre.code .num { color: #B6E68A; }
+pre.code .num.flash { background: var(--hl); color: var(--ink); border-radius: 3px; }
+pre.code .tick {
+  margin-left: 10px; font-family: var(--font-body); font-weight: 800; font-size: 11.5px;
+  background: var(--hl); color: var(--ink); border-radius: 6px; padding: 0 6px;
+}
+.code-note { margin: 0; padding: 8px 14px 10px; font-size: 13.5px; color: var(--code-ink); border-top: 1px solid #22323D; }
+.code-note b { color: #FFD479; }
+
+/* experiment */
+.slider-row { display: flex; align-items: center; gap: 12px; }
+.slider-row input { flex: 1; accent-color: var(--green); min-width: 0; height: 28px; }
+.slider-val { font-family: var(--font-display); font-weight: 800; font-size: 26px; color: var(--green); min-width: 3.4ch; text-align: right; font-variant-numeric: tabular-nums; }
+.ticks { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-weight: 700; padding: 0 2px; }
+.sum { margin: 8px 0 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.question { font-family: var(--font-display); font-weight: 700; font-size: 19px; line-height: 1.25; margin: 0 0 8px; }
+.reveal { margin-top: 8px; background: var(--accent-soft); border-radius: 10px; padding: 8px 10px; }
+
+.quiz-opts { display: grid; gap: 8px; }
+.quiz-opts button {
+  text-align: left; border: 2px solid var(--line); background: var(--surface);
+  border-radius: 12px; padding: 10px 12px; cursor: pointer; font-weight: 700;
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.quiz-opts button:hover { border-color: var(--accent); }
+.quiz-opts button b { font-family: var(--font-display); color: var(--accent); }
+.quiz-opts button.right { border-color: var(--green); background: #E3F5EA; }
+.quiz-opts button.wrong { border-color: var(--red); background: #FBE7E7; }
+.feedback { border-radius: 12px; padding: 10px 12px; margin-top: 10px; }
+.feedback.good { background: #E3F5EA; }
+.feedback.try { background: #FFF6D6; }
+.feedback b { font-family: var(--font-display); font-size: 18px; }
+
+/* footer controls */
+.panel-foot { border-top: 1px solid var(--line); padding: 12px 16px; display: grid; gap: 10px; background: var(--surface); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid var(--line); background: var(--surface);
+  border-radius: 12px; padding: 9px 12px; font-weight: 800; font-size: 14px; cursor: pointer;
+  flex: 1 1 auto;
+}
+.btn:hover:not(:disabled) { background: var(--surface-2); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover:not(:disabled) { background: var(--accent-strong); }
+.btn.warn { color: var(--red); }
+.btn.armed { background: var(--red); color: #fff; border-color: var(--red); }
+.btn[aria-pressed="true"] { background: var(--hl); border-color: var(--hl); }
+.toggle { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; font-weight: 800; font-size: 14px; cursor: pointer; flex: 1 1 auto; }
+.toggle input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
+.why { display: grid; gap: 6px; }
+.why-item { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.why-item > button {
+  width: 100%; text-align: left; background: none; border: 0; padding: 9px 12px;
+  font-weight: 800; cursor: pointer; display: flex; gap: 10px; align-items: flex-start; line-height: 1.35;
+}
+.why-item > button::before {
+  content: '?'; flex: none; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent-strong);
+  display: grid; place-items: center; font-family: var(--font-display); font-size: 15px;
+}
+.why-item.seen > button::before { content: '✓'; background: var(--accent); color: #fff; font-size: 13px; }
+.why-item .ans { padding: 0 12px 10px 44px; }
+.why-item .ans p { margin: 0; font-size: 14.5px; }
+.pin-link { display: inline-block; margin-top: 6px; font-weight: 800; color: var(--accent-strong, #075A63); }
+.why-item.now { border-color: var(--hl); box-shadow: inset 0 0 0 1px var(--hl); background: #FFFBEA; }
+.show3d {
+  margin-top: 8px; border: 1px solid var(--accent); background: var(--surface); color: var(--accent-strong);
+  border-radius: 999px; padding: 3px 12px; font-weight: 800; font-size: 13px; cursor: pointer;
+}
+.show3d:hover { background: var(--accent-soft); }
+.analogy { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.analogy li { display: grid; grid-template-columns: minmax(0, 7.5em) minmax(0, 1fr); gap: 10px; font-size: 14.5px; }
+.analogy b { color: var(--accent-strong); }
+.journey { margin: 0; padding-left: 22px; display: grid; gap: 4px; font-size: 14.5px; }
+.meter { position: relative; height: 22px; border-radius: 8px; overflow: hidden; background: linear-gradient(90deg, #DDF2E5 0 40%, #FBE2E2 40% 100%); border: 1px solid var(--line); }
+.meter i { position: absolute; left: 0; top: 0; bottom: 0; width: 8%; background: var(--green); border-radius: 8px; transition: width .6s, background .3s; }
+.meter i.danger { background: var(--red); }
+.meter-scale { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: var(--muted); margin-top: 3px; }
+.meter-limit { position: absolute; left: 40%; top: -2px; bottom: -2px; width: 2px; background: var(--ink); }
+.big-result { margin: 8px 0; font-size: 15px; }
+.fail { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; font-weight: 700; }
+
+.soundbtn {
+  position: absolute; right: 12px; bottom: 8px;
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 2px solid var(--line); background: var(--surface); color: var(--ink);
+  border-radius: 999px; padding: 6px 14px; font-weight: 800; font-size: 14px; cursor: pointer;
+  box-shadow: 0 4px 12px rgba(21,32,42,.15);
+}
+.soundbtn[aria-pressed="true"] { background: var(--hl); border-color: var(--hl); }
+.wave { width: 100%; height: auto; aspect-ratio: 680 / 170; display: block; background: var(--surface-2); border-radius: 12px; }
+.hold { width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.hold.down { background: var(--hl); border-color: var(--hl); }
+.console { border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: #fff; }
+.console-head { padding: 6px 12px; background: var(--surface-2); font-size: 12px; font-weight: 800; color: var(--muted); }
+.console pre { margin: 0; padding: 8px 12px; height: 150px; overflow-y: auto; font-family: var(--font-code); font-size: 13px; color: var(--ink); white-space: pre-wrap; }
+.divider { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 12px; align-items: stretch; }
+.divider .tube { position: relative; height: 210px; border-radius: 12px; overflow: hidden; border: 2px solid var(--ink); background: var(--surface-2); display: flex; flex-direction: column; }
+.divider .tube i { display: block; width: 100%; transition: height .12s; }
+.divider .tube .top { background: #F2B705; }
+.divider .tube .bot { background: #2F6FDE; flex: 1; }
+.divider .tube .mid { position: absolute; left: 0; right: 0; height: 0; border-top: 3px dashed var(--ink); transition: top .12s; }
+.divider .rows { display: grid; gap: 8px; align-content: space-between; font-size: 14px; line-height: 1.3; }
+.divider .rows div { padding: 6px 10px; border-radius: 10px; background: var(--surface-2); }
+.divider .rows b { font-family: var(--font-display); font-variant-numeric: tabular-nums; }
+.vs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.vs > div { background: var(--surface-2); border-radius: 12px; padding: 8px 10px; display: grid; gap: 2px; text-align: center; }
+.vs small { font-size: 12px; font-weight: 800; color: var(--muted); }
+.vs b { font-family: var(--font-display); font-size: 28px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.vs .bar { height: 12px; border-radius: 6px; background: #fff; border: 1px solid var(--line); overflow: hidden; margin-top: 4px; }
+.vs .bar i { display: block; height: 100%; width: 0; background: var(--green); transition: width .12s; }
+.ladder { display: grid; gap: 6px; }
+.ladder button { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; text-align: left; border: 2px solid var(--line); background: var(--surface); border-radius: 12px; padding: 8px 12px; font-weight: 800; cursor: pointer; }
+.ladder button[aria-pressed="true"] { border-color: var(--ink); background: #FFF6D6; }
+.ladder button span { font-family: var(--font-display); font-variant-numeric: tabular-nums; color: var(--accent-strong); }
+.plan-note { margin: 0; }
+@media (max-width: 860px) {
+  .soundbtn { bottom: 10px; padding: 8px 12px; }
+  .soundbtn span { display: none; }
+  .app { height: auto; min-height: 100%; }
+  main { grid-template-columns: minmax(0, 1fr); }
+  .viewport { height: 58vh; min-height: 360px; }
+  .panel-body { overflow: visible; }
+  .stages { margin-left: 0; }
+  .stage-pill span { display: none; }
+  .stage-pill { padding-right: 4px; }
+  .progress { flex: 1 1 100%; }
+  .status { padding: 6px 10px 6px 6px; gap: 8px; }
+  .st-text b { font-size: 16px; }
+  .st-count { font-size: 24px; }
+  .st-count small { display: none; }
+  .st-text small { display: none; }
+  .reset-view { padding: 8px 12px; font-size: 14px; }
+  .hint { display: none; }
+  .presser { bottom: 10px; font-size: 15px; padding: 8px 16px; }
+  .info { bottom: 74px; }
+  pre.code { max-height: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+
+
+/* Wi-Fi cards (lesson 8) */
+.devs { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+.devs button { display: grid; gap: 2px; text-align: left; border: 2px solid var(--line); background: var(--surface); border-radius: 12px; padding: 8px 10px; font-weight: 800; cursor: pointer; }
+.devs button[aria-pressed="true"] { border-color: var(--ink); background: #FFF6D6; }
+.devs button span { font-family: var(--font-code); font-size: 12px; font-weight: 600; color: var(--accent-strong); }
+.ipbox { display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap; margin: 4px 0 8px; }
+.ipbox button { font-family: var(--font-code); font-weight: 600; font-size: 24px; min-width: 3.4ch; padding: 6px 8px; border-radius: 10px; border: 2px solid var(--line); background: var(--surface); cursor: pointer; }
+.ipbox button[aria-pressed="true"] { border-color: var(--ink); }
+.ipbox button.street { background: #E3F0FF; }
+.ipbox button.house { background: #FFE9C7; }
+.ipbox i { font-style: normal; font-weight: 800; font-size: 24px; }
+.files { display: grid; gap: 8px; }
+.files > div { display: flex; gap: 10px; align-items: center; border-radius: 12px; padding: 8px 10px; border: 2px solid var(--line); font-weight: 800; }
+.files > div.share { background: #E3F5EA; border-color: var(--green); }
+.files > div.keep { background: #FBE7E7; border-color: var(--red); }
+.files small { display: block; font-weight: 600; color: var(--muted); }
+.stat-pill { display: inline-block; border-radius: 999px; padding: 2px 10px; font-weight: 800; background: var(--surface-2); }
+.stat-pill.ok { background: #E3F5EA; color: #11683a; }
+.stat-pill.bad { background: #FBE7E7; color: #9b1c1c; }
+.stat-pill.wait { background: #FFF6D6; }
+.wifi-in { width: 100%; box-sizing: border-box; font: 600 15px var(--font-code); padding: 8px 10px; border-radius: 10px; border: 2px solid var(--line); }
+.sec-pre { margin: 0; }
+
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <svg width="34" height="54" viewBox="0 0 34 54" aria-hidden="true">
+        <rect x="3" y="2" width="28" height="50" rx="9" fill="#2B3038"/>
+        <circle cx="17" cy="13" r="6" fill="#FF4141"/>
+        <circle cx="17" cy="27" r="6" fill="#FFB400"/>
+        <circle cx="17" cy="41" r="6" fill="#22D36B"/>
+      </svg>
+      <div>
+        <a class="home-link" href="../../lessons.html">← All lessons</a>
+        <h1>Hello, Wi-Fi</h1>
+        <p>Lesson 8 · Joining a network</p>
+      </div>
+    </div>
+    <nav class="stages" id="stages" aria-label="Lesson stages"></nav>
+    <div class="progress" aria-live="polite">
+      <div class="bar" role="progressbar" aria-label="Lesson progress" id="progressBar" aria-valuemin="0" aria-valuemax="100"><i id="progressFill"></i></div>
+      <span id="progressText">Step 1 of 8</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="viewport" id="viewport" aria-label="3D workbench">
+      <div id="scene"></div>
+      <div class="labels" id="labels"></div>
+      <div class="status" id="status" aria-live="polite">
+        <div class="lamps" aria-hidden="true"><i data-k="sun"></i></div>
+        <div class="st-text"><b id="stName">WI-FI</b><small id="stWord">Not connected yet</small></div>
+                <span class="st-badge" id="stBadge" hidden>Paused</span>
+      </div>
+      <button class="reset-view" id="resetView" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+        Reset view
+      </button>
+      <div class="live" id="live" hidden></div>
+      <button class="presser" id="pressBtn" type="button" aria-pressed="false" hidden><i aria-hidden="true"></i>▶ Run it again (pretend)</button>
+      <div class="info" id="info" hidden role="dialog" aria-labelledby="infoTitle">
+        <button class="close" id="infoClose" type="button" aria-label="Close">✕</button>
+        <h3 id="infoTitle"></h3>
+        <p class="purpose" id="infoPurpose"></p>
+        <p class="more" id="infoMore"></p>
+        <a class="pin-link" id="infoPins" href="../../pins.html" target="_blank" rel="noopener" hidden>🔍 Explore all 30 pins of the ESP32</a>
+      </div>
+      <p class="hint">Drag to rotate · Scroll or pinch to zoom · Right-drag to slide · Click a part to learn about it</p>
+    </section>
+
+    <aside class="panel" aria-label="Lesson">
+      <div class="panel-body" id="panelBody">
+        <div class="guide">
+          <svg viewBox="0 0 58 70" aria-hidden="true">
+            <rect x="12" y="44" width="34" height="26" rx="10" fill="#2C4E9E"/>
+            <rect x="26" y="50" width="6" height="7" rx="1.5" fill="#F2B705"/>
+            <circle cx="29" cy="30" r="16" fill="#F2C9A0"/>
+            <circle cx="23" cy="31" r="2.2" fill="#15202A"/>
+            <circle cx="35" cy="31" r="2.2" fill="#15202A"/>
+            <path d="M23 37 q6 5 12 0" stroke="#15202A" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <circle cx="19" cy="36" r="2.6" fill="#F4A6A0" opacity=".7"/>
+            <circle cx="39" cy="36" r="2.6" fill="#F4A6A0" opacity=".7"/>
+            <path d="M11 22 q18 -18 36 0 v3 h-36z" fill="#1F3A7A"/>
+            <rect x="9" y="22" width="40" height="5" rx="2.5" fill="#15202A"/>
+            <circle cx="29" cy="14" r="3.4" fill="#F2B705"/>
+          </svg>
+          <div class="bubble">
+            <p class="eyebrow" id="stageName">Stage A · See it</p>
+            <h2 id="stepTitle">See what we are building</h2>
+            <p class="text" id="stepText"></p>
+          </div>
+        </div>
+        <div id="extra" style="display:grid;gap:14px"></div>
+      </div>
+      <div class="panel-foot">
+        <div class="row">
+          <button class="btn" id="prev" type="button">← Previous</button>
+          <button class="btn" id="replay" type="button">↻ Replay this step</button>
+          <button class="btn primary" id="next" type="button">Next →</button>
+        </div>
+        <div class="row">
+          <button class="btn" id="pause" type="button" aria-pressed="false">❚❚ Pause</button>
+          <label class="toggle" for="labelsToggle"><input type="checkbox" id="labelsToggle" checked> Show labels</label>
+          <button class="btn warn" id="resetLesson" type="button">Reset lesson</button>
+        </div>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="../../course.js"></script>
+<script src="../../assets/ohm/ohm.js"></script>
+<script src="../../assets/rewards.js"></script>
+<script src="../../assets/esp32/board.js"></script>
+<script>
+(function () {
+'use strict';
+const $ = (s) => document.querySelector(s);
+const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+if (!window.THREE || !THREE.OrbitControls) {
+  $('#scene').innerHTML = '<div class="fail">The 3D library could not load. Check your internet connection and reload the page.</div>';
+  return;
+}
+
+/* =========================================================
+   Board geometry. 1 unit ≈ 1 cm; breadboard hole pitch 0.25.
+   ========================================================= */
+const P = 0.25;
+const colX = (c) => (c - 15.5) * P;
+const ROWZ = { a: -1.375, b: -1.125, c: -0.875, d: -0.625, e: -0.375, f: 0.375, g: 0.625, h: 0.875, i: 1.125, j: 1.375 };
+const FAR_ROWS = ['a', 'b', 'c', 'd', 'e'], NEAR_ROWS = ['f', 'g', 'h', 'i', 'j'];
+const NEG_RAIL_Z = 2.2, POS_RAIL_Z = 1.95;
+const RAIL_COLS = [];
+for (let c = 1; c <= 30; c++) if ((c - 1) % 6 !== 0) RAIL_COLS.push(c);
+const HEADER_Z = -3.45, HEADER_TOP = -0.05, SLEEVE = 0.27;
+const PIN_X = { D32: -0.5, D33: -0.25, D25: 0, D26: 0.25, D27: 0.5, D13: 1.25, GND: 1.5, '3V3': 1.75 };
+
+const CH = [
+  { key: 'red', name: 'Red', word: 'Stop', pin: 'D25', num: 25, col: 7, hex: 0xff3030, wire: 0xe0413b },
+  { key: 'yellow', name: 'Yellow', word: 'Get ready to stop', pin: 'D26', num: 26, col: 15, hex: 0xffb400, wire: 0xf2c12e },
+  { key: 'green', name: 'Green', word: 'Go', pin: 'D27', num: 27, col: 23, hex: 0x1fd067, wire: 0x2fae5f },
+];
+
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const holeAt = (c, r, y = 0) => V(colX(c), y, ROWZ[r]);
+const railAt = (c, y = 0) => V(colX(c), y, NEG_RAIL_Z);
+const pinAt = (n, y = HEADER_TOP) => V(PIN_X[n], y, n === '3V3' ? FAR_HEADER_Z : HEADER_Z);
+
+/* =========================================================
+   Renderer, scene, camera
+   ========================================================= */
+const host = $('#scene');
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+} catch (e) {
+  host.innerHTML = '<div class="fail">This device could not start 3D graphics (WebGL). Try another browser.</div>';
+  return;
+}
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+host.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf3f7fa);
+scene.fog = new THREE.Fog(0xf3f7fa, 34, 70);
+
+const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 200);
+camera.position.set(0.5, 6.2, 10.5);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.09;
+controls.minDistance = 2.5;
+controls.maxDistance = 30;
+controls.maxPolarAngle = Math.PI * 0.47;
+controls.target.set(0, 0.6, -1.2);
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0xcdd8e0, 0.72);
+scene.add(hemi);
+scene.add(new THREE.AmbientLight(0xffffff, 0.16));
+const sun = new THREE.DirectionalLight(0xffffff, 0.62);
+sun.position.set(6, 15, 9);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -14; sun.shadow.camera.right = 14;
+sun.shadow.camera.top = 14; sun.shadow.camera.bottom = -14;
+sun.shadow.camera.near = 1; sun.shadow.camera.far = 40;
+sun.shadow.bias = -0.0006;
+sun.shadow.radius = 4;
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0xdfefff, 0.22);
+fill.position.set(-8, 6, -4);
+scene.add(fill);
+
+const mat = (color, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.6, metalness: 0 }, o));
+function mesh(geo, m, x = 0, y = 0, z = 0, shadow = true) {
+  const o = new THREE.Mesh(geo, m);
+  o.position.set(x, y, z);
+  o.castShadow = shadow; o.receiveShadow = true;
+  return o;
+}
+function rod(a, b, r, m) {
+  const d = b.clone().sub(a);
+  const o = mesh(new THREE.CylinderGeometry(r, r, d.length(), 8), m);
+  o.position.copy(a).add(b).multiplyScalar(0.5);
+  o.quaternion.setFromUnitVectors(V(0, 1, 0), d.normalize());
+  return o;
+}
+function roundRect(g, x, y, w, h, r) {
+  g.beginPath();
+  g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+const metal = mat(0xc9ced4, { metalness: 0.3, roughness: 0.35 });
+
+/* ---------- table ---------- */
+const table = mesh(new THREE.BoxGeometry(30, 0.6, 20), mat(0xe6d3b5, { roughness: 0.85 }), 0, -0.7, -2, false);
+scene.add(table);
+const matPad = mesh(new THREE.BoxGeometry(17, 0.02, 13.4), mat(0xcfe2e6, { roughness: 0.95 }), 0.6, -0.39, -2.6, false);
+scene.add(matPad);
+
+const pickables = [];
+function tagPart(obj, part) {
+  obj.userData.part = part;
+  pickables.push(obj);
+}
+
+/* ---------- breadboard ---------- */
+function breadboardTexture(W, D) {
+  const S = 180;
+  const c = document.createElement('canvas');
+  c.width = Math.round(W * S); c.height = Math.round(D * S);
+  const g = c.getContext('2d');
+  const U = (x) => (x + W / 2) * S, Z = (z) => (z + D / 2) * S;
+  g.fillStyle = '#f8f8f4'; g.fillRect(0, 0, c.width, c.height);
+  g.fillStyle = '#dcddd5'; g.fillRect(0, Z(-0.13), c.width, 0.26 * S);
+  const line = (z, col) => { g.fillStyle = col; g.fillRect(U(colX(1) - 0.2), Z(z) - 0.014 * S, (colX(30) - colX(1) + 0.4) * S, 0.028 * S); };
+  line(-2.42, '#2f6fde'); line(-1.76, '#d93b3b'); line(1.76, '#d93b3b'); line(2.42, '#2f6fde');
+  const hole = (x, z) => { const s = 0.1 * S; g.fillStyle = '#41464c'; roundRect(g, U(x) - s / 2, Z(z) - s / 2, s, s, s * 0.22); g.fill(); };
+  for (let col = 1; col <= 30; col++) for (const r in ROWZ) hole(colX(col), ROWZ[r]);
+  for (const col of RAIL_COLS) { hole(colX(col), POS_RAIL_Z); hole(colX(col), NEG_RAIL_Z); hole(colX(col), -1.95); hole(colX(col), -2.2); }
+  g.fillStyle = '#6f7a85'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = `700 ${0.115 * S}px Nunito, Arial, sans-serif`;
+  for (let col = 1; col <= 30; col++) { g.fillText(String(col), U(colX(col)), Z(-1.58)); g.fillText(String(col), U(colX(col)), Z(1.58)); }
+  for (const r in ROWZ) { g.fillText(r, U(colX(0)), Z(ROWZ[r])); g.fillText(r, U(colX(31)), Z(ROWZ[r])); }
+  g.font = `800 ${0.2 * S}px Nunito, Arial, sans-serif`;
+  const sign = (t, col, z, fillc) => { g.fillStyle = fillc; g.fillText(t, U(colX(col)), Z(z)); };
+  sign('−', 0, NEG_RAIL_Z, '#2f6fde'); sign('−', 31, NEG_RAIL_Z, '#2f6fde');
+  sign('+', 0, POS_RAIL_Z, '#d93b3b'); sign('+', 31, POS_RAIL_Z, '#d93b3b');
+  sign('−', 0, -2.2, '#2f6fde'); sign('+', 0, -1.95, '#d93b3b');
+  sign('−', 31, -2.2, '#2f6fde'); sign('+', 31, -1.95, '#d93b3b');
+  const tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return tex;
+}
+
+function makeBreadboard() {
+  const g = new THREE.Group();
+  const W = 8.4, D = 5.3, H = 0.4;
+  g.add(mesh(new THREE.BoxGeometry(W, H, D), mat(0xf2f2ec, { roughness: 0.8 }), 0, -H / 2 - 0.001, 0));
+  const top = mesh(new THREE.PlaneGeometry(W, D), new THREE.MeshStandardMaterial({ map: breadboardTexture(W, D), roughness: 0.85 }), 0, 0.001, 0, false);
+  top.rotation.x = -Math.PI / 2;
+  g.add(top);
+  tagPart(g, 'breadboard');
+  return g;
+}
+
+/* ---------- controller board: ESP32 DevKit V1 (30-pin), pins pointing up ----------
+   Laid out from a top view of the real board: antenna end on the left, micro-USB on the right,
+   the EN…VIN pin row nearest the breadboard and the D23…3V3 row at the back. Rows are 0.9" apart. */
+const NEAR_PINS = ['EN', 'VP', 'VN', 'D34', 'D35', 'D32', 'D33', 'D25', 'D26', 'D27', 'D14', 'D12', 'D13', 'GND', 'VIN'];
+const FAR_PINS = ['D23', 'D22', 'TX0', 'RX0', 'D21', 'D19', 'D18', 'D5', 'TX2', 'RX2', 'D4', 'D2', 'D15', 'GND', '3V3'];
+const FAR_HEADER_Z = HEADER_Z - 0.9 * 2.54;
+const pinColX = (k) => (k - 7) * P;
+const ESP = { x0: pinColX(0) - 0.48, x1: pinColX(14) + 0.65, z0: FAR_HEADER_Z - 0.1, z1: HEADER_Z + 0.1, y: -0.2 };
+ESP.cx = (ESP.x0 + ESP.x1) / 2; ESP.cz = (ESP.z0 + ESP.z1) / 2;
+ESP.W = ESP.x1 - ESP.x0; ESP.D = ESP.z1 - ESP.z0;
+
+function canvasFor(w, d, S) {
+  const c = document.createElement('canvas');
+  c.width = Math.round(w * S); c.height = Math.round(d * S);
+  return [c, c.getContext('2d')];
+}
+function texFrom(c) {
+  const tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return tex;
+}
+function esp32Texture() {
+  const { cx, cz, W, D } = ESP;
+  const S = 220;
+  const [c, g] = canvasFor(W, D, S);
+  const U = (x) => (x - cx + W / 2) * S, Z = (z) => (z - cz + D / 2) * S;
+  g.fillStyle = '#4a4b4f'; g.fillRect(0, 0, c.width, c.height);
+  // mounting holes
+  g.fillStyle = '#f3f7fa';
+  for (const x of [ESP.x0 + 0.2, ESP.x1 - 0.2]) for (const z of [cz - 1.02, cz + 1.02]) { g.beginPath(); g.arc(U(x), Z(z), 0.12 * S, 0, Math.PI * 2); g.fill(); }
+  // through-hole pads (square for VIN and 3V3)
+  for (const z of [HEADER_Z, FAR_HEADER_Z]) for (let k = 0; k < 15; k++) {
+    const x = pinColX(k);
+    g.fillStyle = '#c9ccd1'; g.strokeStyle = '#8d9096'; g.lineWidth = 3;
+    if (k === 14) { g.fillRect(U(x) - 0.09 * S, Z(z) - 0.09 * S, 0.18 * S, 0.18 * S); }
+    else { g.beginPath(); g.arc(U(x), Z(z), 0.095 * S, 0, Math.PI * 2); g.fill(); g.stroke(); }
+  }
+  // silkscreen pin names
+  g.fillStyle = '#ffffff'; g.textBaseline = 'middle';
+  g.font = `800 ${0.11 * S}px Nunito, Arial, sans-serif`;
+  const vert = (t, x, z, align) => { g.save(); g.translate(U(x), Z(z)); g.rotate(-Math.PI / 2); g.textAlign = align; g.fillText(t, 0, 0); g.restore(); };
+  NEAR_PINS.forEach((t, k) => vert(t, pinColX(k), HEADER_Z - 0.14, 'left'));
+  FAR_PINS.forEach((t, k) => vert(t, pinColX(k), FAR_HEADER_Z + 0.14, 'right'));
+  vert('EN', ESP.x1 - 0.42, cz + 0.4, 'center');
+  vert('BOOT', ESP.x1 - 0.42, cz - 0.42, 'center');
+  // small surface-mount parts
+  const smd = (x, z, w, d, body) => {
+    g.fillStyle = '#d9dbde'; g.fillRect(U(x - w / 2), Z(z - d / 2), w * S, d * S);
+    g.fillStyle = body; g.fillRect(U(x - w / 2) + 0.03 * S, Z(z - d / 2) + 0.03 * S, (w - 0.06) * S, (d - 0.06) * S);
+  };
+  for (let k = 0; k < 5; k++) smd(0.42, cz + 0.15 - k * 0.15, 0.2, 0.1, '#111');
+  smd(0.32, cz + 0.65, 0.1, 0.2, '#c9a27a'); smd(0.45, cz + 0.65, 0.1, 0.2, '#c9a27a');
+  smd(0.32, cz - 0.68, 0.1, 0.2, '#111'); smd(0.45, cz - 0.68, 0.1, 0.2, '#111');
+  for (const z of [cz + 0.62, cz + 0.32, cz - 0.05]) smd(ESP.x1 - 0.85, z, 0.1, 0.2, '#111');
+  smd(ESP.x1 - 0.85, cz + 0.02, 0.1, 0.2, '#c9a27a');
+  for (const z of [cz - 0.4, cz - 0.7]) smd(ESP.x1 - 0.85, z, 0.1, 0.2, '#111');
+  smd(0.72, cz - 0.7, 0.18, 0.1, '#111');
+  // highlight the pins this lesson uses
+  g.strokeStyle = '#F2B705'; g.lineWidth = 6;
+  roundRect(g, U(pinColX(7) - 0.15), Z(HEADER_Z - 0.62), 0.8 * S, 0.76 * S, 12); g.stroke();
+  roundRect(g, U(pinColX(13) - 0.15), Z(HEADER_Z - 0.62), 0.3 * S, 0.76 * S, 12); g.stroke();
+  return texFrom(c);
+}
+function moduleTexture(w, d) {
+  const S = 220;
+  const [c, g] = canvasFor(w, d, S);
+  g.fillStyle = '#1b1b1c'; g.fillRect(0, 0, c.width, c.height);
+  // castellated pads along both long sides and the inner end
+  g.fillStyle = '#e8d36a';
+  for (let k = 0; k < 13; k++) {
+    const x = (0.62 + k * 0.105) * S;
+    g.fillRect(x, 0, 0.06 * S, 0.07 * S);
+    g.fillRect(x, c.height - 0.07 * S, 0.06 * S, 0.07 * S);
+  }
+  for (let k = 0; k < 10; k++) g.fillRect(c.width - 0.07 * S, (0.32 + k * 0.105) * S, 0.07 * S, 0.06 * S);
+  // printed antenna trace (zig-zag)
+  g.strokeStyle = '#3b3b3d'; g.lineWidth = 0.05 * S; g.lineJoin = 'miter';
+  const pts = [[0.48, 0.1], [0.1, 0.1], [0.1, 0.3], [0.48, 0.3], [0.48, 0.55], [0.1, 0.55], [0.1, 0.78], [0.48, 0.78], [0.48, 1.0], [0.1, 1.0], [0.1, 1.3], [0.36, 1.3]];
+  g.beginPath(); pts.forEach(([x, z], i) => (i ? g.lineTo(x * S, z * S) : g.moveTo(x * S, z * S))); g.stroke();
+  return texFrom(c);
+}
+function shieldTexture(w, d) {
+  const S = 220;
+  const [c, g] = canvasFor(w, d, S);
+  g.fillStyle = '#a7aaae'; g.fillRect(0, 0, c.width, c.height);
+  g.strokeStyle = '#f2f3f4'; g.lineWidth = 6; g.strokeRect(3, 3, c.width - 6, c.height - 6);
+  g.save(); g.translate(c.width / 2, c.height / 2); g.rotate(Math.PI / 2);
+  g.fillStyle = '#f4f5f6'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = `800 ${0.16 * S}px Nunito, Arial, sans-serif`;
+  g.fillText('ESP-WROOM-32', 0, -0.36 * S);
+  g.font = `800 ${0.34 * S}px Nunito, Arial, sans-serif`;
+  g.fillText('C  E', -0.12 * S, 0.02 * S);
+  g.font = `700 ${0.09 * S}px Nunito, Arial, sans-serif`;
+  g.fillText('FCC ID: 2AC7Z-ESPWROOM32', 0, 0.4 * S);
+  g.restore();
+  g.fillStyle = '#111'; g.beginPath(); g.arc(c.width - 0.14 * S, c.height - 0.14 * S, 0.05 * S, 0, Math.PI * 2); g.fill();
+  return texFrom(c);
+}
+function chipTexture(w, d, lines, rot) {
+  const S = 260;
+  const [c, g] = canvasFor(w, d, S);
+  g.fillStyle = '#26272a'; g.fillRect(0, 0, c.width, c.height);
+  g.save(); g.translate(c.width / 2, c.height / 2); g.rotate(rot);
+  g.fillStyle = '#8f9196'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = `600 ${0.075 * S}px 'JetBrains Mono', monospace`;
+  lines.forEach((t, i) => g.fillText(t, 0, (i - (lines.length - 1) / 2) * 0.09 * S));
+  g.restore();
+  return texFrom(c);
+}
+function topBox(w, h, d, sideMat, tex, x, y, z, tint = 0xffffff) {
+  const m = [sideMat, sideMat, new THREE.MeshStandardMaterial({ map: tex, color: tint, roughness: 0.5 }), sideMat, sideMat, sideMat];
+  return mesh(new THREE.BoxGeometry(w, h, d), m, x, y, z);
+}
+
+function makeESP32() {
+  const g = new THREE.Group();
+  const { cx, cz, W, D, y } = ESP;
+  const top = y + 0.03;
+  const pcb = mat(0x46474b, { roughness: 0.6 });
+  g.add(topBox(W, 0.06, D, pcb, esp32Texture(), cx, y, cz));
+  const dark = mat(0x1d1e21, { roughness: 0.5 });
+  const silver = mat(0xd3d6da, { metalness: 0.45, roughness: 0.3 });
+  // rubber feet under the mounting holes
+  for (const x of [ESP.x0 + 0.2, ESP.x1 - 0.2]) for (const z of [cz - 1.02, cz + 1.02]) g.add(mesh(new THREE.CylinderGeometry(0.12, 0.12, y + 0.4 - 0.03, 12), dark, x, (-0.4 + y - 0.03) / 2, z));
+  // header strips with pins pointing up (female jumper ends slide onto them)
+  const pinGeo = new THREE.BoxGeometry(0.05, 0.3, 0.05);
+  const pinMat = mat(0xd9b44a, { metalness: 0.4, roughness: 0.35 });
+  for (const z of [HEADER_Z, FAR_HEADER_Z]) {
+    g.add(mesh(new THREE.BoxGeometry(15 * P, 0.08, 0.22), dark, 0, top + 0.04, z));
+    for (let k = 0; k < 15; k++) g.add(mesh(pinGeo, pinMat, pinColX(k), top + 0.2, z, false));
+  }
+  // ESP-WROOM-32 module: black carrier with antenna trace, metal shield
+  const mx0 = ESP.x0 + 0.04, mx1 = pinColX(7) + 0.05, mw = mx1 - mx0, md = 1.44;
+  g.add(topBox(mw, 0.06, md, dark, moduleTexture(mw, md), (mx0 + mx1) / 2, top + 0.03, cz));
+  const sw = 1.52, sd = 1.32, sx = mx1 - 0.06 - sw / 2;
+  g.add(topBox(sw, 0.1, sd, silver, shieldTexture(sw, sd), sx, top + 0.11, cz, 0x9a9da2));
+  // power LED (red, lit when powered) and GPIO2 LED (blue)
+  g.add(mesh(new THREE.BoxGeometry(0.16, 0.05, 0.09), mat(0xff2a2a, { emissive: 0xff2020, emissiveIntensity: 0.9 }), 0.42, top + 0.025, cz + 0.45, false));
+  g.add(mesh(new THREE.BoxGeometry(0.16, 0.05, 0.09), mat(0x2aa7e0, { roughness: 0.4 }), 0.42, top + 0.025, cz - 0.45, false));
+  // AMS1117 regulator and CP2102 USB chip
+  g.add(topBox(0.57, 0.12, 0.28, dark, chipTexture(0.57, 0.28, ['AMS1117', '3.3'], 0), 1.3, top + 0.06, cz + 0.48));
+  g.add(mesh(new THREE.BoxGeometry(0.2, 0.03, 0.3), silver, 1.3, top + 0.015, cz + 0.72, false));
+  g.add(topBox(0.44, 0.08, 0.44, dark, chipTexture(0.44, 0.44, ['CP2102', 'DCL0CH'], 0), 1.34, top + 0.04, cz - 0.56));
+  // EN and BOOT buttons either side of the micro-USB socket
+  for (const z of [cz + 0.71, cz - 0.71]) {
+    g.add(mesh(new THREE.BoxGeometry(0.43, 0.12, 0.25), silver, ESP.x1 - 0.25, top + 0.06, z));
+    g.add(mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.08, 16), dark, ESP.x1 - 0.25, top + 0.15, z));
+  }
+  g.add(mesh(new THREE.BoxGeometry(0.5, 0.2, 0.68), silver, ESP.x1 - 0.17, top + 0.1, cz));
+  tagPart(g, 'controller');
+  return g;
+}
+
+/* ---------- LED ---------- */
+function flangeGeometry(r, h) {
+  const s = new THREE.Shape();
+  const cut = 0.8 * r, a = Math.acos(cut / r);
+  s.absarc(0, 0, r, a, Math.PI * 2 - a, false);
+  s.lineTo(cut, r * Math.sin(a));
+  const geo = new THREE.ExtrudeGeometry(s, { depth: h, bevelEnabled: false, curveSegments: 28 });
+  geo.rotateX(-Math.PI / 2);
+  return geo;
+}
+let glowTexture = null;
+function getGlowTexture() {
+  if (glowTexture) return glowTexture;
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const g = c.getContext('2d');
+  const grd = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  grd.addColorStop(0, 'rgba(255,255,255,1)'); grd.addColorStop(0.25, 'rgba(255,255,255,.55)'); grd.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grd; g.fillRect(0, 0, 128, 128);
+  glowTexture = new THREE.CanvasTexture(c);
+  return glowTexture;
+}
+// LED colours: OFF is dark tinted plastic and ON is the pure colour with a coloured halo, so nobody can mix them up
+function ledColours(hex) {
+  const hsl = {}; new THREE.Color(hex).getHSL(hsl);
+  const c = (s, l) => new THREE.Color().setHSL(hsl.h, s, l);
+  return { base: c(1, 0.32), hot: c(1, 0.5), halo: c(1, 0.55), dim: c(hsl.s * 0.55, 0.13) };
+}
+function makeLED(hex, scale = 1, legs = [0.5, 0.5], spread = P) {
+  const g = new THREE.Group();
+  const s = scale;
+  const leg = mat(0xc9ced4, { metalness: 0.3, roughness: 0.35 });
+  const legTop = 0.45 * s;
+  const anode = rod(V(0, legTop - legs[0] * s, 0), V(0, legTop, 0), 0.018 * s, leg);
+  const cathode = rod(V(spread, legTop - legs[1] * s, 0), V(spread, legTop, 0), 0.018 * s, leg);
+  g.add(anode, cathode);
+  const body = mat(hex, { transparent: true, opacity: 0.93, roughness: 0.25, emissive: hex, emissiveIntensity: 0 });
+  const cx = spread / 2;
+  const flange = mesh(flangeGeometry(0.29 * s, 0.06 * s), body, cx, legTop, 0);
+  const barrel = mesh(new THREE.CylinderGeometry(0.25 * s, 0.25 * s, 0.32 * s, 28), body, cx, legTop + 0.06 * s + 0.16 * s, 0);
+  const dome = mesh(new THREE.SphereGeometry(0.25 * s, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2), body, cx, legTop + 0.38 * s, 0);
+  g.add(flange, barrel, dome);
+  const light = new THREE.PointLight(hex, 0, 4.5 * s, 2);
+  light.position.set(cx, legTop + 0.4 * s, 0);
+  g.add(light);
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: getGlowTexture(), color: hex, transparent: true, opacity: 0, depthWrite: false }));
+  glow.scale.set(1.7 * s, 1.7 * s, 1);
+  glow.position.set(cx, legTop + 0.35 * s, 0);
+  g.add(glow);
+  g.userData.led = Object.assign({ body, light, glow }, ledColours(hex));
+  glow.material.color.copy(g.userData.led.halo); body.emissive.copy(g.userData.led.hot);
+  body.color.copy(g.userData.led.dim);
+  return g;
+}
+
+/* ---------- resistor (330 Ω: orange, orange, brown, gold) ---------- */
+function makeResistor() {
+  const g = new THREE.Group();
+  const lead = mat(0xc9ced4, { metalness: 0.3, roughness: 0.35 });
+  const zA = ROWZ.d, zB = ROWZ.g, yb = 0.3, half = 0.27;
+  g.add(rod(V(0, -0.05, zA), V(0, yb, zA), 0.016, lead));
+  g.add(rod(V(0, -0.05, zB), V(0, yb, zB), 0.016, lead));
+  g.add(rod(V(0, yb, zA), V(0, yb, -half), 0.016, lead));
+  g.add(rod(V(0, yb, half), V(0, yb, zB), 0.016, lead));
+  const bodyMat = mat(0xd8c08e, { roughness: 0.5 });
+  const body = mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.42, 20), bodyMat, 0, yb, 0);
+  body.rotation.x = Math.PI / 2;
+  g.add(body);
+  for (const z of [-0.2, 0.2]) g.add(mesh(new THREE.SphereGeometry(0.1, 16, 12), bodyMat, 0, yb, z));
+  const bands = [[-0.17, 0xf08a24], [-0.08, 0xf08a24], [0.01, 0x7a4a22], [0.17, 0xc9a227]];
+  for (const [z, col] of bands) {
+    const b = mesh(new THREE.CylinderGeometry(0.094, 0.094, 0.045, 20), mat(col, { roughness: 0.4, metalness: col === 0xc9a227 ? 0.6 : 0 }), 0, yb, z);
+    b.rotation.x = Math.PI / 2;
+    g.add(b);
+  }
+  return g;
+}
+
+/* ---------- jumper wire ---------- */
+const SEGS = 120, RADIAL = 10;
+function makeWire(points, color) {
+  const g = new THREE.Group();
+  const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
+  const geo = new THREE.TubeGeometry(curve, SEGS, 0.045, RADIAL, false);
+  const tube = mesh(geo, mat(color, { roughness: 0.45 }));
+  g.add(tube);
+  const sleeveMat = mat(0x24272c, { roughness: 0.5 });
+  const pinMat = metal;
+  const ends = [];
+  for (const p of [points[0], points[points.length - 1]]) {
+    const e = new THREE.Group();
+    e.add(mesh(new THREE.CylinderGeometry(0.06, 0.06, SLEEVE, 12), sleeveMat, p.x, p.y - SLEEVE / 2, p.z));
+    e.add(mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.12, 8), pinMat, p.x, p.y - SLEEVE - 0.05, p.z));
+    g.add(e); ends.push(e);
+  }
+  const w = { group: g, curve, geo, ends, progress: 1 };
+  w.set = (f) => {
+    w.progress = f;
+    geo.setDrawRange(0, Math.floor(f * SEGS) * RADIAL * 6);
+    ends[0].visible = f > 0;
+    ends[1].visible = f >= 1;
+  };
+  tagPart(g, 'wire');
+  return w;
+}
+
+/* ---------- push button (tactile switch): four legs, the cap goes down when pressed ---------- */
+let btnCap = null;
+function makeButton() {
+  const g = new THREE.Group();
+  const leg = mat(0xc9ced4, { metalness: 0.3, roughness: 0.35 });
+  for (const x of [-P, P]) for (const z of [ROWZ.e, ROWZ.f]) {
+    g.add(rod(V(x, -0.05, z), V(x, 0.2, z), 0.016, leg));
+    g.add(rod(V(x, 0.2, z), V(x, 0.2, Math.sign(z) * 0.27), 0.016, leg));
+  }
+  g.add(mesh(new THREE.BoxGeometry(0.64, 0.2, 0.6), mat(0x2b2f35, { roughness: 0.55 }), 0, 0.22, 0));
+  g.add(mesh(new THREE.BoxGeometry(0.5, 0.025, 0.5), metal, 0, 0.335, 0));
+  btnCap = new THREE.Group();
+  btnCap.add(mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.14, 28), mat(0x2f6fde, { roughness: 0.35 }), 0, 0.41, 0));
+  btnCap.add(mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.016, 24), mat(0x7fa8ff, { roughness: 0.3 }), 0, 0.485, 0, false));
+  g.add(btnCap);
+  tagPart(g, 'button');
+  return g;
+}
+
+/* ---------- resistor lying along a row (330 Ω: orange, orange, brown, gold; 10 kΩ: brown, black, orange, gold) ---------- */
+function makeResistorFlat(span, bands) {
+  const g = new THREE.Group();
+  const lead = mat(0xc9ced4, { metalness: 0.3, roughness: 0.35 });
+  const half = span / 2, yb = 0.3, bodyHalf = 0.27;
+  for (const sx of [-1, 1]) {
+    g.add(rod(V(sx * half, -0.05, 0), V(sx * half, yb, 0), 0.016, lead));
+    g.add(rod(V(sx * half, yb, 0), V(sx * bodyHalf, yb, 0), 0.016, lead));
+  }
+  const bodyMat = mat(0xd8c08e, { roughness: 0.5 });
+  const body = mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.42, 20), bodyMat, 0, yb, 0);
+  body.rotation.z = Math.PI / 2;
+  g.add(body);
+  for (const x of [-0.2, 0.2]) g.add(mesh(new THREE.SphereGeometry(0.1, 16, 12), bodyMat, x, yb, 0));
+  for (const [x, col] of (bands || [[-0.17, 0xf08a24], [-0.08, 0xf08a24], [0.01, 0x7a4a22], [0.17, 0xc9a227]])) {
+    const b = mesh(new THREE.CylinderGeometry(0.094, 0.094, 0.045, 20), mat(col, { roughness: 0.4, metalness: col === 0xc9a227 ? 0.6 : 0 }), x, yb, 0);
+    b.rotation.z = Math.PI / 2;
+    g.add(b);
+  }
+  tagPart(g, 'resistor');
+  return g;
+}
+
+/* ---------- passive buzzer: a black disc with a sound hole; the + leg is the far one (row e) ---------- */
+let buzzBody = null;
+function buzzerTopTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d');
+  g.strokeStyle = '#4a4f57'; g.lineWidth = 6;
+  g.beginPath(); g.arc(128, 128, 112, 0, Math.PI * 2); g.stroke();
+  g.fillStyle = '#050607'; g.beginPath(); g.arc(128, 128, 30, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#e8ecef'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = '800 56px Nunito, Arial, sans-serif';
+  g.fillText('+', 128, 52);
+  g.font = '800 22px Nunito, Arial, sans-serif';
+  g.fillText('PASSIVE', 128, 212);
+  return texFrom(c);
+}
+function makeBuzzer() {
+  const g = new THREE.Group();
+  const leg = mat(0xc9ced4, { metalness: 0.3, roughness: 0.35 });
+  for (const z of [ROWZ.e, ROWZ.f]) g.add(rod(V(0, -0.05, z), V(0, 0.26, z), 0.018, leg));
+  buzzBody = new THREE.Group();
+  const shell = mat(0x1c1e22, { roughness: 0.45 });
+  buzzBody.add(mesh(new THREE.CylinderGeometry(0.55, 0.57, 0.5, 40), shell, 0, 0.45, 0));
+  buzzBody.add(mesh(new THREE.CylinderGeometry(0.5, 0.55, 0.05, 40), mat(0x2d3036, { roughness: 0.5 }), 0, 0.725, 0));
+  const top = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.0), new THREE.MeshStandardMaterial({ map: buzzerTopTexture(), transparent: true, roughness: 0.5 }));
+  top.rotation.x = -Math.PI / 2; top.position.y = 0.753;
+  buzzBody.add(top);
+  g.add(buzzBody);
+  tagPart(g, 'buzzer');
+  return g;
+}
+
+/* ---------- guide character: Officer Ohm ---------- */
+function makeCop() {
+  const g = new THREE.Group();
+  const navy = mat(0x2c4e9e, { roughness: 0.7 }), dark = mat(0x1f2a3d, { roughness: 0.7 });
+  const skin = mat(0xf2c9a0, { roughness: 0.8 }), gold = mat(0xf2b705, { metalness: 0.4, roughness: 0.35 });
+  const ink = mat(0x15202a, { roughness: 0.5 });
+  for (const sx of [-0.16, 0.16]) {
+    g.add(mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.7, 14), dark, sx, 0.4, 0));
+    g.add(mesh(new THREE.BoxGeometry(0.24, 0.12, 0.36), ink, sx, 0.06, 0.06));
+  }
+  g.add(mesh(new THREE.CylinderGeometry(0.36, 0.42, 0.9, 20), navy, 0, 1.18, 0));
+  g.add(mesh(new THREE.CylinderGeometry(0.43, 0.43, 0.1, 20), ink, 0, 0.8, 0));
+  g.add(mesh(new THREE.BoxGeometry(0.14, 0.1, 0.05), gold, 0, 0.8, 0.42));
+  g.add(mesh(new THREE.BoxGeometry(0.13, 0.15, 0.04), gold, -0.16, 1.38, 0.37));
+  g.add(mesh(new THREE.SphereGeometry(0.4, 24, 18), skin, 0, 1.98, 0));
+  for (const sx of [-0.14, 0.14]) {
+    g.add(mesh(new THREE.SphereGeometry(0.05, 10, 8), ink, sx, 2.03, 0.36, false));
+    g.add(mesh(new THREE.SphereGeometry(0.07, 10, 8), mat(0xf4a6a0, { roughness: 0.9 }), sx * 1.6, 1.9, 0.32, false));
+  }
+  const smile = mesh(new THREE.TorusGeometry(0.11, 0.022, 8, 18, Math.PI), ink, 0, 1.9, 0.37, false);
+  smile.rotation.z = Math.PI;
+  g.add(smile);
+  g.add(mesh(new THREE.CylinderGeometry(0.4, 0.37, 0.26, 24), dark, 0, 2.38, 0));
+  g.add(mesh(new THREE.CylinderGeometry(0.45, 0.4, 0.06, 24), dark, 0, 2.52, -0.02));
+  g.add(mesh(new THREE.CylinderGeometry(0.41, 0.41, 0.07, 24), ink, 0, 2.27, 0));
+  const brim = mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.04, 20, 1, false, -Math.PI / 2, Math.PI), ink, 0, 2.25, 0.25);
+  g.add(brim);
+  g.add(mesh(new THREE.SphereGeometry(0.07, 12, 10), gold, 0, 2.4, 0.38));
+  const armL = new THREE.Group(); armL.position.set(-0.46, 1.52, 0);
+  armL.add(mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.62, 12), navy, 0, -0.3, 0));
+  armL.add(mesh(new THREE.SphereGeometry(0.11, 12, 10), skin, 0, -0.64, 0));
+  armL.rotation.z = -0.15;
+  const armR = new THREE.Group(); armR.position.set(0.46, 1.52, 0);
+  armR.add(mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.62, 12), navy, 0, -0.3, 0));
+  armR.add(mesh(new THREE.SphereGeometry(0.11, 12, 10), skin, 0, -0.64, 0));
+  armR.rotation.z = 0.15;
+  g.add(armL, armR);
+  g.userData.armR = armR;
+  tagPart(g, 'cop');
+  return g;
+}
+
+/* ---------- enlarged LED on a display stand ---------- */
+function makeBigLED() {
+  const g = new THREE.Group();
+  g.add(mesh(new THREE.CylinderGeometry(1.0, 1.1, 0.2, 32), mat(0xffffff, { roughness: 0.6 }), 0, 0.1, 0));
+  g.add(mesh(new THREE.BoxGeometry(0.12, 2.1, 0.12), mat(0xbfe6f0, { transparent: true, opacity: 0.45, roughness: 0.1 }), 0.35, 1.15, -0.55));
+  g.add(mesh(new THREE.BoxGeometry(0.8, 0.08, 0.12), mat(0xbfe6f0, { transparent: true, opacity: 0.45, roughness: 0.1 }), 0.35, 2.2, -0.55));
+  const led = makeLED(0xff3030, 2.6, [0.75, 0.5], 0.7);
+  led.position.set(0, 1.0, 0);
+  led.userData.led.body.color.copy(led.userData.led.base);
+  led.userData.led.body.emissiveIntensity = 0.2;
+  g.add(led);
+  tagPart(g, 'led');
+  return g;
+}
+/* =========================================================
+   Build the scene
+   ========================================================= */
+const breadboard = makeBreadboard();
+scene.add(breadboard);
+const esp32 = makeESP32();
+scene.add(esp32);
+
+/* ---------- light sensor (LDR): two legs, a disc with a zig-zag track on top ---------- */
+function ldrTopTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = '#e9dcb4'; g.beginPath(); g.arc(128, 128, 126, 0, Math.PI * 2); g.fill();
+  g.save(); g.beginPath(); g.arc(128, 128, 100, 0, Math.PI * 2); g.clip();
+  g.fillStyle = '#c9b57a'; g.fillRect(0, 0, 256, 256);
+  g.strokeStyle = '#7a3b1e'; g.lineWidth = 15; g.lineJoin = 'round';
+  g.beginPath();
+  for (let k = 0; k < 6; k++) {
+    const y = 40 + k * 34, x0 = k % 2 ? 214 : 42, x1 = k % 2 ? 42 : 214;
+    if (k === 0) g.moveTo(x0, y); else g.lineTo(x0, y);
+    g.lineTo(x1, y);
+  }
+  g.stroke();
+  g.restore();
+  g.strokeStyle = '#8c7a52'; g.lineWidth = 8; g.beginPath(); g.arc(128, 128, 118, 0, Math.PI * 2); g.stroke();
+  return texFrom(c);
+}
+function makeLDR() {
+  const g = new THREE.Group();
+  const leg = mat(0xc9ced4, { metalness: 0.3, roughness: 0.35 });
+  for (const z of [ROWZ.e, ROWZ.f]) g.add(rod(V(0, -0.05, z), V(0, 0.3, z), 0.018, leg));
+  g.add(mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.16, 36), mat(0xb9a56e, { roughness: 0.5 }), 0, 0.38, 0));
+  const top = new THREE.Mesh(new THREE.CircleGeometry(0.33, 40), new THREE.MeshStandardMaterial({ map: ldrTopTexture(), roughness: 0.3 }));
+  top.rotation.x = -Math.PI / 2; top.position.y = 0.462;
+  g.add(top);
+  tagPart(g, 'ldr');
+  return g;
+}
+
+/* ---------- the light sensor stays wired from lesson 6, and a Wi-Fi router joins the bench ---------- */
+const LDR_COL = 11, LRES_COL = 14;
+const ROUTER_AT = V(-5.0, -0.4, -4.6);
+const RADIO_ROUTER = V(-5.0, 1.55, -4.6);
+const RADIO_ESP = V(-1.0, 1.0, -4.8);
+const router = (function () {
+  const g = new THREE.Group();
+  const shell = mat(0xf2f4f7, { roughness: 0.4 }), dark = mat(0x2a2f36, { roughness: 0.6 });
+  g.add(mesh(new THREE.BoxGeometry(3.0, 0.4, 1.7), shell, 0, 0.2, 0));
+  g.add(mesh(new THREE.BoxGeometry(2.7, 0.06, 1.4), dark, 0, 0.42, 0));
+  [-0.9, 0.9].forEach((x) => {
+    const a = mesh(new THREE.CylinderGeometry(0.07, 0.07, 1.6, 12), dark, x, 1.15, -0.55);
+    a.rotation.z = x < 0 ? 0.12 : -0.12;
+    g.add(a);
+    g.add(mesh(new THREE.SphereGeometry(0.1, 12, 8), dark, x + (x < 0 ? -0.1 : 0.1), 1.95, -0.55));
+  });
+  const lampMat = new THREE.MeshStandardMaterial({ color: 0x1f6b3a, emissive: 0x22d36b, emissiveIntensity: 0.9, roughness: 0.4 });
+  [-0.6, -0.3, 0].forEach((x) => g.add(mesh(new THREE.SphereGeometry(0.07, 12, 8), lampMat, x, 0.47, 0.5, false)));
+  g.userData.lampMat = lampMat;
+  g.position.copy(ROUTER_AT);
+  g.position.y = ROUTER_AT.y;
+  return g;
+})();
+tagPart(router, 'router');
+scene.add(router);
+
+// radio waves: soft bubbles that grow from the router's antennas and fade, and message dots between the router and the ESP32
+const waveMat = new THREE.MeshBasicMaterial({ color: 0x2f6fde, transparent: true, opacity: 0, depthWrite: false, side: THREE.BackSide });
+const waves = [0, 1, 2].map(() => {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 14), waveMat.clone());
+  m.position.copy(RADIO_ROUTER); m.renderOrder = 2; m.visible = false;
+  scene.add(m); return m;
+});
+const msgCurve = new THREE.QuadraticBezierCurve3(RADIO_ESP, V(-3.0, 4.2, -4.7), RADIO_ROUTER);
+const msgDots = [0, 1, 2, 3, 4, 5].map(() => {
+  const d = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 8), new THREE.MeshBasicMaterial({ color: 0x2f6fde, depthTest: false, transparent: true, opacity: 0.95 }));
+  d.renderOrder = 10; d.visible = false; scene.add(d); return d;
+});
+let waveT = 0;
+function updateWifiFx(dt) {
+  const st = sim.state;
+  const active = st === 'connecting' || st === 'connected' || st === 'failed';
+  waveT += dt * (st === 'connected' ? 0.35 : 0.6);
+  const col = st === 'failed' ? 0xd94141 : 0x2f6fde;
+  waves.forEach((w, i) => {
+    w.visible = active;
+    if (!active) return;
+    const f = (waveT + i / 3) % 1;
+    w.scale.setScalar(0.4 + f * 2.2);
+    w.material.color.setHex(col);
+    w.material.opacity = 0.16 * (1 - f) * (st === 'connected' ? 0.6 : 1);
+  });
+  const moving = st === 'connecting' || st === 'connected';
+  msgDots.forEach((d, i) => {
+    d.visible = moving;
+    if (!moving) return;
+    const f = ((waveT * 1.4 + i / msgDots.length) % 1);
+    d.position.copy(msgCurve.getPoint(st === 'connected' && i % 2 ? 1 - f : f));
+  });
+  router.userData.lampMat.emissiveIntensity = st === 'failed' ? 0.15 : 0.55 + 0.45 * Math.sin(waveT * 12) ** 2;
+}
+
+
+
+const leds = [], resistors = [], pinWires = [], cathodeWires = [];
+CH.forEach((ch, i) => {
+  const led = makeLED(ch.hex);
+  led.position.set(colX(ch.col), 0, ROWZ.i);
+  tagPart(led, 'led');
+  scene.add(led); leds.push(led);
+
+  const r = makeResistor();
+  r.position.set(colX(ch.col), 0, 0);
+  tagPart(r, 'resistor');
+  scene.add(r); resistors.push(r);
+
+  const A = pinAt(ch.pin, HEADER_TOP + SLEEVE), B = holeAt(ch.col, 'b', SLEEVE);
+  const h = [0, 0.18, 0.36][i];
+  const w = makeWire([
+    A, V(A.x, A.y + 0.45 + h, A.z + 0.12),
+    V((A.x + B.x) / 2, 1.5 + h, (A.z + B.z) / 2 - 0.1),
+    V(B.x, B.y + 0.55, B.z - 0.18), B,
+  ], ch.wire);
+  scene.add(w.group); pinWires.push(w);
+
+  const cA = holeAt(ch.col + 1, 'j', SLEEVE), cB = railAt(ch.col + 1, SLEEVE);
+  const k = makeWire([cA, V(cA.x, cA.y + 0.14, cA.z + 0.2), V(cB.x, cB.y + 0.14, cB.z - 0.2), cB], 0x2b2b2e);
+  scene.add(k.group); cathodeWires.push(k);
+});
+const gA = pinAt('GND', HEADER_TOP + SLEEVE), gB = railAt(30, SLEEVE);
+const gndWire = makeWire([gA, V(1.55, 0.85, -3.3), V(3.3, 1.5, -2.6), V(4.6, 1.35, -0.6), V(4.45, 1.0, 1.5), V(gB.x, 0.72, gB.z), gB], 0x2b2b2e);
+scene.add(gndWire.group);
+
+// push button (lesson 3) and passive buzzer (lesson 5): still wired, today's program does not use them
+const btnGroup = makeButton();
+btnGroup.position.set(colX(3), 0, 0);
+scene.add(btnGroup);
+const bwA = pinAt('D32', HEADER_TOP + SLEEVE), bwB = holeAt(2, 'b', SLEEVE);
+const btnWire = makeWire([
+  bwA, V(bwA.x, bwA.y + 0.5, bwA.z + 0.12),
+  V((bwA.x + bwB.x) / 2, 1.7, (bwA.z + bwB.z) / 2 - 0.1),
+  V(bwB.x, bwB.y + 0.55, bwB.z - 0.18), bwB,
+], 0x2f6fde);
+scene.add(btnWire.group);
+const bgA = holeAt(2, 'j', SLEEVE), bgB = railAt(2, SLEEVE);
+const btnGndWire = makeWire([bgA, V(bgA.x, bgA.y + 0.14, bgA.z + 0.2), V(bgB.x, bgB.y + 0.14, bgB.z - 0.2), bgB], 0x2b2b2e);
+scene.add(btnGndWire.group);
+const bzGroup = makeBuzzer();
+bzGroup.position.set(colX(29), 0, 0);
+scene.add(bzGroup);
+const bzRes = makeResistorFlat(colX(29) - colX(25));
+bzRes.position.set((colX(25) + colX(29)) / 2, 0, ROWZ.c);
+scene.add(bzRes);
+const zwA = pinAt('D13', HEADER_TOP + SLEEVE), zwB = holeAt(25, 'b', SLEEVE);
+const buzzWire = makeWire([
+  zwA, V(zwA.x, zwA.y + 0.5, zwA.z + 0.12),
+  V((zwA.x + zwB.x) / 2, 2.2, (zwA.z + zwB.z) / 2 - 0.1),
+  V(zwB.x, zwB.y + 0.55, zwB.z - 0.18), zwB,
+], 0xe8862a);
+scene.add(buzzWire.group);
+const zgA = holeAt(29, 'j', SLEEVE), zgB = railAt(29, SLEEVE);
+const buzzGndWire = makeWire([zgA, V(zgA.x, zgA.y + 0.14, zgA.z + 0.2), V(zgB.x, zgB.y + 0.14, zgB.z - 0.2), zgB], 0x2b2b2e);
+scene.add(buzzGndWire.group);
+
+// the light sensor: LDR across the gap in column 11 (rows e and f), a 10 kΩ resistor along row i from column 11 to 14,
+// a black wire from column 14 to the ground rail, D33 to the bottom of column 11 (the middle point) and 3V3 to the top of column 11
+const ldrGroup = makeLDR();
+ldrGroup.position.set(colX(LDR_COL), 0, 0);
+scene.add(ldrGroup);
+const lRes = makeResistorFlat(colX(LRES_COL) - colX(LDR_COL), [[-0.17, 0x7a4a22], [-0.08, 0x1a1a1d], [0.01, 0xf08a24], [0.17, 0xc9a227]]);
+lRes.position.set((colX(LDR_COL) + colX(LRES_COL)) / 2, 0, ROWZ.i);
+tagPart(lRes, 'bigres');
+scene.add(lRes);
+const lgA = holeAt(LRES_COL, 'j', SLEEVE), lgB = railAt(LRES_COL, SLEEVE);
+const ldrGndWire = makeWire([lgA, V(lgA.x, lgA.y + 0.14, lgA.z + 0.2), V(lgB.x, lgB.y + 0.14, lgB.z - 0.2), lgB], 0x2b2b2e);
+scene.add(ldrGndWire.group);
+const lwA = pinAt('D33', HEADER_TOP + SLEEVE), lwB = holeAt(LDR_COL, 'h', SLEEVE);
+const ldrSigWire = makeWire([
+  lwA, V(lwA.x, lwA.y + 0.5, lwA.z + 0.12),
+  V((lwA.x + lwB.x) / 2 - 0.3, 2.0, (lwA.z + lwB.z) / 2 - 0.1),
+  V(lwB.x - 0.55, 1.0, -0.7), V(lwB.x - 0.5, 0.65, 0.6), V(lwB.x - 0.12, lwB.y + 0.3, lwB.z), lwB,
+], 0x8a5cd6);
+scene.add(ldrSigWire.group);
+const lpA = pinAt('3V3', HEADER_TOP + SLEEVE), lpB = holeAt(LDR_COL, 'b', SLEEVE);
+const ldrPowWire = makeWire([
+  lpA, V(lpA.x, lpA.y + 0.6, lpA.z + 0.15),
+  V((lpA.x + lpB.x) / 2, 2.8, (lpA.z + lpB.z) / 2),
+  V(lpB.x, lpB.y + 0.55, lpB.z - 0.18), lpB,
+], 0xe0413b);
+scene.add(ldrPowWire.group);
+
+const cop = makeCop();
+cop.position.set(-5.9, -0.4, 1.6);
+cop.rotation.y = 0.45;
+scene.add(cop);
+
+const PARTS = {};
+CH.forEach((_, i) => {
+  PARTS['res' + i] = { obj: resistors[i] };
+  PARTS['led' + i] = { obj: leds[i] };
+  PARTS['w' + i] = { obj: pinWires[i].group, wire: pinWires[i] };
+  PARTS['k' + i] = { obj: cathodeWires[i].group, wire: cathodeWires[i] };
+});
+PARTS.gnd = { obj: gndWire.group, wire: gndWire };
+PARTS.btn = { obj: btnGroup };
+PARTS.bw = { obj: btnWire.group, wire: btnWire };
+PARTS.bg = { obj: btnGndWire.group, wire: btnGndWire };
+PARTS.bz = { obj: bzGroup };
+PARTS.bzr = { obj: bzRes };
+PARTS.bzw = { obj: buzzWire.group, wire: buzzWire };
+PARTS.bzg = { obj: buzzGndWire.group, wire: buzzGndWire };
+PARTS.ldr = { obj: ldrGroup };
+PARTS.lres = { obj: lRes };
+PARTS.lg = { obj: ldrGndWire.group, wire: ldrGndWire };
+PARTS.lw = { obj: ldrSigWire.group, wire: ldrSigWire };
+PARTS.lp = { obj: ldrPowWire.group, wire: ldrPowWire };
+const ALL_PARTS = Object.keys(PARTS);
+const NEW_PARTS = [];
+function setPart(id, on) {
+  const p = PARTS[id];
+  p.obj.visible = on;
+  p.obj.position.y = 0;
+  if (p.wire) p.wire.set(on ? 1 : 0);
+}
+
+/* ---------- lights: the program switches them (one at a time) ---------- */
+let litIndex = -1;
+function setLights(idx) {
+  if (idx === litIndex) return;
+  litIndex = idx;
+  leds.forEach((led, i) => {
+    const on = i === idx;
+    const L = led.userData.led;
+    L.body.color.copy(on ? L.base : L.dim);
+    L.body.emissiveIntensity = on ? 0.9 : 0;
+    L.body.opacity = on ? 0.97 : 0.93;
+    L.light.intensity = on ? 2.4 : 0;
+    L.glow.material.opacity = on ? 0.7 : 0;
+  });
+}
+
+/* =========================================================
+   Labels that stay readable while the camera moves
+   ========================================================= */
+const labelLayer = $('#labels');
+const labels = [];
+let showLabels = true;
+function addLabel(html, posFn, opt = {}) {
+  const el = document.createElement('div');
+  el.className = 'lbl ' + (opt.cls || '');
+  if (opt.lift != null) el.style.setProperty('--lift', opt.lift + 'px');
+  el.innerHTML = '<span>' + html + '</span>';
+  labelLayer.appendChild(el);
+  const L = { el, pos: typeof posFn === 'function' ? posFn : () => posFn, obj: opt.obj || null, kind: opt.kind || 'part', update: opt.update || null };
+  labels.push(L);
+  return L;
+}
+function removeLabel(L) {
+  const i = labels.indexOf(L);
+  if (i >= 0) labels.splice(i, 1);
+  L.el.remove();
+}
+function visibleInScene(o) {
+  while (o) { if (!o.visible) return false; o = o.parent; }
+  return true;
+}
+const tmpV = new THREE.Vector3();
+function updateLabels() {
+  const w = labelLayer.clientWidth, h = labelLayer.clientHeight;
+  for (const L of labels) {
+    let show = L.kind === 'callout' || (showLabels && (!L.obj || visibleInScene(L.obj)));
+    if (show) {
+      tmpV.copy(L.pos()).project(camera);
+      if (tmpV.z > 1 || tmpV.z < -1) show = false;
+    }
+    if (!show) { if (L.el.style.display !== 'none') L.el.style.display = 'none'; continue; }
+    if (L.el.style.display === 'none') L.el.style.display = '';
+    if (L.update) L.update(L);
+    const x = (tmpV.x + 1) / 2 * w, y = (1 - tmpV.y) / 2 * h;
+    L.el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+  }
+}
+
+// Part labels
+CH.forEach((ch, i) => {
+  const x = colX(ch.col) + P / 2;
+  addLabel(`<i class="dot" style="background:#${ch.hex.toString(16).padStart(6, '0')}"></i>${ch.name.toUpperCase()} LED`,
+    V(x, 1.15, ROWZ.i),
+    { obj: leds[i], cls: 'lamp ' + ch.key, lift: 58 });
+  addLabel('330 Ω', V(colX(ch.col) - 0.05, 0.42, -0.15), { obj: resistors[i], lift: 8 });
+});
+addLabel('ESP32 DevKit (controller)', V(-1.0, 0.0, ESP.cz), { obj: esp32, lift: 6 });
+addLabel('Breadboard', V(-3.9, 0.02, 2.55), { obj: breadboard, lift: 6 });
+addLabel('Ground rail (−)', V(colX(3), 0.02, NEG_RAIL_Z), { obj: breadboard, lift: 34 });
+addLabel('Jumper wire', () => gndWire.curve.getPoint(0.45), { obj: gndWire.group, lift: 12 });
+addLabel('Officer Ohm', V(-5.9, 2.7, 1.6), { obj: cop, lift: 8 });
+addLabel('Push button', V(colX(3), 0.62, 0), { obj: btnGroup, lift: 40 });
+addLabel('Passive buzzer', V(colX(29), 0.8, 0), { obj: bzGroup, lift: 40 });
+addLabel('330 Ω', V((colX(25) + colX(29)) / 2, 0.42, ROWZ.c), { obj: bzRes, lift: 14 });
+addLabel('LDR (light sensor)', V(colX(LDR_COL), 0.62, 0), { obj: ldrGroup, cls: 'lamp', lift: 44 });
+addLabel('10 kΩ', V((colX(LDR_COL) + colX(LRES_COL)) / 2, 0.42, ROWZ.i), { obj: lRes, lift: 16 });
+addLabel('Wi-Fi router', V(RADIO_ROUTER.x, 0.9, RADIO_ROUTER.z), { obj: router, lift: 30 });
+const pinLabels = ['D25', 'D26', 'D27', 'D32', 'D33', 'D13', 'GND', '3V3'].map((n, i) => addLabel(n, pinAt(n, HEADER_TOP + 0.05), {
+  obj: esp32, cls: 'pin', lift: [14, 40, 66, 92, 118, 40, 14, 14][i],
+}));
+
+/* =========================================================
+   Temporary step helpers: endpoint rings, strip highlights, callouts
+   ========================================================= */
+let temps = [], callouts = [];
+const basicT = (color, opacity) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false });
+function ring(pos, color = 0xf2b705) {
+  const m = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.03, 10, 36), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.95, depthTest: false }));
+  m.rotation.x = -Math.PI / 2;
+  m.position.copy(pos); m.position.y += 0.02;
+  m.renderOrder = 6;
+  m.userData.pulse = true;
+  scene.add(m); temps.push(m);
+  return m;
+}
+function strip(points, color) {
+  const g = new THREE.Group();
+  const a = points[0], b = points[points.length - 1];
+  const alongZ = Math.abs(b.z - a.z) > Math.abs(b.x - a.x);
+  const len = a.distanceTo(b) + 0.22;
+  const bar = new THREE.Mesh(new THREE.BoxGeometry(alongZ ? 0.19 : len, 0.01, alongZ ? len : 0.19), basicT(color, 0.42));
+  bar.position.set((a.x + b.x) / 2, 0.009, (a.z + b.z) / 2);
+  g.add(bar);
+  for (const p of points) {
+    const s = new THREE.Mesh(new THREE.BoxGeometry(0.135, 0.014, 0.135), basicT(color, 0.95));
+    s.position.set(p.x, 0.013, p.z);
+    g.add(s);
+  }
+  g.traverse((o) => { if (o.material) o.userData.o0 = o.material.opacity; });
+  scene.add(g); temps.push(g);
+  return g;
+}
+const column = (c, half) => (half === 'far' ? FAR_ROWS : NEAR_ROWS).map((r) => holeAt(c, r));
+const railPoints = () => RAIL_COLS.map((c) => railAt(c));
+function callout(text, pos, cls = '', lift = 26) {
+  const L = addLabel(text, pos, { kind: 'callout', cls: 'callout ' + cls, lift });
+  callouts.push(L);
+  return L;
+}
+function clearTemps() {
+  temps.forEach((o) => { scene.remove(o); o.traverse((x) => { if (x.geometry) x.geometry.dispose(); if (x.material) x.material.dispose(); }); });
+  temps = [];
+  callouts.forEach(removeLabel);
+  callouts = [];
+}
+
+/* =========================================================
+   Tweens (step animations respect Pause; camera does not)
+   ========================================================= */
+let token = 0, paused = false, tweens = [];
+const easeInOut = (f) => f < 0.5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2;
+const easeOut = (f) => 1 - Math.pow(1 - f, 3);
+const speed = reduceMotion ? 0.35 : 1;
+function tween(dur, fn, t, ease = easeInOut) {
+  return new Promise((res) => tweens.push({ e: 0, dur: Math.max(0.001, dur * speed), fn, ease, t, res }));
+}
+const wait = (dur, t) => new Promise((res) => tweens.push({ e: 0, dur: Math.max(0.001, dur), fn: () => {}, ease: (f) => f, t, res }));
+function updateTweens(dt) {
+  const keep = [];
+  for (const tw of tweens) {
+    if (tw.t !== token) continue;
+    tw.e += dt;
+    const f = Math.min(1, tw.e / tw.dur);
+    tw.fn(tw.ease(f));
+    if (f >= 1) tw.res(); else keep.push(tw);
+  }
+  tweens = keep;
+}
+function fadeOut(g, dur, t) {
+  return tween(dur, (f) => g.traverse((o) => { if (o.material && o.userData.o0 != null) o.material.opacity = o.userData.o0 * (1 - f); }), t);
+}
+async function dropIn(id, t) {
+  const o = PARTS[id].obj;
+  o.visible = true;
+  await tween(0.8, (f) => { o.position.y = (1 - f) * 1.8; }, t, easeOut);
+}
+async function drawWire(id, t, dur = 1.5) {
+  const w = PARTS[id].wire;
+  w.group.visible = true;
+  await tween(dur, (f) => w.set(f), t);
+}
+const live = $('#live');
+function caption(text) {
+  live.hidden = !text;
+  live.textContent = text || '';
+}
+/* ---------- camera ---------- */
+const CAM = {
+  hero: { p: [-0.2, 7.4, 12.2], t: [-1.0, 0.4, -1.4] },
+  ldr: { p: [-0.6, 6.0, 6.0], t: [-1.0, 0.2, 0.2] },
+  router: { p: [-2.6, 5.4, 7.4], t: [-3.0, 1.0, -3.6] },
+  pin: { p: [-0.9, 7.6, 3.4], t: [-0.7, 0, -1.8] },
+  power: { p: [1.2, 9.2, 3.6], t: [0, 0, -2.8] },
+  setup: { p: [-0.3, 6.6, 0.4], t: [-0.3, 0, -4.4] },
+  code: { p: [1.0, 8.2, 10.8], t: [0.2, 0.3, -2.2] },
+};
+let camTw = null;
+function flyTo(key, instant) {
+  const c = CAM[key];
+  const to = { p: V(...c.p), t: V(...c.t) };
+  const aspect = camera.aspect;
+  if (aspect < 1.25) {
+    const k = 1 + (1.25 - aspect) * 0.4;
+    to.p.sub(to.t).multiplyScalar(k).add(to.t);
+  }
+  if (instant || reduceMotion) {
+    camera.position.copy(to.p); controls.target.copy(to.t); camTw = null; return;
+  }
+  camTw = { e: 0, dur: 1.3, fp: camera.position.clone(), ft: controls.target.clone(), to };
+}
+function updateCam(dt) {
+  if (!camTw) return;
+  camTw.e += dt;
+  const f = easeInOut(Math.min(1, camTw.e / camTw.dur));
+  camera.position.lerpVectors(camTw.fp, camTw.to.p, f);
+  controls.target.lerpVectors(camTw.ft, camTw.to.t, f);
+  if (f >= 1) camTw = null;
+}
+controls.addEventListener('start', () => { camTw = null; });
+/* =========================================================
+   The pretend Wi-Fi and the program that connects
+   ========================================================= */
+const pressBtn = $('#pressBtn');
+const IP = '192.168.1.42';
+const DEFAULT_CFG = { name: 'MyHomeWiFi', signal: 0.8, wrong: false }; // the network name, how strong the signal is, a pretend wrong password
+const sim = { running: false, auto: false, t: 0, next: 0, tries: 0, state: 'idle', phase: 'imp', log: [], idle: 0, cfg: Object.assign({}, DEFAULT_CFG) };
+// a stronger signal connects sooner (pretend: real times vary)
+const connectTime = () => 1.2 + (1 - sim.cfg.signal) * 6;
+function resetRun() {
+  sim.t = 0; sim.next = 0.5; sim.tries = 0; sim.idle = 0; sim.log = [];
+  sim.state = sim.running ? 'connecting' : 'idle';
+  sim.phase = sim.running ? 'conn' : 'imp';
+  renderConsole();
+}
+function renderConsole() {
+  const pre = document.getElementById('consolePre');
+  if (!pre) return;
+  pre.textContent = '>>> %Run main.py\n' + sim.log.join('\n');
+  pre.scrollTop = pre.scrollHeight;
+}
+const say = (s) => { sim.log.push(s); if (sim.log.length > 40) sim.log.shift(); renderConsole(); };
+const isUp = () => !sim.cfg.wrong && sim.t >= connectTime();
+// the same steps as the program: connect(), then check isconnected() once a second, then report
+function stepProgram(dt) {
+  if (sim.state === 'connected' || sim.state === 'failed') {
+    sim.idle += dt;
+    if (sim.auto && sim.idle > 6) { resetRun(); }
+    return;
+  }
+  sim.t += dt;
+  while (sim.state === 'connecting' && sim.t >= sim.next) {
+    sim.phase = 'wait';
+    if (isUp()) { sim.state = 'connected'; sim.phase = 'ok'; say('Connected! My IP address is ' + IP); }
+    else if (sim.tries >= 10) { sim.state = 'failed'; sim.phase = 'fail'; say('Could not connect. Check the name and password.'); }
+    else { say('Connecting...'); sim.tries++; sim.next += 1; }
+  }
+}
+function updateSim(dt) {
+  if (sim.running) stepProgram(dt);
+}
+function runAgain() { sim.running = true; resetRun(); }
+pressBtn.addEventListener('click', runAgain);
+
+/* =========================================================
+   Code panel
+   ========================================================= */
+function codeLines() {
+  return [
+    ['# Hello, Wi-Fi (ESP32)', ''],
+    ['import network', 'imp'],
+    ['import time', 'imp'],
+    ['from secrets import WIFI_NAME, WIFI_PASSWORD', 'sec', 'key'],
+    ['', ''],
+    ['wifi = network.WLAN(network.STA_IF)', 'set', 'key'],
+    ['wifi.active(True)', 'set'],
+    ['wifi.connect(WIFI_NAME, WIFI_PASSWORD)', 'conn', 'key'],
+    ['', ''],
+    ['tries = 0', 'wait'],
+    ['while not wifi.isconnected() and tries < 10:', 'wait', 'key'],
+    ['    print("Connecting...")', 'wait'],
+    ['    time.sleep(1)', 'wait'],
+    ['    tries = tries + 1', 'wait'],
+    ['', ''],
+    ['if wifi.isconnected():', 'ok fail', 'key'],
+    ['    print("Connected! My IP address is", wifi.ifconfig()[0])', 'ok'],
+    ['else:', 'fail'],
+    ['    print("Could not connect. Check the name and password.")', 'fail'],
+  ];
+}
+const secretsLines = () => [
+  '# secrets.py: keep this file private!',
+  `WIFI_NAME = "${sim.cfg.name}"`,
+  'WIFI_PASSWORD = "type-your-password-here"',
+];
+const LN = (re) => codeLines().findIndex((l) => re.test(l[0]));
+let CODE = codeLines();
+function highlightCode(src) {
+  const esc = src.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  return esc.replace(/(#.*$)|\b(from|import|while|True|if|else|not|and)\b|\b(Pin|print|sleep|WLAN|active|connect|isconnected|ifconfig)\b|\b(STA_IF)\b|(&quot;|")([^"]*)"|\b(\d+(?:\.\d+)?)\b/g,
+    (m, c, kw, fn, k2, q, str, num) => {
+      if (c) return `<span class="c">${c}</span>`;
+      if (kw) return `<span class="kw">${kw}</span>`;
+      if (fn) return `<span class="fn">${fn}</span>`;
+      if (k2) return `<span class="k2">${k2}</span>`;
+      if (q) return `<span class="c" style="color:#9fe0b0">"${str}"</span>`;
+      return `<span class="num">${num}</span>`;
+    });
+}
+const codeCard = document.createElement('div');
+codeCard.className = 'code-card';
+codeCard.innerHTML = `
+  <div class="code-head"><span>main.py</span></div>
+  <pre class="code" id="codePre" aria-label="MicroPython program"></pre>
+  <p class="code-note" id="codeNote"></p>`;
+const codePre = codeCard.querySelector('#codePre');
+const lineEls = CODE.map(([src, block, role], n) => {
+  const el = document.createElement('span');
+  el.className = 'ln';
+  el.dataset.n = String(n + 1);
+  codePre.appendChild(el);
+  return el;
+});
+let codeRev = 0;
+function renderCode() {
+  CODE = codeLines();
+  lineEls.forEach((el, n) => {
+    const [src, block, role] = CODE[n];
+    el.dataset.b = block;
+    if (role) el.dataset.role = role; else delete el.dataset.role;
+    el.innerHTML = highlightCode(src) || ' ';
+  });
+  document.querySelectorAll('.secretsPre').forEach((pre) => { pre.innerHTML = secretsLines().map((l, n) => `<span class="ln" data-n="${n + 1}">${highlightCode(l)}</span>`).join(''); });
+  codeRev++;
+}
+renderCode();
+// a second small card: the private file the program reads the Wi-Fi name and password from
+function secretsCard() {
+  const c = document.createElement('div');
+  c.className = 'code-card';
+  c.innerHTML = `<div class="code-head"><span>secrets.py · private</span></div><pre class="code secretsPre sec-pre" aria-label="The private secrets.py file"></pre>`;
+  renderCode();
+  return c;
+}
+let codeOverride = null, lastCodeKey = '';
+function setCodeNote(html) { codeCard.querySelector('#codeNote').innerHTML = html; }
+function liveBlock() {
+  return sim.phase;
+}
+function updateCodeHighlight() {
+  if (!codeCard.isConnected) return;
+  let block = codeOverride ? codeOverride.block : null;
+  const only = codeOverride ? codeOverride.lines : null;
+  const live = !codeOverride && sim.running;
+  if (live) block = liveBlock();
+  const key = `${block}|${only}|${paused}|${codeRev}|${live}`;
+  if (key === lastCodeKey) return;
+  lastCodeKey = key;
+  lineEls.forEach((el, n) => {
+    const on = only != null ? only.includes(n) : (block && el.dataset.b.split(' ').includes(block));
+    el.classList.toggle('hl', !!on);
+    el.classList.toggle('key', !!on && el.dataset.role === 'key');
+  });
+  if (live) {
+    setCodeNote(block === 'conn' ? 'Asking the router to let us in: <b>wifi.connect()</b> starts the connection.'
+      : block === 'wait' ? 'Waiting: connecting takes a few seconds, so the program checks once a second.'
+        : block === 'ok' ? 'Connected! <b>wifi.ifconfig()[0]</b> is our IP address.'
+          : block === 'fail' ? 'Out of tries: the program tells us what to check.' : 'Starting up.');
+  }
+}
+
+/* =========================================================
+   Lesson steps
+   ========================================================= */
+const STAGES = [
+  { letter: 'A', name: 'See it' },
+  { letter: 'B', name: 'Understand' },
+  { letter: 'C', name: 'Code it' },
+  { letter: 'D', name: 'Experiment' },
+];
+const T = (w, def) => `<span class="term" title="${def}">${w}</span>`;
+const W = (k, t) => (window.ESP32 ? ESP32.chip(k, t) : (t || k)); // tappable maker word, saved in the word book
+
+const STEPS = [
+  { stage: 0, title: 'Your crossing is about to join the internet', cam: 'hero', run: true, auto: true, try: true, console: true, extra: 'A',
+    text: `So far your crossing worked alone. Today it learns to talk to the world: the ESP32 has ${W('wifi', 'Wi-Fi')} built in, so it can join your home network, just like your phone does. Watch the pretend connection: the blue waves are the ESP32 and the router talking by radio. The waves are a drawing, but the steps in the program are the real ones.` },
+  { stage: 1, title: 'What is a network?', cam: 'router', run: true, auto: true, extra: 'N', why: () => WHY.net, play: playNet,
+    text: `A ${W('network', 'network')} is a group of devices that can send each other messages. At home, one box connects them all: the ${W('router', 'router')}. Your phone, laptop and ESP32 each join it by Wi-Fi. Tap a device to see how the router finds it.` },
+  { stage: 1, title: 'Every device has an address', cam: 'router', extra: 'IP', why: () => WHY.ip, play: playIp,
+    text: `For the router to deliver a message, every device needs an address, like a house number. Engineers call it an ${W('ipaddress', 'IP address')}. It is four numbers with dots between them. Tap each number to see what it means.` },
+  { stage: 2, title: 'Keep the password in a secret file', cam: 'setup', code: true, extra: 'S', why: () => WHY.secret, play: playSecret,
+    text: 'Your Wi-Fi name and password go in their own file, <b>secrets.py</b>. The main program only says <b>from secrets import …</b>. That way you can share <b>main.py</b> with friends without sharing your password.' },
+  { stage: 2, title: 'Turn Wi-Fi on and connect', cam: 'code', code: true, why: () => WHY.connect, play: playConnect,
+    text: 'Three short lines switch the radio on. <b>network.WLAN(network.STA_IF)</b> makes the Wi-Fi object, <b>wifi.active(True)</b> switches it on, and <b>wifi.connect(…)</b> asks the router to let us in.' },
+  { stage: 2, title: 'Wait, then print the address', cam: 'hero', run: true, auto: true, try: true, code: true, console: true, why: () => WHY.wait, play: playWait,
+    text: 'Connecting takes a few seconds, so the program waits in a loop, checking <b>wifi.isconnected()</b> once a second. When it works, it prints the IP address in the Shell. Watch the numbers appear and the highlighted lines move.' },
+  { stage: 3, title: 'Make it yours: try the Wi-Fi', cam: 'hero', run: true, try: true, free: true, code: true, console: true, extra: 'E1',
+    text: 'Change the network name, the signal strength and the password, then press <b>Run it again</b> under the scene. This is a pretend Wi-Fi, so nothing here can connect to your real one.' },
+  { stage: 3, title: 'Quick quiz', cam: 'hero', run: true, auto: true, extra: 'E2',
+    text: 'Three quick questions to check what you learned. Wrong answers are fine: you get a hint and can try again.' },
+];
+
+let stepIndex = 0;
+const partsFound = new Set();
+let quiz = [0, 1, 2].map(() => ({ choice: null, solved: false }));
+let revealOpen = false;
+let devPick = 0, ipPick = 0, sameAns = null;
+
+const PART_INFO = {
+  controller: { name: 'ESP32 DevKit (controller)', purpose: 'Follows our instructions: it controls the lights, listens to the button, makes the buzzer sing, measures light and now talks Wi-Fi.', more: 'The ESP-WROOM-32 module has the Wi-Fi radio inside it. Its antenna is the printed zig-zag at the end of the board.' },
+  router: { name: 'Wi-Fi router', purpose: 'The box in your home that joins all your devices into one network and connects them to the internet.', more: 'A router hands out an IP address to every device that joins. The ESP32 can join networks on the 2.4 GHz band, so choose that one if your router has two.' },
+  led: { name: 'LED', purpose: 'A small light that lets electricity flow in one direction.', more: 'LED stands for light-emitting diode. Its long leg (anode, +) must face the pin, and its short leg (cathode, −) faces ground.' },
+  resistor: { name: '330 Ω resistor', purpose: 'Limits the current to help protect the part it is wired to.', more: 'Current means how much electricity is flowing. Ω (ohm) is the unit for resistance; the bands orange, orange, brown mean 330.' },
+  bigres: { name: '10 kΩ resistor', purpose: 'The light sensor’s partner. Together they split the 3.3 volts.', more: 'k means thousand, so 10 kΩ is 10,000 ohms. The bands brown (1), black (0), orange (×1000) spell it out.' },
+  breadboard: { name: 'Breadboard', purpose: 'Holds connections so we can build without soldering.', more: 'On a breadboard you just push parts into the holes. The 5 holes in a row are joined; the middle gap keeps the halves apart.' },
+  wire: { name: 'Jumper wire', purpose: 'Connects one part of the circuit to another.', more: 'One end slides onto an ESP32 pin. The other end has a metal pin that pushes into a breadboard hole.' },
+  button: { name: 'Push button (tactile switch)', purpose: 'Lets a person tell the ESP32 something: press to connect, let go to disconnect.', more: 'Not used by today’s program, but it is still wired to D32 for later.' },
+  buzzer: { name: 'Passive buzzer', purpose: 'Makes sound when the ESP32 switches it on and off very fast.', more: 'Not used by today’s program, but it is still wired to D13 for later.' },
+  ldr: { name: 'Light sensor (LDR)', purpose: 'A resistor that changes with light: wide open in bright light, almost shut in the dark.', more: 'Not used by today’s program, but it is still wired to D33.' },
+  cop: { name: 'Officer Ohm', purpose: 'Your guide for this lesson.', more: 'Officer Ohm is named after the ohm (Ω), the unit we use to measure resistors.' },
+};
+const CORE_PARTS = ['controller', 'led', 'resistor', 'breadboard', 'wire'];
+
+/* ---------- "Why?" questions: each answer can light up the board ---------- */
+async function flash(t, parts, labels = []) {
+  const made = parts.map(([pts, color]) => strip(pts, color));
+  const cs = labels.map(([txt, pos, cls, lift]) => callout(txt, pos, cls, lift || 30));
+  await wait(4, t); if (t !== token) return;
+  made.forEach((g) => fadeOut(g, 0.6, t));
+  cs.forEach((c) => removeLabel(c));
+  callouts = callouts.filter((L) => !cs.includes(L));
+}
+const WHY = {
+  net: [
+    { cue: 'what', q: 'Why do we need a router?',
+      a: 'Devices cannot find each other by magic. The router is like a post office for the house: everybody hands it their messages and it passes each one to the right device. It also connects your home to the internet.' },
+    { cue: 'radio', q: 'How can the message travel with no wire?',
+      a: 'Wi-Fi sends messages as invisible radio waves, a bit like a very quiet radio station. The ESP32 has a tiny radio and an antenna inside its metal module. Nothing here is dangerous, but walls and distance make the waves weaker.' },
+    { cue: 'band', q: 'Why must I pick the 2.4 GHz Wi-Fi?',
+      a: 'The ESP32’s radio only speaks the 2.4 GHz kind of Wi-Fi. Many routers also offer 5 GHz, and the ESP32 cannot see it. If connecting fails, ask a grown-up to check that 2.4 GHz is switched on.' },
+    { cue: 'ref', q: 'Is my home network the whole internet?',
+      a: 'No. Your home network is a small private street. The router also has a door to the big internet outside. In this course we stay inside the home network first, because it is safer and simpler.' },
+  ],
+  ip: [
+    { cue: 'house', q: 'Why does every device need its own address?',
+      a: 'If two houses had the same number, the postman would not know where to deliver. Each device gets a different number so a message reaches only the device it is for.' },
+    { cue: 'street', q: 'Why four numbers?',
+      a: 'They work like a street name and a house number together. The first three numbers say which network (the street). The last number says which device (the house). Each number goes from 0 to 255.' },
+    { cue: 'give', q: 'Who gives my ESP32 its address?',
+      a: 'The router does, automatically, when the ESP32 joins. It picks a free number so no two devices clash. That is why the number can change next time you connect.' },
+    { cue: 'private', q: 'Why does mine start with 192.168?',
+      a: 'Numbers starting 192.168 are kept for private home networks. Every home can use them because they never leave the house. Yours may start differently, and that is fine.' },
+  ],
+  secret: [
+    { cue: 'why', q: 'Why a separate secrets file?',
+      a: 'Code gets shared: on GitHub, in class, in photos of your screen. A password inside it would be shared too. A separate file lets you share main.py and keep secrets.py to yourself.' },
+    { cue: 'import', q: 'What does “from secrets import …” do?',
+      a: 'It opens secrets.py and lets main.py use the two names inside it. So WIFI_NAME and WIFI_PASSWORD work in the program just like variables you made yourself.' },
+    { cue: 'caps', q: 'Why capital letters again?',
+      a: 'Like DARK last time: a name in CAPITALS is a setting that the program never changes while it runs.' },
+    { cue: 'adult', q: 'Whose password is it?',
+      a: 'It is your family’s Wi-Fi, so ask a grown-up before you use it. Never put a Wi-Fi password in a lesson page, a message or a photo. The password boxes in this lesson are pretend.' },
+  ],
+  connect: [
+    { cue: 'sta', q: 'What is network.WLAN(network.STA_IF)?',
+      a: 'It makes the Wi-Fi object. STA_IF means “station”: the ESP32 acts like a phone that joins a router. (It can also be the router itself, but we do not need that.) We keep it in a variable called wifi so we can give it orders.' },
+    { cue: 'active', q: 'Why wifi.active(True)?',
+      a: 'The radio is switched off to save power until you turn it on, like pressing the power button on a radio. True means “on”.' },
+    { cue: 'connect', q: 'Why does connect() not wait for us?',
+      a: 'It just sends the request and returns at once. Joining takes a few seconds, so the program does something else meanwhile. That is why the next step waits in a loop.' },
+    { cue: 'import', q: 'Why import network?',
+      a: 'MicroPython keeps the Wi-Fi tools in a box called network. We have to open the box before we can use what is inside, like import time before time.sleep().' },
+  ],
+  wait: [
+    { cue: 'loop', q: 'Why wait in a loop?',
+      a: 'If the program printed the address straight away, it would not have one yet. The loop keeps checking wifi.isconnected() once a second until the answer is True.' },
+    { cue: 'tries', q: 'Why count tries?',
+      a: 'With a wrong password the answer stays False for ever. Counting to 10 gives up politely instead of waiting for ever. The counter is the same idea as in lesson 4.' },
+    { cue: 'ip', q: 'What is wifi.ifconfig()[0]?',
+      a: 'ifconfig() gives a list of four things about the connection. The first one, number 0, is our IP address. Python starts counting at 0, so [0] means “the first one”.' },
+    { cue: 'print', q: 'Why print the address?',
+      a: 'The ESP32 has no screen. The Shell is the only way to see it. In the next lessons you will type this number into your phone to find your ESP32.' },
+  ],
+};
+
+let whyEls = [], whyList = [];
+function whyCard(list) {
+  whyList = list;
+  const card = el(`<div class="card"><h4>Why is it built this way?</h4><div class="why"></div>
+    <p class="note" style="margin-top:8px">Tap a question to read the answer.</p></div>`);
+  const box = card.querySelector('.why');
+  whyEls = list.map((w, k) => {
+    const item = el(`<div class="why-item"><button type="button" aria-expanded="false">${w.q}</button>
+      <div class="ans" hidden><p>${w.a}</p></div></div>`);
+    item.firstElementChild.addEventListener('click', () => openWhy(k, { toggle: true, scroll: false }));
+    box.appendChild(item);
+    return item;
+  });
+  return card;
+}
+function openWhy(k, opt = {}) {
+  const item = whyEls[k];
+  if (!item) return;
+  const ans = item.querySelector('.ans');
+  const open = opt.toggle ? ans.hidden : true;
+  whyEls.forEach((e) => e.classList.remove('now'));
+  ans.hidden = !open;
+  item.firstElementChild.setAttribute('aria-expanded', String(open));
+  if (open) item.classList.add('now', 'seen');
+  if (opt.scroll !== false) {
+    const pb = $('#panelBody');
+    if (pb.scrollHeight > pb.clientHeight + 4) {
+      const r = item.getBoundingClientRect(), pr = pb.getBoundingClientRect();
+      if (r.top < pr.top || r.bottom > pr.bottom) pb.scrollTop += r.top - pr.top - 12;
+    }
+  }
+}
+// open every "why" for this cue, the first one gets focus
+function cue(t, name) {
+  if (t !== token) return;
+  const ks = whyList.map((w, k) => (w.cue === name ? k : -1)).filter((k) => k >= 0);
+  ks.slice().reverse().forEach((k) => openWhy(k, { scroll: false }));
+  if (ks.length) openWhy(ks[0]);
+}
+
+/* ---------- step animations ---------- */
+async function playNet(t) {
+  caption('The router passes messages between the devices');
+  cue(t, 'what');
+  await wait(4.5, t); if (t !== token) return;
+  cue(t, 'radio');
+  await wait(5, t); if (t !== token) return;
+  cue(t, 'band');
+  await wait(4.5, t); if (t !== token) return;
+  cue(t, 'ref');
+}
+async function playIp(t) {
+  caption('Four numbers: the street and the house');
+  cue(t, 'house');
+  await wait(4.5, t); if (t !== token) return;
+  cue(t, 'street');
+  await wait(5, t); if (t !== token) return;
+  cue(t, 'give');
+  await wait(4.5, t); if (t !== token) return;
+  cue(t, 'private');
+}
+async function playSecret(t) {
+  const imp = LN(/^from secrets/);
+  codeOverride = { lines: [imp] };
+  setCodeNote('<b>from secrets import …</b> brings the name and the password in from the private file.');
+  cue(t, 'why');
+  await wait(4.5, t); if (t !== token) return;
+  cue(t, 'import');
+  await wait(4.5, t); if (t !== token) return;
+  cue(t, 'caps');
+  await wait(3.5, t); if (t !== token) return;
+  cue(t, 'adult');
+}
+async function playConnect(t) {
+  const imp = LN(/^import network/), sta = LN(/^wifi = /), act = LN(/active\(True\)/), con = LN(/wifi\.connect/);
+  codeOverride = { lines: [imp] };
+  setCodeNote('<b>import network</b> opens the box of Wi-Fi tools.');
+  cue(t, 'import');
+  await wait(3.8, t); if (t !== token) return;
+  codeOverride = { lines: [sta] };
+  setCodeNote('<b>wifi</b> is our Wi-Fi object, acting as a station.');
+  cue(t, 'sta');
+  await wait(4.2, t); if (t !== token) return;
+  codeOverride = { lines: [act] };
+  setCodeNote('Switch the radio on.');
+  cue(t, 'active');
+  await wait(3.5, t); if (t !== token) return;
+  codeOverride = { lines: [con] };
+  setCodeNote('Ask the router to let us in, using the name and password from secrets.py.');
+  cue(t, 'connect');
+  sim.running = true; resetRun();
+}
+async function playWait(t) {
+  const lp = LN(/^while not/), ck = LN(/^if wifi/);
+  codeOverride = { lines: [lp, lp + 1, lp + 2, lp + 3] };
+  setCodeNote('<b>while not wifi.isconnected()</b>: keep waiting until we are connected, but only up to 10 tries.');
+  cue(t, 'loop');
+  await wait(4.5, t); if (t !== token) return;
+  cue(t, 'tries');
+  await wait(4.5, t); if (t !== token) return;
+  codeOverride = { lines: [ck, ck + 1] };
+  setCodeNote('When connected, print the first item of <b>ifconfig()</b>: our IP address.');
+  cue(t, 'ip');
+  await wait(4, t); if (t !== token) return;
+  codeOverride = null; lastCodeKey = '';
+  sim.cfg = Object.assign({}, DEFAULT_CFG);
+  sim.running = true; sim.auto = true; resetRun();
+  cue(t, 'print');
+}
+
+/* ---------- panel rendering ---------- */
+const extra = $('#extra');
+function el(html) { const d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstElementChild; }
+function consoleCard() {
+  return el(`<div class="console"><div class="console-head">Shell · what print() sends to Thonny</div><pre id="consolePre" aria-live="off"></pre></div>`);
+}
+const DEVICES = [
+  ['📱', 'Phone', '192.168.1.20'],
+  ['💻', 'Laptop', '192.168.1.31'],
+  ['🤖', 'My ESP32', IP],
+  ['📺', 'Smart TV', '192.168.1.57'],
+];
+const IPPARTS = [
+  ['192', 'street', 'The first number belongs to the street. Every device on your home network shares these first three numbers.'],
+  ['168', 'street', 'The second number is also part of the street. Together 192.168 means “a private home network”.'],
+  ['1', 'street', 'The third number is the last part of the street. Another home might have 192.168.0 or 192.168.7 here.'],
+  ['42', 'house', 'The last number is the house. It is different for every device on the street: the ESP32 is 42 and a phone might be 20.'],
+];
+const SAME = [
+  ['192.168.1.20', true], ['192.168.7.5', false], ['192.168.1.99', true],
+];
+function devText() {
+  const [icon, name, ip] = DEVICES[devPick];
+  return name === 'My ESP32'
+    ? `${icon} The <b>${name}</b> lives at <b>${ip}</b>. Every message for it is addressed with this number, and the router delivers it.`
+    : `${icon} The <b>${name}</b> lives at <b>${ip}</b>. To talk to your ESP32 it writes <b>${IP}</b> on its message, and the router delivers it. Same street (192.168.1), different house.`;
+}
+function netCard() {
+  const card = el(`<div class="card"><h4>One network, many devices</h4>
+    <div class="devs"></div>
+    <p class="big-result" id="devText" style="margin:8px 0 0"></p>
+    <p class="note" style="margin:6px 0 0">Pretend addresses: yours will be different, and the router gives them out.</p></div>`);
+  DEVICES.forEach(([icon, name, ip], k) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.setAttribute('aria-pressed', String(k === devPick));
+    b.innerHTML = `${icon} ${name}<span>${ip}</span>`;
+    b.addEventListener('click', () => {
+      devPick = k;
+      card.querySelectorAll('.devs button').forEach((x, j) => x.setAttribute('aria-pressed', String(j === k)));
+      card.querySelector('#devText').innerHTML = devText();
+    });
+    card.querySelector('.devs').appendChild(b);
+  });
+  card.querySelector('#devText').innerHTML = devText();
+  return card;
+}
+function ipCard() {
+  const card = el(`<div class="card"><h4>Anatomy of an IP address</h4>
+    <div class="ipbox"></div>
+    <p class="big-result" id="ipText" style="margin:0 0 6px"></p></div>`);
+  const box = card.querySelector('.ipbox');
+  IPPARTS.forEach(([n, kind], k) => {
+    if (k) box.appendChild(el('<i>.</i>'));
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = kind; b.textContent = n;
+    b.setAttribute('aria-pressed', String(k === ipPick));
+    b.addEventListener('click', () => {
+      ipPick = k;
+      box.querySelectorAll('button').forEach((x, j) => x.setAttribute('aria-pressed', String(j === k)));
+      card.querySelector('#ipText').innerHTML = ipText();
+    });
+    box.appendChild(b);
+  });
+  card.querySelector('#ipText').innerHTML = ipText();
+  return card;
+}
+const ipText = () => `<b>${IPPARTS[ipPick][1] === 'street' ? '🏘️ Street' : '🏠 House'}:</b> ${IPPARTS[ipPick][2]}`;
+function sameCard() {
+  const card = el(`<div class="card"><h4>Can they talk? Tap the addresses on the same street as ${IP}</h4>
+    <div class="devs"></div><p class="big-result" id="sameText" style="margin:8px 0 0"></p></div>`);
+  SAME.forEach(([ip, yes]) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.innerHTML = `<span style="font-size:15px">${ip}</span>`;
+    b.addEventListener('click', () => {
+      sameAns = ip;
+      card.querySelector('#sameText').innerHTML = yes
+        ? `<b>Yes!</b> ${ip} starts with 192.168.1 like ${IP}: same street, different house.`
+        : `<b>Not this one.</b> ${ip} has 7 in the third place, so it is on another street (network).`;
+    });
+    card.querySelector('.devs').appendChild(b);
+  });
+  return card;
+}
+function filesCard() {
+  return el(`<div class="card"><h4>Which file can I share?</h4><div class="files">
+    <div class="share"><span style="font-size:22px">📄</span><span>main.py<small>The program. Safe to share with friends and teachers.</small></span></div>
+    <div class="keep"><span style="font-size:22px">🔒</span><span>secrets.py<small>Your Wi-Fi name and password. Keep it on your own board.</small></span></div>
+  </div></div>`);
+}
+function stateCard() {
+  return el(`<div class="card"><h4>The connection</h4>
+    <p class="big-result" style="margin:0"><span class="stat-pill" data-live="pill"></span></p>
+    <p class="big-result" data-live="ip" style="margin:8px 0 0"></p></div>`);
+}
+function renderExtra(s) {
+  extra.innerHTML = '';
+  if (s.extra === 'A') {
+    extra.appendChild(el(`<div class="card"><h4>The big idea</h4><ul class="list">
+      <li><span style="font-size:20px">📶</span><span>The ESP32 has a <b>Wi-Fi radio</b> inside.</span></li>
+      <li><span style="font-size:20px">📡</span><span>The <b>router</b> lets it join the home <b>network</b>.</span></li>
+      <li><span style="font-size:20px">🏠</span><span>The router gives it an <b>IP address</b>, like a house number.</span></li>
+    </ul><p class="note" style="margin-top:8px">Phones, TVs and smart speakers join the same way. Today your ESP32 does too.</p></div>`));
+    extra.appendChild(stateCard());
+    extra.appendChild(consoleCard());
+  }
+  if (s.extra === 'N') extra.appendChild(netCard());
+  if (s.extra === 'IP') { extra.appendChild(ipCard()); extra.appendChild(sameCard()); }
+  if (s.extra === 'S') { extra.appendChild(secretsCard()); extra.appendChild(filesCard()); }
+  if (s.code) {
+    lastCodeKey = '';
+    if (!s.play) setCodeNote('');
+    if (s.extra !== 'E1') extra.appendChild(codeCard);
+  }
+  if (s.why) extra.appendChild(whyCard(s.why()));
+  if (s.console && s.extra !== 'A' && s.extra !== 'E1') extra.appendChild(consoleCard());
+  if (s.extra === 'E1') {
+    const wrap = el(`<div style="display:grid;gap:14px"></div>`);
+    wrap.appendChild(stateCard());
+    wrap.appendChild(el(`<div class="card"><h4>Choose your settings (pretend)</h4>
+      <div class="var-row"><label class="mono" for="s_name">WIFI_NAME = …</label>
+      <input class="wifi-in" id="s_name" maxlength="24" value="${sim.cfg.name}" autocomplete="off" spellcheck="false"></div>
+      <div class="var-row"><label class="mono" for="s_sig">Signal strength</label>
+      <div class="slider-row"><input type="range" id="s_sig" min="10" max="100" step="5" value="${Math.round(sim.cfg.signal * 100)}" aria-label="Signal strength"><span class="slider-val" id="sigVal">${Math.round(sim.cfg.signal * 100)}%</span></div></div>
+      <label class="toggle" for="s_wrong" style="margin-top:4px"><input type="checkbox" id="s_wrong" ${sim.cfg.wrong ? 'checked' : ''}> Pretend I typed the password wrong</label>
+      <p class="big-result" id="cfgText" style="margin-bottom:0"></p></div>`));
+    wrap.appendChild(secretsCard());
+    wrap.appendChild(codeCard);
+    wrap.appendChild(consoleCard());
+    wrap.appendChild(el(`<div class="card"><p class="question">You typed the right password but the ESP32 never connects, and the router only has a 5 GHz network. What could you ask a grown-up to check?</p>
+      <button class="btn" id="revealBtn" type="button" aria-expanded="${revealOpen}">${revealOpen ? 'Hide the answer' : 'Think first, then show the answer'}</button>
+      <div class="reveal" id="revealBox" ${revealOpen ? '' : 'hidden'}>Ask them to switch on the 2.4 GHz Wi-Fi in the router’s settings, or to share the 2.4 GHz network name. The ESP32 cannot see 5 GHz networks.</div>
+      <p class="note" style="margin-top:10px"><b>Make it yours:</b> write your own network name in secrets.py (but never share the password!) and run the program on your real board.</p></div>`));
+    wrap.querySelector('#s_name').addEventListener('input', (e) => {
+      sim.cfg.name = e.target.value.replace(/["\\]/g, '').slice(0, 24) || 'MyHomeWiFi';
+      renderCode(); updateCfgText();
+    });
+    wrap.querySelector('#s_sig').addEventListener('input', (e) => {
+      sim.cfg.signal = +e.target.value / 100;
+      wrap.querySelector('#sigVal').textContent = e.target.value + '%';
+      updateCfgText();
+    });
+    wrap.querySelector('#s_wrong').addEventListener('change', (e) => { sim.cfg.wrong = e.target.checked; updateCfgText(); });
+    wrap.querySelector('#revealBtn').addEventListener('click', (e) => {
+      revealOpen = !revealOpen;
+      wrap.querySelector('#revealBox').hidden = !revealOpen;
+      e.currentTarget.textContent = revealOpen ? 'Hide the answer' : 'Think first, then show the answer';
+      e.currentTarget.setAttribute('aria-expanded', String(revealOpen));
+    });
+    extra.appendChild(wrap);
+    setTimeout(updateCfgText, 0);
+  }
+  if (s.extra === 'E2') QUIZ.forEach((_, k) => extra.appendChild(renderQuiz(k)));
+  renderConsole();
+  renderCode();
+  liveKey = '';
+}
+function updateCfgText() {
+  const t = $('#cfgText');
+  if (!t) return;
+  t.innerHTML = sim.cfg.wrong
+    ? 'With a wrong password the router says no, so after 10 tries the program gives up and prints the helpful message.'
+    : `A <b>${Math.round(sim.cfg.signal * 100)}%</b> signal connects in about <b>${connectTime().toFixed(1)}</b> seconds. ${sim.cfg.signal < 0.3 ? 'A weak signal is slow: move closer to the router!' : 'Press Run it again to watch it.'}`;
+}
+// live words in the cards, refreshed whenever the connection changes
+let liveKey = '';
+function updateLive() {
+  const key = `${sim.state}|${sim.tries}|${sim.running}|${stepIndex}`;
+  if (key === liveKey) return;
+  liveKey = key;
+  const set = (k, html) => { const n = extra.querySelector(`[data-live="${k}"]`); if (n && n.innerHTML !== html) n.innerHTML = html; };
+  const pill = extra.querySelector('[data-live="pill"]');
+  if (pill) {
+    pill.className = 'stat-pill ' + (sim.state === 'connected' ? 'ok' : sim.state === 'failed' ? 'bad' : 'wait');
+    pill.textContent = sim.state === 'connected' ? '✅ Connected' : sim.state === 'failed' ? '❌ Could not connect' : sim.state === 'connecting' ? '⏳ Connecting…' : 'Not started';
+  }
+  set('ip', sim.state === 'connected' ? `My IP address is <b class="mono" style="font-size:16px">${IP}</b>` : sim.state === 'failed' ? 'No address: the router never let us in.' : 'No address yet.');
+}
+const QUIZ = [
+  { q: 'What does the router do for the ESP32?',
+    opts: ['It lets the ESP32 join the home network and gives it an address', 'It makes the LEDs brighter', 'It stores the program', 'It measures the light'],
+    right: 0,
+    good: 'The router is the post office of your home network: it lets devices join, gives each an address and passes messages between them.',
+    hint: 'Think of the router as the box that all your devices connect to. Which answer is about connecting?' },
+  { q: 'Which two devices can be on the same street (network)?',
+    opts: ['192.168.1.20 and 192.168.1.42', '192.168.1.20 and 192.168.7.42', 'Only devices with the same last number', 'Only the ESP32 and the router'],
+    right: 0,
+    good: 'The first three numbers name the street and are the same for both. Only the last number, the house, must differ.',
+    hint: 'The first three numbers are the street. Which pair has the same first three numbers?' },
+  { q: 'Why is the Wi-Fi password in secrets.py and not in main.py?',
+    opts: ['So the program runs faster', 'So we can share main.py without sharing the password', 'Because Python needs two files', 'Because the router asks for it'],
+    right: 1,
+    good: 'Programs get shared. Keeping the password in its own private file means you can share the program and still keep the password secret.',
+    hint: 'Think about what happens when you show your code to a friend or put it online.' },
+];
+function renderQuiz(n) {
+  const Q = QUIZ[n], st = quiz[n];
+  const card = el(`<div class="card"><h4>Question ${n + 1} of ${QUIZ.length}</h4><p class="question">${Q.q}</p><div class="quiz-opts" role="group" aria-label="Answers"></div><div aria-live="polite"></div></div>`);
+  const box = card.querySelector('.quiz-opts');
+  Q.opts.forEach((txt, k) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.innerHTML = `<b>${'ABCD'[k]}</b><span>${txt}</span>`;
+    if (st.choice === k) b.classList.add(k === Q.right ? 'right' : 'wrong');
+    if (st.solved && k === Q.right) b.classList.add('right');
+    b.addEventListener('click', () => {
+      st.choice = k; if (k === Q.right) st.solved = true;
+      card.replaceWith(renderQuiz(n));
+      const done = document.getElementById('quizDone');
+      if (quiz.every((x) => x.solved) && !done) extra.appendChild(finishCard());
+    });
+    box.appendChild(b);
+  });
+  const fb = card.lastElementChild;
+  if (st.choice != null) {
+    fb.innerHTML = st.choice === Q.right
+      ? `<div class="feedback good"><b>Yes, great thinking!</b><p style="margin:4px 0 0">${Q.good}</p></div>`
+      : `<div class="feedback try"><b>Good try!</b><p style="margin:4px 0 0">That’s not quite it. ${Q.hint} Pick another answer.</p></div>`;
+  }
+  return card;
+}
+const LESSON_SLUG = '08-hello-wifi';
+function saveProgress(patch) {
+  if (window.COURSE) window.COURSE.saveProgress(LESSON_SLUG, patch);
+}
+function finishCard() {
+  saveProgress({ done: true });
+  const next = window.COURSE ? window.COURSE.nextLesson(LESSON_SLUG) : null;
+  const link = next && next.status === 'ready'
+    ? `<p style="margin:8px 0 0"><a class="btn primary" href="../${next.slug}/index.html">Next lesson: ${next.title} →</a></p>`
+    : `<p style="margin:8px 0 0"><a class="btn" href="../../lessons.html">Back to all lessons</a></p>`;
+  return el(`<div class="feedback good" id="quizDone"><b>You finished the lesson!</b><p style="margin:4px 0 0">Your ESP32 can join a network now: it switches its radio on, asks the router to let it in, waits politely and learns its own IP address. Next time that address becomes a web page. Great work, engineer!</p>${link}</div>`);
+}
+
+
+/* ---------- header progress ---------- */
+const stagesNav = $('#stages');
+STAGES.forEach((st, k) => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'stage-pill';
+  b.innerHTML = `<b>${st.letter}</b><span>${st.name}</span>`;
+  b.setAttribute('aria-label', `Stage ${st.letter}: ${st.name}`);
+  b.addEventListener('click', () => goTo(STEPS.findIndex((s) => s.stage === k)));
+  stagesNav.appendChild(b);
+});
+function updateNav() {
+  const s = STEPS[stepIndex];
+  [...stagesNav.children].forEach((b, k) => {
+    b.classList.toggle('current', k === s.stage);
+    b.classList.toggle('done', k < s.stage);
+    if (k === s.stage) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+  });
+  const pct = Math.round(((stepIndex + 1) / STEPS.length) * 100);
+  $('#progressFill').style.width = pct + '%';
+  $('#progressBar').setAttribute('aria-valuenow', String(pct));
+  $('#progressText').textContent = `Step ${stepIndex + 1} of ${STEPS.length}`;
+  $('#prev').disabled = stepIndex === 0;
+  $('#next').disabled = stepIndex === STEPS.length - 1;
+  const st = STAGES[s.stage];
+  $('#stageName').textContent = `Stage ${st.letter} · ${st.name}`;
+  $('#stepTitle').textContent = s.title;
+  $('#stepText').innerHTML = s.text;
+}
+
+/* ---------- selection / info card ---------- */
+let selHelper = null;
+const info = $('#info');
+function clearSelection() {
+  if (selHelper) { scene.remove(selHelper); selHelper.geometry.dispose(); selHelper = null; }
+}
+function hideInfo() { info.hidden = true; clearSelection(); }
+function selectPart(part, obj) {
+  clearSelection();
+  if (!obj) {
+    const candidates = pickables.filter((o) => o.userData.part === part && visibleInScene(o));
+    obj = candidates[0] || null;
+  }
+  if (obj) {
+    selHelper = new THREE.BoxHelper(obj, 0xf2b705);
+    selHelper.material.depthTest = false;
+    selHelper.material.transparent = true;
+    selHelper.renderOrder = 8;
+    selHelper.userData.target = obj;
+    scene.add(selHelper);
+  }
+  const d = PART_INFO[part];
+  $('#infoTitle').textContent = d.name;
+  $('#infoPurpose').textContent = d.purpose;
+  $('#infoMore').textContent = d.more;
+  $('#infoPins').hidden = part !== 'controller';
+  info.hidden = false;
+  if (CORE_PARTS.includes(part) && !partsFound.has(part)) {
+    partsFound.add(part);
+    const li = document.querySelector(`#partList [data-part="${part}"]`);
+    if (li) li.classList.add('done');
+    const fc = $('#foundCount');
+    if (fc) fc.textContent = String(partsFound.size);
+    if (partsFound.size === 5 && STEPS[stepIndex].extra === 'B1') caption('You found all five parts! Click Next.');
+  }
+}
+$('#infoClose').addEventListener('click', hideInfo);
+
+const raycaster = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+let downAt = null;
+renderer.domElement.addEventListener('pointerdown', (e) => { downAt = { x: e.clientX, y: e.clientY }; });
+renderer.domElement.addEventListener('pointerup', (e) => {
+  if (!downAt) return;
+  const moved = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y);
+  downAt = null;
+  if (moved > 6) return;
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  raycaster.setFromCamera(ndc, camera);
+  const hits = raycaster.intersectObjects(pickables.filter(visibleInScene), true);
+  for (const h of hits) {
+    let o = h.object;
+    while (o && !o.userData.part) o = o.parent;
+    if (o && visibleInScene(o)) { selectPart(o.userData.part, o); return; }
+  }
+});
+/* =========================================================
+   Navigation
+   ========================================================= */
+let copWave = 0;
+function goTo(i, opt = {}) {
+  i = Math.max(0, Math.min(STEPS.length - 1, i));
+  token++;
+  const t = token;
+  tweens = [];
+  clearTemps();
+  hideInfo();
+  caption('');
+  stepIndex = i;
+  const s = STEPS[i];
+  const built = new Set(s.build || ALL_PARTS);
+  ALL_PARTS.forEach((id) => setPart(id, built.has(id)));
+  codeOverride = null;
+  sim.running = !!s.run;
+  sim.auto = !!s.auto;
+  if (!s.free) sim.cfg = Object.assign({}, DEFAULT_CFG);
+  resetRun();
+  renderCode();
+  pressBtn.hidden = !s.try;
+  whyEls = []; whyList = [];
+  setLights(-1);
+  updateNav();
+  renderExtra(s);
+  flyTo(s.cam, opt.instant);
+  copWave = 1.8;
+  $('#panelBody').scrollTop = 0;
+  if (s.play) s.play(t);
+  saveProgress({ step: i, steps: STEPS.length });
+}
+
+$('#prev').addEventListener('click', () => goTo(stepIndex - 1));
+$('#next').addEventListener('click', () => goTo(stepIndex + 1));
+$('#replay').addEventListener('click', () => goTo(stepIndex, { replay: true }));
+$('#resetView').addEventListener('click', () => flyTo(STEPS[stepIndex].cam));
+$('#labelsToggle').addEventListener('change', (e) => { showLabels = e.target.checked; });
+const pauseBtn = $('#pause');
+function setPaused(p) {
+  paused = p;
+  pauseBtn.setAttribute('aria-pressed', String(p));
+  pauseBtn.textContent = p ? '▶ Resume' : '❚❚ Pause';
+}
+pauseBtn.addEventListener('click', () => setPaused(!paused));
+const resetBtn = $('#resetLesson');
+let resetArmed = null;
+resetBtn.addEventListener('click', () => {
+  if (!resetArmed) {
+    resetBtn.classList.add('armed');
+    resetBtn.textContent = 'Click again to reset';
+    resetArmed = setTimeout(() => { resetArmed = null; resetBtn.classList.remove('armed'); resetBtn.textContent = 'Reset lesson'; }, 3000);
+    return;
+  }
+  clearTimeout(resetArmed); resetArmed = null;
+  resetBtn.classList.remove('armed'); resetBtn.textContent = 'Reset lesson';
+  resetLesson();
+});
+function resetLesson() {
+  partsFound.clear();
+  quiz = [0, 1, 2].map(() => ({ choice: null, solved: false }));
+  revealOpen = false;
+  setPaused(false);
+  showLabels = true; $('#labelsToggle').checked = true;
+  sim.cfg = Object.assign({}, DEFAULT_CFG);
+  stepIndex = 0;
+  goTo(0, { replay: true });
+}
+document.addEventListener('keydown', (e) => {
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
+  if (e.key === 'ArrowRight' && stepIndex < STEPS.length - 1) goTo(stepIndex + 1);
+  if (e.key === 'ArrowLeft' && stepIndex > 0) goTo(stepIndex - 1);
+});
+
+/* ---------- status chip + live readings ---------- */
+const stName = $('#stName'), stWord = $('#stWord'), stBadge = $('#stBadge');
+const lampEls = [...document.querySelectorAll('.lamps i')];
+let lastStatus = '';
+function updateStatus() {
+  const key = `${sim.running}|${sim.state}|${paused}|${stepIndex}`;
+  if (key === lastStatus) return;
+  lastStatus = key;
+  const dot = lampEls[0];
+  const col = { idle: '#4A515B', connecting: '#FFB400', connected: '#22D36B', failed: '#FF4141' }[sim.running ? sim.state : 'idle'];
+  dot.style.background = col;
+  dot.style.boxShadow = sim.running ? `0 0 12px ${col}` : 'none';
+  stName.textContent = 'WI-FI';
+  stName.style.color = 'var(--ink)';
+  stWord.textContent = !sim.running ? 'Not connected yet'
+    : sim.state === 'connecting' ? 'Connecting…'
+      : sim.state === 'connected' ? 'Connected · ' + IP : 'Could not connect';
+  stBadge.hidden = !paused;
+  stBadge.textContent = 'Paused';
+}
+
+/* =========================================================
+   Main loop
+   ========================================================= */
+function resize() {
+  const r = $('#viewport').getBoundingClientRect();
+  const w = Math.max(1, r.width), h = Math.max(1, r.height);
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.fov = camera.aspect < 1 ? 52 : 40;
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe($('#viewport'));
+resize();
+
+let last = performance.now();
+function frame(now) {
+  const rdt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  const dt = paused ? 0 : rdt;
+  updateTweens(dt);
+  updateCam(rdt);
+  updateSim(dt);
+  updateWifiFx(dt);
+  updateLive();
+  // Officer Ohm bobs and waves at each new step
+  const tt = now / 1000;
+  cop.position.y = -0.4 + Math.sin(tt * 2) * 0.03;
+  const armR = cop.userData.armR;
+  if (copWave > 0) { copWave -= rdt; armR.rotation.z = 2.5 + Math.sin(tt * 11) * 0.35; }
+  else armR.rotation.z += (0.15 - armR.rotation.z) * Math.min(1, rdt * 5);
+  for (const o of temps) if (o.userData.pulse) o.scale.setScalar(1 + 0.22 * Math.sin(tt * 6));
+  if (selHelper) selHelper.update();
+  controls.update();
+  renderer.render(scene, camera);
+  updateLabels();
+  updateStatus();
+  updateCodeHighlight();
+  requestAnimationFrame(frame);
+}
+
+if (window.ESP32) ESP32.initWords();
+if (window.innerWidth < 600) { showLabels = false; $('#labelsToggle').checked = false; }
+goTo(0, { instant: true });
+requestAnimationFrame(frame);
+
+// expose a tiny hook for automated checks
+window.__lesson = { camera, controls, goTo, get step() { return stepIndex; }, sim, selectPart, runAgain, tick(dt) { updateSim(dt); } };
+  // the program for "Try it on my real board": exactly the code shown in this lesson
+  window.__lessonProgram = () => codeLines().map((l) => l[0]).join('\n') + '\n';
+})();
+</script>
+<script src="../../assets/board-link.js"></script>
+<script src="../../assets/prepare-board.js"></script>
+<script src="../../assets/run-panel.js"></script>
+<script src="../../assets/board-drawer.js"></script>
+<script>KKBoard.attach({ id: '08-hello-wifi', base: '../../', buttonHost: 'header.top .progress', program: () => window.__lessonProgram(), wiring: 'Nothing new to wire: the circuit stays as it was. This program needs a 2.4 GHz Wi-Fi network and a file called secrets.py on the board with WIFI_NAME and WIFI_PASSWORD (ask a grown-up first and never share that file).' });</script>
+</body>
+</html>

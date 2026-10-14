@@ -43,7 +43,7 @@
       idea: 'Make a decision from a sensor reading.',
       hardware: 'Nothing new',
       code: 'a threshold, if / else on a sensor reading, a flashing-yellow mode' },
-    { n: 8, slug: '08-hello-wifi', skills: ['Connected the ESP32 to Wi-Fi', 'Learned what an IP address is', 'Kept passwords out of shared code'], title: 'Hello, Wi-Fi', unit: 2, status: 'planned', minutes: 45,
+    { n: 8, slug: '08-hello-wifi', skills: ['Connected the ESP32 to Wi-Fi', 'Learned what an IP address is', 'Kept passwords out of shared code'], title: 'Hello, Wi-Fi', unit: 2, status: 'ready', minutes: 45,
       idea: 'What a network and an IP address are.',
       hardware: 'Nothing new (the ESP32 has Wi-Fi built in)',
       code: 'network.WLAN, connecting and printing the IP address' },
