@@ -47,7 +47,7 @@
       idea: 'What a network and an IP address are.',
       hardware: 'Nothing new (the ESP32 has Wi-Fi built in)',
       code: 'network.WLAN, connecting and printing the IP address' },
-    { n: 9, slug: '09-status-page', skills: ['Ran a tiny web server on the ESP32', 'Showed live status on a phone', 'Learned how browsers ask for pages'], title: 'Your Traffic Light’s Web Page', unit: 2, status: 'planned', minutes: 45,
+    { n: 9, slug: '09-status-page', skills: ['Ran a tiny web server on the ESP32', 'Showed live status on a phone', 'Learned how browsers ask for pages'], title: 'Your Traffic Light’s Web Page', unit: 2, status: 'ready', minutes: 45,
       idea: 'The ESP32 serves a web page your phone can open.',
       hardware: 'Nothing new',
       code: 'a tiny web server, showing the current light' },
