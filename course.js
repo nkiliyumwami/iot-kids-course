@@ -51,10 +51,10 @@
       idea: 'The ESP32 serves a web page your phone can open.',
       hardware: 'Nothing new',
       code: 'a tiny web server, showing the current light' },
-    { n: 10, slug: '10-phone-control', skills: ['Controlled lights from a phone', 'Handled web requests', 'Kept safety rules in charge'], title: 'Control It From Your Phone', unit: 2, status: 'planned', minutes: 50,
+    { n: 10, slug: '10-phone-control', skills: ['Added a button to a web page', 'Read the path of a web request', 'Kept safety rules in charge'], title: 'Control It From Your Phone', unit: 2, status: 'ready', minutes: 50,
       idea: 'Your phone sends commands, but safety rules still win.',
       hardware: 'Nothing new',
-      code: 'handling requests, keeping the crossing safe' },
+      code: 'reading the request path, a crossing flag, safety rules in the program' },
   ];
   const units = {
     0: { name: 'Start here', blurb: 'Meet your board, then build your first circuits by hand. You’ll know every wire, LED and resistor before Part 1.' },
