@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Circuit Challenge Lab: Experiment &amp; Fix It · KundaKode</title>
+<script src="../../assets/brand.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/virtual-lab/lab.css">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="titles">
+      <a class="back" href="../../lessons.html">← All lessons</a>
+      <h1>Circuit Challenge Lab</h1>
+      <p>Experiment &amp; Fix It: an optional challenge after Lesson 1. Build the traffic light, break it safely, find out why.</p>
+    </div>
+    <div class="prog">
+      <span id="progressText">Step 1 of 24</span><div class="bar" aria-hidden="true"><i id="barFill"></i></div>
+      <button type="button" class="bookbtn" data-wordbook>📖 My words <span id="wordCount"></span></button>
+      <button type="button" class="resetlab" id="resetLab">⟲ Reset lab</button>
+    </div>
+    <nav class="stagebar" aria-label="Lab progress">
+      <span class="sname" id="stageName"></span>
+      <ol class="stages" id="stages"></ol>
+    </nav>
+  </header>
+
+  <main>
+    <section class="viewport" aria-label="3D workbench: a breadboard, an ESP32 and a tray of parts. Use the “Pick without a mouse” list in the guide to choose things with the keyboard.">
+      <div id="scene"></div>
+      <div class="labels" id="labels"></div>
+      <div class="vtools">
+        <button type="button" class="labels-btn" id="labelsBtn" aria-pressed="true" aria-label="Labels">🏷<span class="btxt"> Labels</span></button>
+        <button type="button" class="reset" id="resetView">↺ Reset view</button>
+      </div>
+      <div class="hand" id="hand" hidden></div>
+      <div class="hud" id="hud" hidden aria-hidden="true"></div>
+      <div class="tip" id="tip" hidden aria-live="off">
+        <img src="../../assets/ohm/point.svg" alt="" width="34" height="40">
+        <div class="tiptext" id="tipText"></div>
+        <div class="tipbtns"><button type="button" id="tipMore" aria-label="Read more in the guide below">More ↓</button><button type="button" id="tipClose" aria-label="Hide this message">✕</button></div>
+      </div>
+      <p class="vhint" id="vhint">Drag to spin · Right-drag or two fingers to slide · Scroll or pinch to zoom · Tap anything</p>
+      <div class="lost" id="lost" hidden><div><p>The 3D view stopped (the graphics chip needed a rest).</p><button type="button" class="btn primary" id="lostReload">Reload the lab</button></div></div>
+    </section>
+
+    <aside class="panel" aria-label="Lab guide">
+      <div class="scroll" id="scroll">
+        <div class="guide">
+          <svg viewBox="0 0 72 84" aria-hidden="true"><circle cx="36" cy="30" r="20" fill="#F5C9A0"/><rect x="16" y="50" width="40" height="30" rx="10" fill="#1F3A68"/></svg>
+          <div>
+            <div class="eyebrow" id="eyebrow"></div>
+            <h2 id="stepTitle" tabindex="-1"></h2>
+            <div id="stepText"></div>
+            <div class="voice-row"><button class="listen" id="listenBtn" type="button" aria-pressed="false">🔊 Listen</button><label class="readme"><input type="checkbox" id="readToMe"> Read every step to me</label></div>
+          </div>
+        </div>
+        <div id="taskBox"></div>
+        <div id="fbBox" role="status" aria-live="polite"></div>
+        <div id="inspectBox" role="status" aria-live="polite"></div>
+        <div id="simLive" class="sr" role="status" aria-live="polite"></div>
+        <div id="extraBox"></div>
+        <details class="picker" id="picker">
+          <summary>⌨️ Pick without a mouse</summary>
+          <p class="small">Choose a part, hole, pin or rail, then press <b>Use</b>. It works just like tapping it on the bench.</p>
+          <div id="pickerBody"></div>
+        </details>
+        <p class="small safety" id="safety"></p>
+      </div>
+      <div class="nav">
+        <button type="button" class="btn" id="prevBtn">← Back</button>
+        <button type="button" class="btn" id="replayBtn" aria-label="Replay this step">↻ Replay</button>
+        <button type="button" class="btn primary" id="nextBtn">Next →</button>
+      </div>
+    </aside>
+  </main>
+
+  <section class="fallback" id="fallback" hidden aria-labelledby="fbTitle">
+    <span class="limited">Limited version: no 3D</span>
+    <h2 id="fbTitle">The 3D workbench couldn’t start</h2>
+    <p id="fallbackWhy"></p>
+    <p>This text version is <b>not</b> the same as the interactive lab: you can read the circuit here, but you can’t build or test it.</p>
+    <h3>The circuit you’ll build</h3>
+    <ul id="fallbackWiring"></ul>
+    <p class="small">Every LED has its own 330 Ω resistor. This is a learning simulation. Check real wiring with a knowledgeable adult before applying power.</p>
+    <p><button type="button" class="btn primary" id="retry3d">↻ Try the 3D lab again</button></p>
+    <h3>Lessons that teach this circuit</h3>
+    <ul id="fallbackLinks"></ul>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="../../course.js"></script>
+<script src="../../assets/ohm/ohm.js"></script>
+<script src="../../assets/esp32/board.js"></script>
+<script src="../../assets/voice/voice.js?v=naledi1"></script>
+<script src="../../assets/circuit/kit3d.js"></script>
+<script src="../../assets/virtual-lab/netlist.js"></script>
+<script src="../../assets/virtual-lab/curriculum.js"></script>
+<script src="../../assets/virtual-lab/code.js"></script>
+<script src="../../assets/virtual-lab/simulator.js"></script>
+<script src="../../assets/virtual-lab/progress.js"></script>
+<script src="../../assets/virtual-lab/ui.js"></script>
+<script src="../../assets/virtual-lab/view.js"></script>
+<script src="../../assets/virtual-lab/runner.js"></script>
+<script src="../../assets/virtual-lab/experiment.js"></script>
+<script src="../../assets/virtual-lab/main.js"></script>
+</body>
+</html>
