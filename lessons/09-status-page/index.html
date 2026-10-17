@@ -2201,6 +2201,12 @@ function renderExtra(s) {
     if (s.extra !== 'E1') extra.appendChild(codeCard);
   }
   if (s.why) extra.appendChild(whyCard(s.why()));
+  if (s.title === 'Lights and page together') extra.appendChild(el(`<div class="card"><h4>🔧 The page will not open? Check these, in order</h4><ul class="list">
+      <li><span style="font-size:20px">1️⃣</span><span>Is the phone on the <b>same Wi-Fi</b> as the ESP32? Mobile data and guest networks cannot reach it.</span></li>
+      <li><span style="font-size:20px">2️⃣</span><span>Did you type the address <b>exactly</b> as the Shell printed it, starting with <b>http://</b>, not https?</span></li>
+      <li><span style="font-size:20px">3️⃣</span><span>Is the program still running? If you pressed Stop, nobody is listening.</span></li>
+      <li><span style="font-size:20px">4️⃣</span><span>Did the IP address change? The router can hand out a new one after a restart, so read the Shell again.</span></li>
+    </ul><p class="note" style="margin-top:8px">Engineers debug like this too: change one thing at a time and check after each.</p></div>`));
   if (s.console && s.extra !== 'A' && s.extra !== 'E1') extra.appendChild(consoleCard());
   if (s.extra === 'E1') {
     const wrap = el(`<div style="display:grid;gap:14px"></div>`);
