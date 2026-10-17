@@ -339,7 +339,7 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
   const C = window.COURSE; if (!C) return;
   let prog = {}; try { prog = C.readProgress() || {}; } catch (e) { prog = {}; }
   const next = C.lessons.find((l) => l.status === 'ready' && !(prog[l.slug] || {}).done);
-  const started = Object.keys(prog).length > 0;
+  const started = Object.keys(prog).some((k) => C.lessonBySlug(k)); // optional extras don't count as starting the course
   ['startBtn', 'startBtn2'].forEach((id) => {
     const b = document.getElementById(id); if (!b) return;
     if (next) { b.href = `lessons/${next.slug}/index.html`; if (started) b.textContent = `Continue: ${window.COURSE.name(next)} →`; }
