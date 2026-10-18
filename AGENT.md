@@ -54,13 +54,16 @@ https://nkiliyumwami.github.io/iot-kids-course/. Read this whole file and `ROADM
 - Start a new module from `lessons/_module-template/`, not from lesson 1. Keep its layout: story card, parts list,
   3D scene with wiring, editable code panel, three challenges and "Why?" taps.
 - Look-alike sensors are a **"Swap the part"** box inside the parent module, never a module of their own
-  (tilt switch, rain sensor, water level, IR obstacle, radar motion).
+  (water level in the rain module, PIR or radar motion in the door module, tilt switch, potentiometer for the joystick).
+- Module ideas come from the Eazytronic project library (229 videos of real kids' builds). Prefer the sensors it uses most:
+  ultrasonic, IR obstacle, raindrop, soil moisture, joystick. It has no PIR, sound or reed-switch builds.
 - Module pins (all checked against the rules below):
 
   | Part | Pin | Why |
   |---|---|---|
-  | Digital sensor (reed, tilt, PIR, IR obstacle) | D14 or D32, `Pin.IN, Pin.PULL_UP` | safe inputs with a built-in pull-up |
-  | Analog sensor (soil, sound, joystick) | D33, D34 or D35 | ADC1, so they still work with Wi-Fi on |
+  | Digital sensor (IR obstacle, PIR, tilt) | D14, `Pin.IN, Pin.PULL_UP` | safe input with a built-in pull-up |
+  | Touch (foil fence) | D32, `TouchPad(Pin(32))` | a touch pin, so no extra sensor is needed |
+  | Analog sensor (soil D33, raindrop D34, joystick D35) | D33, D34 or D35 | ADC1, so they still work with Wi-Fi on |
   | SG90 servo signal | D18, PWM at 50 Hz | free pin, no start-up job |
   | DHT11 data | D4 | free pin, one data wire |
   | HC-SR04 | trig D19, echo D21 | two free pins side by side |

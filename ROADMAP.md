@@ -51,26 +51,37 @@ Start each from `lessons/_module-template/`; look-alike parts go in its "Swap th
   `if … : turn(90) else: turn(0)`). Swap the part: none. 3D scene: a waving arm on the desk.
 - [ ] **The Parking Gate** (`m-parking-gate`, needs `m-servo`): new part: HC-SR04P distance sensor (3.3 V version), TRIG on
   D19, ECHO on D21 (a 5 V HC-SR04 needs a 1 kΩ/2 kΩ divider on ECHO). New code idea: `time_pulse_us()` and `t / 58` for
-  centimetres. If-line: `if d < NEAR:` → gate(90), else gate(0). Swap the part: IR obstacle sensor or radar motion sensor on D14.
-  3D scene: the gate (the template's scene, `assets/models/modules/parking-gate.glb`).
+  centimetres. If-line: `if d < NEAR:` → gate(90), else gate(0). Swap the part: IR obstacle sensor on D14. Challenge: the
+  same parts make a smart dustbin lid. 3D scene: the gate (the template's scene, `assets/models/modules/parking-gate.glb`).
+  Library: ≈46 ultrasonic builds (parking/toll gates, barriers, dustbins).
 - [ ] **The Thirsty Plant** (`m-thirsty-plant`): new part: soil moisture probe on D33 (ADC1, powered from 3V3). New code
   idea: reading a probe and choosing a "too dry" number from real readings. If-line: `if soil.read() > DRY:` → LED on D25,
-  else off. Swap the part: rain sensor, water level sensor (same analog read). 3D scene: a garden bed.
-- [ ] **Catch My Sibling** (`m-catch-my-sibling`): new part: PIR motion sensor (HC-SR501, 5 V power, 3.3 V output) on D14
-  (`Pin.IN`). New code idea: a sensor that needs a minute to settle, and its own "hold" time. If-line:
-  `if pir.value() == 1:` → buzzer on D13 beeps, else silent. Swap the part: radar motion sensor (RCWL-0516). 3D scene:
-  a bedroom at night.
-- [ ] **Is the Door Open?** (`m-door`): new part: reed switch and magnet on D32 (`Pin.IN, Pin.PULL_UP`). New code idea:
-  a magnet as a button nobody presses. If-line: `if door.value() == 1:` → LED on D25, else off. Swap the part: tilt
-  switch. 3D scene: a door.
-- [ ] **Too Hot in Here** (`m-too-hot`): new part: DHT11 on D4. New code idea: `import dht`, `measure()`,
-  `temperature()`. If-line: `if t > HOT:` → RGB LED red, else green. Replaces the landing page's smoke-alarm card as a heat
-  alarm (no flame or gas sensors). Swap the part: none. 3D scene: a kitchen.
-- [ ] **Clap On Clap Off** (`m-clap`): new part: sound sensor on D34 (ADC1, listening-only). New code idea: a toggle,
-  `on = not on`. If-line: `if mic.read() > LOUD:` → toggle the LED on D25. Swap the part: none. 3D scene: a bedroom at night.
+  else off. Swap the part: none. Challenge: a pretend pump (a servo tips a cup). 3D scene: a garden bed. Library: 7 soil builds
+  plus many "automatic plant watering" builds.
+- [ ] **Rain, Rain, Go Away** (`m-rain-roof`, needs `m-servo`): new part: raindrop sensor board on D34 (analog, ADC1,
+  listening-only). New code idea: wet means a *smaller* number. If-line: `if rain.read() < WET:` → servo swings the roof
+  over the washing, else back. Swap the part: water-level sensor. 3D scene: a washing line beside a house. Library: the
+  channel's signature build (rain-retracting clothesline, 34K likes) and ≈10 rain builds.
+- [ ] **Who's at the Door?** (`m-door`): new part: IR obstacle sensor on D14 (`Pin.IN, Pin.PULL_UP`, reads 0 when
+  something is close; its little knob sets the range). New code idea: an active-low sensor. If-line: `if eye.value() == 0:`
+  → buzzer on D13 beeps, else silent. Swap the part: PIR motion sensor, radar motion sensor (RCWL-0516), tilt switch on
+  the door. 3D scene: a front door at night. Library: ≈41 IR builds (door and gate alarms, touchless taps). Replaces the
+  earlier "Catch My Sibling" (PIR) and "Is the Door Open?" (reed switch) ideas.
 - [ ] **Follow My Hand** (`m-joystick`, needs `m-servo`): new part: joystick X on D35 (ADC1). New code idea: turning a
   reading into an angle, `x * 180 // 4095`. If-line: `if x < MIDDLE:` → servo left, else right (then the smooth version).
-  Swap the part: a potentiometer. 3D scene: the desk with a pointer arm.
+  Swap the part: a potentiometer. 3D scene: a crane arm on the desk. Library: "Joystick-Controlled Servo (KY-023)", ≈6
+  joystick builds (goalkeeper games).
+- [ ] **Too Hot in Here** (`m-too-hot`): new part: DHT11 on D4. New code idea: `import dht`, `measure()`,
+  `temperature()`. If-line: `if t > HOT:` → red LED on D25, else green on D27. Replaces the landing page's smoke-alarm card
+  as a heat alarm (no flame or gas sensors). Swap the part: none. 3D scene: a kitchen.
+- [ ] **Don't Touch the Fence** (`m-touch-fence`): new part: none! A foil "fence" on a wire to D32, read with
+  `TouchPad(Pin(32))`. New code idea: the ESP32 can feel a touch by itself; smaller number = touched. If-line:
+  `if fence.read() < TOUCHED:` → buzzer on D13. Swap the part: a coin or a piece of fruit as the touch plate. 3D scene: a
+  vegetable garden with a fence. Library: "Field Protection" electric-fence alarm (2 builds, pretend fence only).
+- [ ] **Radar Scanner** (`m-radar`, needs `m-parking-gate`): new part: none new, the HC-SR04P is mounted on the servo horn.
+  New code idea: a `for angle in range(0, 181, 10):` sweep that remembers the closest reading. If-line:
+  `if d < closest:` → remember this angle; at the end, point the servo at it and print a little Shell map. Swap the part:
+  none. 3D scene: a ship's radar screen. Library: "Ultrasonic Radar Scanner" (servo sweep + radar display).
 - [ ] **Landing page**: smoke-alarm card → heat alarm, goal-counter card → IR obstacle (not laser), link each project card
   to its module, update the kit checklist.
 
@@ -119,3 +130,4 @@ an extra interactive demo, or fixes from the course owner's comments. Add any ne
 - 2026-10-16: Built lesson 10 (`10-phone-control`). No new hardware. New idea: reading the request. Code: `request = client.recv(1024)`, `if b"GET /walk" in request and light == "green":` sets the `waiting` flag (`global waiting`), `client.settimeout(1)` so a silent visitor cannot freeze the lights, a link `<a href='/walk'>` on the page, `content='2;url=/'` so the refresh never repeats /walk, and a lights loop that gives at least 4 s green, 2 s yellow and the full red before clearing the flag. Safety rules live in the program: the phone can only ask, unknown paths (e.g. /make-green) change nothing, presses during yellow/red are ignored. Added word Path. Demos: address picker (/, /walk, /make-green), a "try to break the crossing" card (press, press 5 times, sneaky address), pretend phone with a clickable button, sliders for walking time and button words. Checked with `tools/check.sh` (desktop and 400 px, no script errors, no sideways scroll), simulated presses in green/yellow/red and the quiz. Left to do: not run on a real board and phone (needs Wi-Fi); no story chapter yet. Part 2 is complete.
 - 2026-10-17: All ten lessons are built, so this run improved lesson 9 (`09-status-page`): the "Lights and page together" step now has a "The page will not open? Check these, in order" card (same Wi-Fi, exact http:// address, program still running, IP address may have changed) for learners testing on a real phone. Checked with `tools/check.sh` (desktop and 400 px, no script errors, no sideways scroll) and confirmed the card appears. Left to do: story chapters for lessons 5–10; real-board tests of lessons 8–10.
 - 2026-10-18: Groundwork for sensor modules (no module built yet). `AGENT.md` has a "Sensor modules (after lesson 7)" section (bare board, read/if/do/else/undo, swap boxes, pins, servo on VIN, safety list). `course.js` has a `modules` list (Servo Says Hello, The Parking Gate, The Thirsty Plant, Catch My Sibling, all planned) with `moduleBySlug()`, `moduleUnlocked()` and `itemBySlug()`; ready modules count for the course certificate. `lessons.html` has a "Pick a sensor" section between Part 1 and Part 2 (locked until lesson 7, "Do … first", "Coming soon"). New `lessons/_module-template/` page built from the parking-gate preview, ported from three.js r170 to r128 (story, parts, 3D gate and wiring views, the real MicroPython runner as the code panel, Why taps, swap box, three challenges, quiz, badge); its model is now `assets/models/modules/parking-gate.glb` (Draco, 686 KB, was 3.5 MB inside a 4.7 MB page). Four module badges and module pin facts in `PINS` (shown in the Pin Explorer and Lesson 0). Checked at desktop and 400 px. Left to do: every module page; no module wiring is tested on hardware.
+- 2026-10-18: Sensor modules re-planned against the Eazytronic project library (229 videos of kids' builds, 12 sensors). Kept Servo Says Hello, The Parking Gate, The Thirsty Plant, Follow My Hand and Too Hot in Here. Added Rain, Rain, Go Away (raindrop → servo roof, the library's most popular build), Who's at the Door? (IR obstacle → buzzer, replacing the PIR and reed-switch ideas, which the library never uses), Don't Touch the Fence (the ESP32's own touch pin, no sensor to buy) and Radar Scanner (ultrasonic on a servo). Dropped Clap On Clap Off (no sound-sensor builds). `course.js` now lists 9 planned modules; 5 new badges; pin facts for D14, D32 and D34 updated.
