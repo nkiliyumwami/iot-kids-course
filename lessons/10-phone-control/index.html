@@ -2221,6 +2221,12 @@ function renderExtra(s) {
     if (s.extra !== 'E1') extra.appendChild(codeCard);
   }
   if (s.why) extra.appendChild(whyCard(s.why()));
+  if (s.title === 'Let the program decide') extra.appendChild(el(`<div class="card"><h4>🔧 You tapped the button and nothing happened? Check these, in order</h4><ul class="list">
+      <li><span style="font-size:20px">1️⃣</span><span>Is the light <b>green</b> right now? A tap during yellow or red is ignored on purpose.</span></li>
+      <li><span style="font-size:20px">2️⃣</span><span>Does the code say <b>/walk</b> in both places, in the link and in the <b>if</b>? One different letter and they never match.</span></li>
+      <li><span style="font-size:20px">3️⃣</span><span>Does the page still open? If not, use the checklist from Lesson 9 first.</span></li>
+      <li><span style="font-size:20px">4️⃣</span><span>Wait a few seconds. The program checks <b>waiting</b> once a second, and green stays on for at least 4 seconds before yellow.</span></li>
+    </ul><p class="note" style="margin-top:8px">Debugging means finding where the message got lost: phone, Wi-Fi, request, <b>if</b>, lights.</p></div>`));
   if (s.console && s.extra !== 'A' && s.extra !== 'E1') extra.appendChild(consoleCard());
   if (s.extra === 'E1') {
     const wrap = el(`<div style="display:grid;gap:14px"></div>`);
