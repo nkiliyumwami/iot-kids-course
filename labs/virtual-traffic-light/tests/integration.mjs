@@ -197,6 +197,13 @@ const WATCH = () => {
     const cancel = window.speechSynthesis.cancel.bind(window.speechSynthesis);
     window.speechSynthesis.cancel = () => { window.__log.push(['cancel']); cancel(); };
   }
+  // note when a missing MP3 fails, so a late "no recording" answer can be waited for (voice.js's own handler runs in the same event)
+  const RealAudio = window.Audio;
+  window.Audio = function (src) {
+    const a = new RealAudio(src), m = String(src).match(/([0-9a-f]{8})\.mp3/);
+    a.addEventListener('error', () => window.__log.push(['mp3-error', m && m[1]]));
+    return a;
+  };
   let real;
   Object.defineProperty(window, 'KKVoice', { configurable: true, get: () => real, set(v) { const say = v.say; v.say = (t, o) => { window.__log.push(['say', v.clean(t), v.id(t)]); return say(t, o); }; real = v; } });
 };
@@ -234,18 +241,55 @@ const WATCH = () => {
   await lab1.uncheck('#readToMe'); await lab1.close();
   await page.reload(); await page.waitForFunction(() => window.__lesson && window.__lesson.kit);
   check(!(await page.isChecked('#readToMe')), 'and unticking it in Circuit Lab 1 unticks it in the lab');
-  await page.check('#readToMe'); await sleep(200);
+  // No fixed waits from here: every wait is for a real speech event. The test's speech stub never finishes a line by
+  // itself, so a line counts as playing from its 'speak' until the next 'cancel'.
+  const spokenOf = (i) => page.evaluate((i) => { const s = window.__lesson.STEPS[i]; return window.KKVoice.clean(s.title + (/[.!?]$/.test(s.title) ? ' ' : '. ') + s.text); }, i);
+  const waitSpeak = async (i) => { const t = await spokenOf(i); await page.waitForFunction((t) => window.__log.some((e) => e[0] === 'speak' && e[1] === t), t, { timeout: 15000 }); };
+  const voices = (log, playing) => { // replay a log: most lines playing at once, lines that aren't the latest step's, lines started without stopping the one before
+    let max = playing, lastSay = null; const stale = [], unstopped = [];
+    for (const e of log) {
+      if (e[0] === 'say') lastSay = e[1];
+      if (e[0] === 'cancel') playing = 0;
+      if (e[0] === 'speak') {
+        if (playing) unstopped.push(e[1].slice(0, 30));
+        playing++; max = Math.max(max, playing);
+        if (e[1] !== lastSay) stale.push(e[1].slice(0, 30));
+      }
+    }
+    return { max, stale, unstopped };
+  };
+  await page.evaluate(() => { window.__log = []; });
+  await page.check('#readToMe');
+  await waitSpeak(0); // ticking it reads the open step: clear the log only once that line has really started
   await page.evaluate(() => { const l = window.__lesson; l.state.mode = 'guided'; l.done('welcome'); window.__log = []; });
-  await page.click('#nextBtn'); await sleep(1000);
+  await page.click('#nextBtn'); await waitSpeak(1);
   await page.evaluate(() => { window.__lesson.done(window.__lesson.STEPS[1].id); });
-  await page.click('#nextBtn'); await sleep(800);
+  await page.click('#nextBtn'); await waitSpeak(2);
   log = await page.evaluate(() => window.__log);
   const says = log.filter((e) => e[0] === 'say').map((e) => e[1].split('.')[0]);
   const titles = await page.evaluate(() => [1, 2].map((i) => window.__lesson.STEPS[i].title));
   check(same(says, titles), 'with it ticked, each new step is read as it opens', { says, titles });
-  const speaks = log.map((e, i) => [e, i]).filter(([e]) => e[0] === 'speak').map(([, i]) => i);
-  const stoppedFirst = speaks.slice(1).every((i) => log.slice(speaks[speaks.indexOf(i) - 1] + 1, i).some((e) => e[0] === 'cancel'));
-  check(speaks.length === 2 && stoppedFirst, 'changing step stops the last line before the next starts (no overlapping voices)', log.map((e) => e[0]));
+  let v = voices(log, 1); // the first step's line was still playing when the log was cleared
+  check(log.filter((e) => e[0] === 'speak').length === 2 && !v.unstopped.length, 'changing step stops the line before it, before the next one starts', log.map((e) => e[0]));
+  check(v.max === 1 && !v.stale.length, 'never two voices at once, and every line spoken belongs to the step on screen', v);
+  // a slow "no recording" answer for a step the learner has already left must stay silent
+  const held = []; let onHeld = () => {};
+  await page.route('**/assets/voice/en/*.mp3*', (route) => { held.push(route); onHeld(); });
+  const heldCount = (n) => new Promise((r) => { onHeld = () => { if (held.length >= n) r(); }; onHeld(); });
+  await page.evaluate(() => { window.__lesson.done(window.__lesson.STEPS[2].id); window.__log = []; });
+  await page.click('#nextBtn'); await heldCount(1); // step 3 asks for its MP3; the answer is held back
+  await page.evaluate(() => { window.__lesson.done(window.__lesson.STEPS[3].id); });
+  await page.click('#nextBtn'); await heldCount(2); // the learner moves on to step 4 before step 3's answer arrives
+  const oldText = await spokenOf(3), old = await page.evaluate((t) => window.KKVoice.id(t), oldText);
+  await held[0].fulfill({ status: 404, body: '' }); // now step 3's "no recording" answer arrives, late
+  await page.waitForFunction((id) => window.__log.some((e) => e[0] === 'mp3-error' && e[1] === id), old, { timeout: 15000 });
+  const late = await page.evaluate((t) => window.__log.some((e) => e[0] === 'speak' && e[1] === t), oldText);
+  await held[1].fulfill({ status: 404, body: '' });
+  await waitSpeak(4);
+  await page.unroute('**/assets/voice/en/*.mp3*');
+  log = await page.evaluate(() => window.__log);
+  v = voices(log, 0);
+  check(!late && !v.stale.length && v.max === 1 && log.filter((e) => e[0] === 'speak').length === 1, 'a late fallback for a step already left never speaks; only the new step is read', log.map((e) => e[0] === 'speak' ? 'speak:' + e[1].slice(0, 20) : e.join(':')));
   await page.locator('.voice-row').scrollIntoViewIfNeeded();
   await page.screenshot({ path: `${OUT}/05_lab_voice_controls.png` });
   await page.evaluate(() => window.KKVoice.stop());
