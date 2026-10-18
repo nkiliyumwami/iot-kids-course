@@ -1,0 +1,512 @@
+{
+  "note": "Officer Ohm narration recorded from the published course. Do not edit by hand; see narration.mjs.",
+  "voiceJs": "2954fdcc79870a030358e0c58669b4c91671185cc0025386e193980d60c32be3",
+  "linesJson": "21093485c321518354b4eef5c773bea807594bd6c4f8b554a53a80642f08a23f",
+  "recordings": [
+    {
+      "id": "04cf6fd2",
+      "where": "lab2-code-switch · Move the red wire",
+      "text": "Move the red wire. Move the top end of the red wire from 3V3 to D25. In code, D25 is Pin(25). Remember the name trick from Pin Detective? The other end stays in the breadboard, so the rest of your circuit doesn’t change.",
+      "sha256": "2af2d41477f56cf10203b24f9c8cf20945974ef0fb2b2ce0f58061275eda8386"
+    },
+    {
+      "id": "055332ce",
+      "where": "00-meet-esp32 · Wake up the blue LED",
+      "text": "Wake up the blue LED. There’s a tiny blue light on the board, and it’s wired to pin D2. Your program can switch that pin on and off. That’s what most pins are for!",
+      "sha256": "55b3eb982dfcfd278c1c1e3572e9384b69185c6e39ca91e21612d6dd7514828d"
+    },
+    {
+      "id": "11cebd5c",
+      "where": "00-meet-esp32 · Detective quiz",
+      "text": "Detective quiz. Three quick questions and the Pin Detective badge is yours.",
+      "sha256": "5d48f4c14bd38468d534c4a09d152cdab1e90fae323f41c3c4c472cf2d665044"
+    },
+    {
+      "id": "1b27c346",
+      "where": "00-meet-esp32 · How does it reach the internet?",
+      "text": "How does it reach the internet? Your ESP32 can join Wi-Fi without any wires. To do that, it needs something that sends and catches invisible radio waves.",
+      "sha256": "69fbfc56453e238545f83d6d69392edafe4a2934aca58e5062f15fd22cd35284"
+    },
+    {
+      "id": "1c933868",
+      "where": "lab1-light-it-up · Meet the LED",
+      "text": "Meet the LED. An LED is a tiny light. Look closely: one leg is long and one is short. That matters! Electricity can only go through an LED one way: in through the long leg, out through the short leg.",
+      "sha256": "6e81f42feecdd4537f342ff0065e8c7262308b59894397c69e491a75efef3929"
+    },
+    {
+      "id": "1e68125c",
+      "where": "lab2-code-switch · Unplug first",
+      "text": "Unplug first. You know the golden rule: never move wires while the board has power.",
+      "sha256": "0b7576f39f6878fef480799d92b9736cc5ba187d53b89186cc48d589dafc071f"
+    },
+    {
+      "id": "1f621451",
+      "where": "00-meet-esp32 · Find the road home",
+      "text": "Find the road home. Electricity is like a runner on a loop: it leaves the board, does its job (like lighting an LED), and must come back home. No way home, no light! The way home is called ground, and the board prints it as GND.",
+      "sha256": "73dc1ca3c771ca3a8c40c0e4798e6b214f022554453eed6b4a7d79b9e68f238d"
+    },
+    {
+      "id": "2bde1e0a",
+      "where": "lab2-code-switch · Make it yours",
+      "text": "Make it yours. Change how long each sleep lasts. Smaller numbers make a faster blink. Can you make a super-fast flash, and then a slow, sleepy blink?",
+      "sha256": "aa3fd82ede49bd0a58dc15ffcf4a4e9d8042bd8fb88d58f66b79033950dba95f"
+    },
+    {
+      "id": "34188780",
+      "where": "lab1-light-it-up · The road home, part 1",
+      "text": "The road home, part 1. Electricity that leaves the LED’s short leg needs a road home to GND. First, a short black wire from the short leg’s strip to the blue − rail.",
+      "sha256": "5c209f1066868a6e159be0ac8f091c9089ff66588bf4c109fae2e3b915024138"
+    },
+    {
+      "id": "38c1f16c",
+      "where": "story l0",
+      "text": "The world our children are growing up in runs on smart machines: robots, smart homes, self-driving cars. Someone has to invent and build them. Why not your child? It all starts with a tiny computer like this one.",
+      "sha256": "c89f291ce00390aa1958e5cc1723eb06d25d438e485a31e102ef52d9c407a453"
+    },
+    {
+      "id": "3e4bec9d",
+      "where": "lab1-light-it-up · Power goes in last",
+      "text": "Power goes in last. Last wire: the red one brings the power. It goes from 3V3 (3.3 volts, always on) to row 7 above the gap, the resistor’s top strip. We connect power last, so nothing can get power until the whole circuit is ready.",
+      "sha256": "c9bc2ca6bd8e18db1b54dd9a54087a180c2a2750b52e886572675880e75a811f"
+    },
+    {
+      "id": "4023c65e",
+      "where": "lab1-light-it-up · The fix-it shop",
+      "text": "The fix-it shop. Officer Ohm’s friends built the same circuit three times, but each light stays dark. Can you find each problem? Tap the part that’s wrong.",
+      "sha256": "a428863fee7f5cd2be02323d161562e46c1f18c2d70a736519140c72d6dfd7b6"
+    },
+    {
+      "id": "441f015a",
+      "where": "00-meet-esp32 · Pins with a special job",
+      "text": "Pins with a special job. A few pins already have a job, like talking to your computer, restarting the board, or only listening. They’re now orange. Good engineers check a pin’s job before they use it.",
+      "sha256": "4aa02984e4289fa689d13c09665b560195ccd260684f5181879df3529706df6b"
+    },
+    {
+      "id": "4971ef22",
+      "where": "00-meet-esp32 · The name trick",
+      "text": "The name trick. Here’s a secret that confuses lots of grown-ups. In code we write a GPIO number, like Pin(25). Where is pin 25? Count along the board… or is there a better way?",
+      "sha256": "80d23e8a64dd3fbebb018b49615d35adf62ad3a190aa924ca06b228d3cb6a6a9"
+    },
+    {
+      "id": "4fc8a281",
+      "where": "lab2-code-switch · Run it on your real ESP32",
+      "text": "Run it on your real ESP32. Now the real thing! On your real breadboard, move the red wire from 3V3 to D25, with the board unplugged. Then send your program to the ESP32.",
+      "sha256": "4467d7ec996f5c680a369de36c4c0fb1d05e0966d79fc2bdd2f27931adcf57aa"
+    },
+    {
+      "id": "583b135f",
+      "where": "story l4",
+      "text": "And it’s all about people. Our young makers solve real problems from their own homes and communities: safer road crossings, gardens that water themselves, homes that save power.",
+      "sha256": "69e8c64cc17f1cb36ecc25f8704871e5c12a7fc73f3868db287962bc31cace8a"
+    },
+    {
+      "id": "59631ca7",
+      "where": "lab1-light-it-up · Check, then plug in",
+      "text": "Check, then plug in. Before power, engineers check every connection. Follow the path with your finger: 3V3, red wire, resistor, LED, black wire, − rail, black wire, GND. All good? Then it’s time to plug in!",
+      "sha256": "813aa9f1ad1dc56bd0c64d3529448bbd39be40636db3ad7099c31d035520df06"
+    },
+    {
+      "id": "68c08359",
+      "where": "story l1",
+      "text": "At KundaKode, kids don’t just watch videos. They wire real circuits with their own hands, write real code, and watch their own traffic light come to life. That’s the moment a child thinks: I built this!",
+      "sha256": "339663e315e732f205e560b1cee781cdfdfa1a47996a3659ddb4184dfca257f2"
+    },
+    {
+      "id": "6ab5efe5",
+      "where": "00-meet-esp32 · Find the brain",
+      "text": "Find the brain. Every computer has a brain that runs the program. On this board the brain hides under a shiny metal lid.",
+      "sha256": "15a7f52504caf6a034f03b598614442e8d2bd46056b9d3e0027098ae1b8826dc"
+    },
+    {
+      "id": "6f46fac0",
+      "where": "story l2",
+      "text": "Then they make it their own. Change the code, try a new idea, test it, fix it. That’s how engineers think, and it’s a skill for life, whatever your child becomes.",
+      "sha256": "12ffb32136472ff48b88d88449da2f99161fa7b07f5959363ab20c34eb3a861c"
+    },
+    {
+      "id": "6fb01e49",
+      "where": "lab1-light-it-up · Meet the resistor",
+      "text": "Meet the resistor. A resistor slows electricity down, like a narrow part of a water pipe. Without one, too much electricity rushes through the LED and can break it. The colour bands tell you how strong it is.",
+      "sha256": "be79ef9d158f9d9cce28039bf14a0cae9139867248433443cafa9c91eabbd64d"
+    },
+    {
+      "id": "71ec644c",
+      "where": "lab2-code-switch · Your light, your code",
+      "text": "Your light, your code. In Circuit Lab 1 you lit an LED with power from 3V3. It stays on all the time: the only way to switch it off is to pull out the cable! Today the ESP32’s code becomes the switch. Only one wire moves.",
+      "sha256": "6fbec3b769d2763f4cb27b6ddf5d09e1e6f60a9b4c7b581a28d8ff9e3a25bb6b"
+    },
+    {
+      "id": "7488e60c",
+      "where": "lab2-code-switch · Get the pin ready",
+      "text": "Get the pin ready. Every MicroPython program starts by getting its tools. Then we tell the ESP32 that pin 25 is an output: it will push electricity out to the LED.",
+      "sha256": "d72f27164cdcaa4be0398d479e29d79cb550d8dfda175368fd05c5f90b78afae"
+    },
+    {
+      "id": "7aeacc03",
+      "where": "lab2-code-switch · Be the computer",
+      "text": "Be the computer. Can you make the LED blink? Tap ON and OFF again and again, as fast as you can!",
+      "sha256": "c4efebb249b80b42442cdc2d7254f080eb59fffcd956be5f3b3c4ba04fc2ac21"
+    },
+    {
+      "id": "8c37c8db",
+      "where": "story end",
+      "text": "No experience needed, just curiosity. From age ten, step by step, your child goes from using technology to creating it. Start the free course today, and build the future with KundaKode.",
+      "sha256": "85dce91070fbc95e3ef360d383822b291d2eb839825e61e041c4cf09da2a130d"
+    },
+    {
+      "id": "8d906ade",
+      "where": "story l3",
+      "text": "Next, the machine learns to listen. A button, a sensor, a signal: the same ideas behind robots, drones and smart devices. For a curious kid, it feels like a superpower.",
+      "sha256": "927c4704f43f2730b8e2908a777a95ed729ef8f42522f8092198b62b608b46c3"
+    },
+    {
+      "id": "90980005",
+      "where": "lab2-code-switch · Switch it on",
+      "text": "Switch it on. Now the magic line. led.value(1) sets the pin HIGH: 3.3 volts flow out, through the resistor and the LED, and home to GND. led.value(0) sets it LOW again.",
+      "sha256": "99bcc7514ab2ccc076d249d9e083174700aec242cebb0ec9e660446628470df4"
+    },
+    {
+      "id": "a2cde6d5",
+      "where": "lab1-light-it-up · Place the resistor",
+      "text": "Place the resistor. Put the resistor across the middle gap, in row 7: one leg above the gap and one leg below. Why across the gap? Then electricity arriving at the top strip can only reach the bottom strip by going through the resistor.",
+      "sha256": "5e14d60cc9b839136c191bedd3e9e107586ac5385deb4af0ef67a5e14b3226d6"
+    },
+    {
+      "id": "a6e54fb8",
+      "where": "lab1-light-it-up · Your first circuit",
+      "text": "Your first circuit. Today you’ll build a real light with your own hands. No code at all! Everything you need is on the table: a breadboard, a red LED, a resistor and some jumper wires. Your ESP32 will give the power.",
+      "sha256": "d6e226189d7630c58430e2c71da26a9253263b524bf0fdcd7b6b66e9fe4ce9dc"
+    },
+    {
+      "id": "a9478857",
+      "where": "lab1-light-it-up · Secret tunnels",
+      "text": "Secret tunnels. The breadboard hides metal strips under its holes. Holes on the same strip are joined, so electricity can travel between them. Tap some holes to find the hidden strips!",
+      "sha256": "482ef02bd3d67db4833f81ff0e90b64c4a690e3da2a7ca47cfa6d83bcdfdc8cc"
+    },
+    {
+      "id": "b6d2531d",
+      "where": "lab2-code-switch · Plug in… and nothing?",
+      "text": "Plug in… and nothing? Everything is wired. Plug the USB cable back in and watch your LED.",
+      "sha256": "d15119e5cfac45a736be9baa07f91892a5ba7a8c8edf25f88d39f9ac512f2f95"
+    },
+    {
+      "id": "b802fceb",
+      "where": "lab1-light-it-up · Build it for real",
+      "text": "Build it for real. Time to build it on your real breadboard, exactly like on the screen. Use the same holes, and ask an adult to check before you plug in.",
+      "sha256": "a7b5a9a9679552a3d01dcf268db9c19c43193c97bfa16625cb66560115b4ee46"
+    },
+    {
+      "id": "bf2e2fac",
+      "where": "lab2-code-switch · Blink forever",
+      "text": "Blink forever. Here is a whole program. while True: repeats the lines inside it forever. time.sleep(0.5) waits half a second, so your eyes can see each change.",
+      "sha256": "f37a8007916a7afd2696d0d0c003302abde258e70627eec2818b6d57d8b09d3d"
+    },
+    {
+      "id": "c11be62c",
+      "where": "00-meet-esp32 · Count the legs",
+      "text": "Count the legs. See the two rows of metal legs? They are called pins, and they connect the board to wires, lights and sensors. Each one has a name printed next to it.",
+      "sha256": "3ee40965dc0e2e7d28faeddeb12d85e2cb8d72274a7d8a1753ab7a6af0649fa5"
+    },
+    {
+      "id": "ce0c8b0b",
+      "where": "lab1-light-it-up · The road home, part 2",
+      "text": "The road home, part 2. The − rail isn’t joined to the ESP32 yet. A long black wire joins the rail to a GND pin, and the road home is complete.",
+      "sha256": "945cb128b27e3b308ea789ba01a50422cbfa2c63c943fc63016d136bfe204221"
+    },
+    {
+      "id": "d507d94e",
+      "where": "lab2-code-switch · Lab quiz",
+      "text": "Lab quiz. Three quick questions and the Circuit Lab 2 badge is yours.",
+      "sha256": "65cf7bb3cdd02e5baf1c1a07d3dabc209c97d12d3b28b9bc1e2288759601c575"
+    },
+    {
+      "id": "d6eb465e",
+      "where": "00-meet-esp32 · Wake it up",
+      "text": "Wake it up. Right now the board is asleep: it has no power. Where would you plug in a cable to give it power and send it your code?",
+      "sha256": "1c856110b07f1ce3ebbc42d4427c4c4a535d8c09a396a50c10035956ead08836"
+    },
+    {
+      "id": "d79f6167",
+      "where": "lab1-light-it-up · Place the LED",
+      "text": "Place the LED. Now the LED. Its long leg goes in the same strip as the resistor’s bottom leg: row 7, below the gap. The short leg goes next door, in row 8.",
+      "sha256": "18f496caf613dc9f590e5335327f8a66d85ed307cd6a7c1564d42dcd2d9aca7a"
+    },
+    {
+      "id": "e4f1582b",
+      "where": "00-meet-esp32 · Meet your ESP32",
+      "text": "Meet your ESP32. This little board will be the brain of every project in this course: a traffic light, a buzzer, even something you control from a phone. Today you’re a pin detective. You’ll explore the board, find its secrets, and learn the real words engineers use. Each mission unlocks a maker word.",
+      "sha256": "fed8bcd966ed22d8e899c63709c4c4536c7306512d7e8aa24a917451009e806d"
+    },
+    {
+      "id": "ec2c0c12",
+      "where": "lab1-light-it-up · Safety first: unplug",
+      "text": "Safety first: unplug. Engineers have a golden rule: never change wires while the board has power. One wrong hole could make a short circuit. Your ESP32 is still plugged in from Pin Detective. See its red power light?",
+      "sha256": "e01d77d54cf3c91fa8dfc07495c62d6d7c4bde4eec320e7f196c8f13a100f1c5"
+    },
+    {
+      "id": "f7f5910c",
+      "where": "00-meet-esp32 · Pin hunt!",
+      "text": "Pin hunt! Time to prove your detective skills. Officer Ohm calls out a pin and you find it, fast!",
+      "sha256": "838c19f8b309fa9dc2a9f57fcb0ad06307515f1c0ed4ef9f58e37a56482a480b"
+    },
+    {
+      "id": "fba47b74",
+      "where": "00-meet-esp32 · Find the power pins",
+      "text": "Find the power pins. Two pins give electricity to other parts. One gives a gentle 3.3 volts, printed 3V3. One brings in about 5 volts from the USB cable, printed VIN. A volt measures how hard electricity pushes, like water pressure in a pipe.",
+      "sha256": "58af083f279f6d06f56291ad5d24ed4fa53c8c35ef3371a90582b0c55259ba0e"
+    },
+    {
+      "id": "feeddb57",
+      "where": "lab1-light-it-up · Lab quiz",
+      "text": "Lab quiz. Three quick questions and the Circuit Lab 1 badge is yours.",
+      "sha256": "a2a99b3c19f0602befe7794a8bd096fc0d845541b8ec7e256871bbe4ab2d6b8f"
+    }
+  ],
+  "lessons": {
+    "00-meet-esp32": [
+      {
+        "title": "Meet your ESP32",
+        "id": "e4f1582b",
+        "text": "Meet your ESP32. This little board will be the brain of every project in this course: a traffic light, a buzzer, even something you control from a phone. Today you’re a pin detective. You’ll explore the board, find its secrets, and learn the real words engineers use. Each mission unlocks a maker word."
+      },
+      {
+        "title": "Find the brain",
+        "id": "6ab5efe5",
+        "text": "Find the brain. Every computer has a brain that runs the program. On this board the brain hides under a shiny metal lid."
+      },
+      {
+        "title": "How does it reach the internet?",
+        "id": "1b27c346",
+        "text": "How does it reach the internet? Your ESP32 can join Wi-Fi without any wires. To do that, it needs something that sends and catches invisible radio waves."
+      },
+      {
+        "title": "Wake it up",
+        "id": "d6eb465e",
+        "text": "Wake it up. Right now the board is asleep: it has no power. Where would you plug in a cable to give it power and send it your code?"
+      },
+      {
+        "title": "Count the legs",
+        "id": "c11be62c",
+        "text": "Count the legs. See the two rows of metal legs? They are called pins, and they connect the board to wires, lights and sensors. Each one has a name printed next to it."
+      },
+      {
+        "title": "Find the road home",
+        "id": "1f621451",
+        "text": "Find the road home. Electricity is like a runner on a loop: it leaves the board, does its job (like lighting an LED), and must come back home. No way home, no light! The way home is called ground, and the board prints it as GND."
+      },
+      {
+        "title": "Find the power pins",
+        "id": "fba47b74",
+        "text": "Find the power pins. Two pins give electricity to other parts. One gives a gentle 3.3 volts, printed 3V3. One brings in about 5 volts from the USB cable, printed VIN. A volt measures how hard electricity pushes, like water pressure in a pipe."
+      },
+      {
+        "title": "Wake up the blue LED",
+        "id": "055332ce",
+        "text": "Wake up the blue LED. There’s a tiny blue light on the board, and it’s wired to pin D2. Your program can switch that pin on and off. That’s what most pins are for!"
+      },
+      {
+        "title": "The name trick",
+        "id": "4971ef22",
+        "text": "The name trick. Here’s a secret that confuses lots of grown-ups. In code we write a GPIO number, like Pin(25). Where is pin 25? Count along the board… or is there a better way?"
+      },
+      {
+        "title": "Pins with a special job",
+        "id": "441f015a",
+        "text": "Pins with a special job. A few pins already have a job, like talking to your computer, restarting the board, or only listening. They’re now orange. Good engineers check a pin’s job before they use it."
+      },
+      {
+        "title": "Pin hunt!",
+        "id": "f7f5910c",
+        "text": "Pin hunt! Time to prove your detective skills. Officer Ohm calls out a pin and you find it, fast!"
+      },
+      {
+        "title": "Detective quiz",
+        "id": "11cebd5c",
+        "text": "Detective quiz. Three quick questions and the Pin Detective badge is yours."
+      }
+    ],
+    "lab1-light-it-up": [
+      {
+        "title": "Your first circuit",
+        "id": "a6e54fb8",
+        "text": "Your first circuit. Today you’ll build a real light with your own hands. No code at all! Everything you need is on the table: a breadboard, a red LED, a resistor and some jumper wires. Your ESP32 will give the power."
+      },
+      {
+        "title": "Secret tunnels",
+        "id": "a9478857",
+        "text": "Secret tunnels. The breadboard hides metal strips under its holes. Holes on the same strip are joined, so electricity can travel between them. Tap some holes to find the hidden strips!"
+      },
+      {
+        "title": "Meet the LED",
+        "id": "1c933868",
+        "text": "Meet the LED. An LED is a tiny light. Look closely: one leg is long and one is short. That matters! Electricity can only go through an LED one way: in through the long leg, out through the short leg."
+      },
+      {
+        "title": "Meet the resistor",
+        "id": "6fb01e49",
+        "text": "Meet the resistor. A resistor slows electricity down, like a narrow part of a water pipe. Without one, too much electricity rushes through the LED and can break it. The colour bands tell you how strong it is."
+      },
+      {
+        "title": "Safety first: unplug",
+        "id": "ec2c0c12",
+        "text": "Safety first: unplug. Engineers have a golden rule: never change wires while the board has power. One wrong hole could make a short circuit. Your ESP32 is still plugged in from Pin Detective. See its red power light?"
+      },
+      {
+        "title": "Place the resistor",
+        "id": "a2cde6d5",
+        "text": "Place the resistor. Put the resistor across the middle gap, in row 7: one leg above the gap and one leg below. Why across the gap? Then electricity arriving at the top strip can only reach the bottom strip by going through the resistor."
+      },
+      {
+        "title": "Place the LED",
+        "id": "d79f6167",
+        "text": "Place the LED. Now the LED. Its long leg goes in the same strip as the resistor’s bottom leg: row 7, below the gap. The short leg goes next door, in row 8."
+      },
+      {
+        "title": "The road home, part 1",
+        "id": "34188780",
+        "text": "The road home, part 1. Electricity that leaves the LED’s short leg needs a road home to GND. First, a short black wire from the short leg’s strip to the blue − rail."
+      },
+      {
+        "title": "The road home, part 2",
+        "id": "ce0c8b0b",
+        "text": "The road home, part 2. The − rail isn’t joined to the ESP32 yet. A long black wire joins the rail to a GND pin, and the road home is complete."
+      },
+      {
+        "title": "Power goes in last",
+        "id": "3e4bec9d",
+        "text": "Power goes in last. Last wire: the red one brings the power. It goes from 3V3 (3.3 volts, always on) to row 7 above the gap, the resistor’s top strip. We connect power last, so nothing can get power until the whole circuit is ready."
+      },
+      {
+        "title": "Check, then plug in",
+        "id": "59631ca7",
+        "text": "Check, then plug in. Before power, engineers check every connection. Follow the path with your finger: 3V3, red wire, resistor, LED, black wire, − rail, black wire, GND. All good? Then it’s time to plug in!"
+      },
+      {
+        "title": "The fix-it shop",
+        "id": "4023c65e",
+        "text": "The fix-it shop. Officer Ohm’s friends built the same circuit three times, but each light stays dark. Can you find each problem? Tap the part that’s wrong."
+      },
+      {
+        "title": "Build it for real",
+        "id": "b802fceb",
+        "text": "Build it for real. Time to build it on your real breadboard, exactly like on the screen. Use the same holes, and ask an adult to check before you plug in."
+      },
+      {
+        "title": "Lab quiz",
+        "id": "feeddb57",
+        "text": "Lab quiz. Three quick questions and the Circuit Lab 1 badge is yours."
+      }
+    ],
+    "lab2-code-switch": [
+      {
+        "title": "Your light, your code",
+        "id": "71ec644c",
+        "text": "Your light, your code. In Circuit Lab 1 you lit an LED with power from 3V3. It stays on all the time: the only way to switch it off is to pull out the cable! Today the ESP32’s code becomes the switch. Only one wire moves."
+      },
+      {
+        "title": "Unplug first",
+        "id": "1e68125c",
+        "text": "Unplug first. You know the golden rule: never move wires while the board has power."
+      },
+      {
+        "title": "Move the red wire",
+        "id": "04cf6fd2",
+        "text": "Move the red wire. Move the top end of the red wire from 3V3 to D25. In code, D25 is Pin(25). Remember the name trick from Pin Detective? The other end stays in the breadboard, so the rest of your circuit doesn’t change."
+      },
+      {
+        "title": "Plug in… and nothing?",
+        "id": "b6d2531d",
+        "text": "Plug in… and nothing? Everything is wired. Plug the USB cable back in and watch your LED."
+      },
+      {
+        "title": "Get the pin ready",
+        "id": "7488e60c",
+        "text": "Get the pin ready. Every MicroPython program starts by getting its tools. Then we tell the ESP32 that pin 25 is an output: it will push electricity out to the LED."
+      },
+      {
+        "title": "Switch it on",
+        "id": "90980005",
+        "text": "Switch it on. Now the magic line. led.value(1) sets the pin HIGH: 3.3 volts flow out, through the resistor and the LED, and home to GND. led.value(0) sets it LOW again."
+      },
+      {
+        "title": "Be the computer",
+        "id": "7aeacc03",
+        "text": "Be the computer. Can you make the LED blink? Tap ON and OFF again and again, as fast as you can!"
+      },
+      {
+        "title": "Blink forever",
+        "id": "bf2e2fac",
+        "text": "Blink forever. Here is a whole program. while True: repeats the lines inside it forever. time.sleep(0.5) waits half a second, so your eyes can see each change."
+      },
+      {
+        "title": "Make it yours",
+        "id": "2bde1e0a",
+        "text": "Make it yours. Change how long each sleep lasts. Smaller numbers make a faster blink. Can you make a super-fast flash, and then a slow, sleepy blink?"
+      },
+      {
+        "title": "Run it on your real ESP32",
+        "id": "4fc8a281",
+        "text": "Run it on your real ESP32. Now the real thing! On your real breadboard, move the red wire from 3V3 to D25, with the board unplugged. Then send your program to the ESP32."
+      },
+      {
+        "title": "Lab quiz",
+        "id": "d507d94e",
+        "text": "Lab quiz. Three quick questions and the Circuit Lab 2 badge is yours."
+      }
+    ]
+  },
+  "story": {
+    "index.html": [
+      {
+        "chapter": "l0",
+        "id": "38c1f16c"
+      },
+      {
+        "chapter": "l1",
+        "id": "68c08359"
+      },
+      {
+        "chapter": "l2",
+        "id": "6f46fac0"
+      },
+      {
+        "chapter": "l3",
+        "id": "8d906ade"
+      },
+      {
+        "chapter": "l4",
+        "id": "583b135f"
+      },
+      {
+        "chapter": "end",
+        "id": "8c37c8db"
+      }
+    ],
+    "story.html": [
+      {
+        "chapter": "l0",
+        "id": "38c1f16c"
+      },
+      {
+        "chapter": "l1",
+        "id": "68c08359"
+      },
+      {
+        "chapter": "l2",
+        "id": "6f46fac0"
+      },
+      {
+        "chapter": "l3",
+        "id": "8d906ade"
+      },
+      {
+        "chapter": "l4",
+        "id": "583b135f"
+      },
+      {
+        "chapter": "end",
+        "id": "8c37c8db"
+      }
+    ]
+  }
+}

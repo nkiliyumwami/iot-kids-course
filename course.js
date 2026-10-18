@@ -61,6 +61,16 @@
     1: { name: 'Build the thing', blurb: 'Lights, buttons, sound and sensors: a traffic light that works on its own.' },
     2: { name: 'Connect it', blurb: 'Put your traffic light on Wi-Fi and talk to it from a phone. This is the “Internet” in Internet of Things.' },
   };
+  // Optional extras: practice activities shown beside a lesson. They are not lessons: they never change the lesson
+  // order, the "Next" links, badges or certificates, and no lesson waits for them. Each saves its progress in the same
+  // store under its own id, which must never be a lesson slug.
+  const extras = [
+    { id: 'circuit-challenge-lab', after: '01-traffic-light', href: 'labs/virtual-traffic-light/index.html', minutes: 45,
+      label: 'Circuit Challenge Lab', title: 'Experiment & Fix It',
+      idea: 'An optional challenge after Lesson 1: build the whole traffic light yourself on a 3D bench, then break it on purpose and find out why.',
+      can: ['Build a full three-LED circuit', 'Make wiring mistakes safely and see why a circuit fails', 'Spot wrong GPIO pins, reversed LEDs and missing parts, and fix them',
+        'Experiment with the traffic-light timing', 'Solve troubleshooting challenges on your own'] },
+  ];
   const KEY = 'iotkids.progress';
   function readProgress() {
     try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { return {}; }
@@ -82,5 +92,11 @@
   const short = (l) => l.short || String(l.n);
   function lessonBySlug(slug) { return lessons.find((l) => l.slug === slug) || null; }
   function badgeSrc(lesson, prefix) { return (prefix || '') + 'assets/badges/' + (lesson.badge || String(lesson.n).padStart(2, '0')) + '.svg'; }
-  window.COURSE = { title: 'IoT for Young Makers', lessons, units, readProgress, saveProgress, nextLesson, lessonBySlug, badgeSrc, name, short };
+  const extrasAfter = (slug) => extras.filter((x) => x.after === slug);
+  // an extra's "start over": removes only that extra's own entry, never a lesson's
+  function forgetExtra(id) {
+    if (!extras.some((x) => x.id === id) || lessonBySlug(id)) return;
+    try { const all = readProgress(); delete all[id]; localStorage.setItem(KEY, JSON.stringify(all)); } catch (e) { /* nothing saved */ }
+  }
+  window.COURSE = { title: 'IoT for Young Makers', lessons, units, extras, extrasAfter, forgetExtra, readProgress, saveProgress, nextLesson, lessonBySlug, badgeSrc, name, short };
 })();

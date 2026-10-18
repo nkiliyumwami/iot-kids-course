@@ -1,0 +1,20 @@
+{
+  "name": "virtual-traffic-light-tests",
+  "private": true,
+  "description": "Test tools for the Virtual Traffic Light Lab only. Nothing here ships to learners.",
+  "scripts": {
+    "unit": "node --test \"unit/*.test.js\"",
+    "smoke": "node smoke.mjs",
+    "assembly": "node assembly.mjs",
+    "program": "node program.mjs",
+    "walkthrough": "node walkthrough.mjs",
+    "perf": "node perf.mjs",
+    "phase4": "node phase4.mjs",
+    "narration": "node narration.mjs",
+    "integration": "node integration.mjs"
+  },
+  "devDependencies": {
+    "axe-core": "4.13.0",
+    "playwright": "1.64.1"
+  }
+}

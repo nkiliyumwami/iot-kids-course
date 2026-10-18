@@ -98,6 +98,12 @@ section.unit { margin-bottom: 34px; }
 .badge.open { background: var(--accent-soft); color: var(--accent-strong); }
 .badge.done { background: #E3F5EA; color: var(--green); }
 .badge.going { background: #FFF6D6; color: #7A5600; }
+.badge.extra { background: #EFE7FB; color: #5A2E9C; }
+.lesson.extra { border: 2px dashed #B79BE0; padding-right: 14px; }
+.lesson.extra .num { background: #EFE7FB; color: #5A2E9C; border: 2px solid #B79BE0; font-size: 24px; }
+.lesson.extra.done .num { background: var(--green); color: #fff; border-color: var(--green); }
+.lesson.extra:hover { border-color: #5A2E9C; box-shadow: 0 6px 18px rgba(21,32,42,.08); }
+.lesson .can { margin: 0 0 6px; padding-left: 18px; font-size: 14px; display: grid; gap: 1px; }
 .bar { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-top: 6px; }
 .bar i { display: block; height: 100%; background: var(--accent); }
 
@@ -235,6 +241,23 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
           ${done ? `<a class="cert-link" href="certificate.html?lesson=${l.slug}">🎓 Your certificate</a>` : ''}
         </div></article>`;
       ol.appendChild(li);
+      // optional extras that belong with this lesson (never numbered, no badge, nothing waits for them)
+      (C.extrasAfter ? C.extrasAfter(l.slug) : []).forEach((x) => {
+        const xp = prog[x.id] || {};
+        const xpct = xp.steps ? Math.round(((xp.step + 1) / xp.steps) * 100) : 0;
+        const xb = xp.done ? '<span class="badge done">Finished ✓</span>' : xp.steps ? `<span class="badge going">In progress · ${xpct}%</span>` : '<span class="badge extra">Optional challenge</span>';
+        const xli = document.createElement('li');
+        xli.innerHTML = `<article class="lesson ready extra ${xp.done ? 'done' : ''}" data-extra="${x.id}">
+          <div class="num" aria-hidden="true">${xp.done ? '✓' : '★'}</div>
+          <div>${xb}
+            <h3><a href="${x.href}">${esc(x.label)}: ${esc(x.title)}</a></h3>
+            <p>${esc(x.idea)}</p>
+            <ul class="can">${x.can.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>
+            <div class="meta"><span>About ${x.minutes} minutes · optional: the next lesson doesn’t need it</span></div>
+            ${xp.steps && !xp.done ? `<div class="bar" aria-hidden="true"><i style="width:${xpct}%"></i></div>` : ''}
+          </div></article>`;
+        ol.appendChild(xli);
+      });
     });
     main.appendChild(sec);
   });
@@ -252,7 +275,7 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
   const btn = document.getElementById('startBtn'), note = document.getElementById('startNote');
   if (next) {
     btn.href = `lessons/${next.slug}/index.html`;
-    const started = Object.keys(prog).length > 0;
+    const started = Object.keys(prog).some((k) => C.lessonBySlug(k)); // optional extras don't count as starting the course
     btn.textContent = `${started ? 'Continue' : 'Start'}: ${C.name(next)} →`;
   } else {
     btn.textContent = 'Review lesson 1 →';
