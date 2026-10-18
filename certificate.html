@@ -133,8 +133,8 @@ h1 { font-family: var(--font-display); font-size: 54px; line-height: 1; margin: 
   const $ = (id) => document.getElementById(id);
   const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
-  const lesson = which === 'all' ? null : C.lessonBySlug(which);
-  const allLessons = C.lessons;
+  const lesson = which === 'all' ? null : (C.itemBySlug || C.lessonBySlug)(which); // a lesson or a sensor module
+  const allLessons = C.certItems ? C.certItems() : C.lessons; // every lesson, plus every ready sensor module
   const earned = (l) => !!(prog[l.slug] && prog[l.slug].done);
   const unlocked = preview || (lesson ? earned(lesson) : allLessons.every(earned));
 
@@ -144,12 +144,12 @@ h1 { font-family: var(--font-display); font-size: 54px; line-height: 1; margin: 
     const box = $('locked'); box.hidden = false;
     if (lesson) {
       box.innerHTML = `<img src="${C.badgeSrc(lesson)}" alt=""><h2>Finish ${C.name(lesson)} to unlock this certificate</h2>
-        <p>Complete the lesson and its quiz, then come back here.</p>
-        <a class="btn" href="lessons/${lesson.slug}/index.html">Go to ${C.name(lesson)} →</a>`;
+        <p>Complete the ${lesson.n == null && lesson.sensor ? 'module' : 'lesson'} and its quiz, then come back here.</p>
+        ${lesson.status === 'ready' ? `<a class="btn" href="lessons/${lesson.slug}/index.html">Go to ${C.name(lesson)} →</a>` : '<a class="btn" href="lessons.html">Back to the lessons</a>'}`;
     } else {
       const left = allLessons.filter((l) => !earned(l)).length;
-      box.innerHTML = `<img src="assets/ohm/celebrate.svg" alt="" style="filter:none;opacity:1"><h2>The course certificate unlocks after all ${allLessons.length} lessons</h2>
-        <p>You have ${left} lesson${left === 1 ? '' : 's'} to go. Keep going!</p><a class="btn" href="lessons.html">Back to the lessons</a>`;
+      box.innerHTML = `<img src="assets/ohm/celebrate.svg" alt="" style="filter:none;opacity:1"><h2>The course certificate unlocks after all ${allLessons.length} ${allLessons.length > C.lessons.length ? 'lessons and modules' : 'lessons'}</h2>
+        <p>You have ${left} to go. Keep going!</p><a class="btn" href="lessons.html">Back to the lessons</a>`;
     }
     return;
   }
@@ -162,11 +162,12 @@ h1 { font-family: var(--font-display); font-size: 54px; line-height: 1; margin: 
     document.title = `${C.name(lesson)} certificate · KundaKode`;
   } else {
     $('certTitle').textContent = 'Course Completion Certificate';
-    $('certWhat').innerHTML = `has completed <b>all ${allLessons.length} lessons of IoT for Young Makers</b>`;
+    $('certWhat').innerHTML = `has completed <b>all ${allLessons.length} ${allLessons.length > C.lessons.length ? 'lessons and sensor modules' : 'lessons'} of IoT for Young Makers</b>`;
     $('certSkills').innerHTML = ['Built and coded circuits with an ESP32', 'Read buttons and sensors', 'Controlled a traffic light from a phone over Wi-Fi']
       .map((s) => `<li>${esc(s)}</li>`).join('');
     const row = $('certBadges'); row.hidden = false;
-    row.innerHTML = allLessons.map((l) => `<img src="${C.badgeSrc(l)}" alt="${C.name(l)} badge">`).join('');
+    const extraBadges = (C.modules || []).filter((m) => earned(m) && !allLessons.includes(m)); // modules finished early still show
+    row.innerHTML = allLessons.concat(extraBadges).map((l) => `<img src="${C.badgeSrc(l)}" alt="${C.name(l)} badge">`).join('');
     $('certSeal').src = 'assets/ohm/celebrate.svg'; $('certSeal').alt = '';
     document.querySelector('.cert .ohm').hidden = true;
   }

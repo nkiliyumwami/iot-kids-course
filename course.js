@@ -71,6 +71,24 @@
       can: ['Build a full three-LED circuit', 'Make wiring mistakes safely and see why a circuit fails', 'Spot wrong GPIO pins, reversed LEDs and missing parts, and fix them',
         'Experiment with the traffic-light timing', 'Solve troubleshooting challenges on your own'] },
   ];
+  // Sensor modules: standalone projects that unlock after Lesson 7 and can be done in any order. Each starts from a bare
+  // board with one new sensor and one output the learner already knows. They are not lessons: they never change the
+  // lesson order or the "Next" links, but each earns a badge (assets/badges/m-<slug>.svg) and counts for the course
+  // certificate once it is 'ready'. `uses` lists modules to finish first. Pages live in lessons/m-<slug>/.
+  const modules = [
+    { slug: 'm-servo', badge: 'm-servo', title: 'Servo Says Hello', sensor: 'None (an output module)', output: 'SG90 servo', needs: '07-night-mode', uses: [], status: 'planned', minutes: 40,
+      idea: 'Meet a motor that turns to the angle you choose: wave hello with a servo arm.',
+      skills: ['Powered a servo safely from VIN', 'Set a servo angle with a 50 Hz PWM signal', 'Turned a number of degrees into a pulse'] },
+    { slug: 'm-parking-gate', badge: 'm-parking-gate', title: 'The Parking Gate', sensor: 'HC-SR04 distance sensor', output: 'SG90 servo', needs: '07-night-mode', uses: ['m-servo'], status: 'planned', minutes: 45,
+      idea: 'A car drives up, the gate lifts. Measure distance with sound and open a servo gate.',
+      skills: ['Measured distance with an ultrasonic echo', 'Turned echo time into centimetres', 'Opened a gate when something came close'] },
+    { slug: 'm-thirsty-plant', badge: 'm-thirsty-plant', title: 'The Thirsty Plant', sensor: 'Soil moisture probe', output: 'LED', needs: '07-night-mode', uses: [], status: 'planned', minutes: 40,
+      idea: 'Your plant can’t talk, so give it a light that says “water me!” when the soil gets dry.',
+      skills: ['Read a soil moisture probe on an analog pin', 'Chose a “too dry” threshold from real readings', 'Lit a warning LED when the soil dried out'] },
+    { slug: 'm-catch-my-sibling', badge: 'm-catch-my-sibling', title: 'Catch My Sibling', sensor: 'PIR motion sensor', output: 'Buzzer', needs: '07-night-mode', uses: [], status: 'planned', minutes: 40,
+      idea: 'Someone sneaks into your room? A motion sensor spots them and the buzzer tells on them.',
+      skills: ['Wired a PIR motion sensor to a digital input', 'Learned why a PIR needs time to settle', 'Sounded an alarm when movement was seen'] },
+  ];
   const KEY = 'iotkids.progress';
   function readProgress() {
     try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { return {}; }
@@ -87,16 +105,24 @@
     const i = lessons.findIndex((l) => l.slug === slug);
     return i >= 0 ? lessons.slice(i + 1).find((l) => l.status === 'ready') || null : null;
   }
-  // "Lesson 3" or "Circuit Lab 1", and the short form for the little number circle
-  const name = (l) => l.label || 'Lesson ' + l.n;
-  const short = (l) => l.short || String(l.n);
+  // "Lesson 3", "Circuit Lab 1" or a module's title, and the short form for the little number circle
+  const name = (l) => l.label || (l.n == null ? l.title : 'Lesson ' + l.n);
+  const short = (l) => l.short || (l.n == null ? 'M' : String(l.n));
   function lessonBySlug(slug) { return lessons.find((l) => l.slug === slug) || null; }
+  function moduleBySlug(slug) { return modules.find((m) => m.slug === slug) || null; }
+  // anything that earns a badge and a certificate: a lesson or a sensor module
+  const itemBySlug = (slug) => lessonBySlug(slug) || moduleBySlug(slug);
+  // modules open once Lesson 7 (Night Mode) is finished
+  function moduleUnlocked() { return !!(readProgress()['07-night-mode'] || {}).done; }
+  // what the course certificate asks for: every lesson, plus every module that is ready
+  const certItems = () => lessons.concat(modules.filter((m) => m.status === 'ready'));
   function badgeSrc(lesson, prefix) { return (prefix || '') + 'assets/badges/' + (lesson.badge || String(lesson.n).padStart(2, '0')) + '.svg'; }
   const extrasAfter = (slug) => extras.filter((x) => x.after === slug);
   // an extra's "start over": removes only that extra's own entry, never a lesson's
   function forgetExtra(id) {
-    if (!extras.some((x) => x.id === id) || lessonBySlug(id)) return;
+    if (!extras.some((x) => x.id === id) || itemBySlug(id)) return;
     try { const all = readProgress(); delete all[id]; localStorage.setItem(KEY, JSON.stringify(all)); } catch (e) { /* nothing saved */ }
   }
-  window.COURSE = { title: 'IoT for Young Makers', lessons, units, extras, extrasAfter, forgetExtra, readProgress, saveProgress, nextLesson, lessonBySlug, badgeSrc, name, short };
+  window.COURSE = { title: 'IoT for Young Makers', lessons, units, extras, extrasAfter, forgetExtra, modules, moduleBySlug, moduleUnlocked, itemBySlug, certItems,
+    readProgress, saveProgress, nextLesson, lessonBySlug, badgeSrc, name, short };
 })();

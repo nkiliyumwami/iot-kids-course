@@ -103,6 +103,12 @@ section.unit { margin-bottom: 34px; }
 .lesson.extra .num { background: #EFE7FB; color: #5A2E9C; border: 2px solid #B79BE0; font-size: 24px; }
 .lesson.extra.done .num { background: var(--green); color: #fff; border-color: var(--green); }
 .lesson.extra:hover { border-color: #5A2E9C; box-shadow: 0 6px 18px rgba(21,32,42,.08); }
+/* "Pick a sensor": the sensor modules, any order once Lesson 7 is done */
+.lesson.module .num { font-size: 22px; }
+.lesson.module.locked { opacity: .62; filter: grayscale(.7); }
+.lesson.module .flow { font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+.badge.lock { background: var(--surface-2); color: var(--muted); }
+.unit-lock { margin: 0 0 12px; padding: 10px 14px; border-radius: 12px; background: var(--surface-2); color: var(--muted); font-weight: 700; }
 .lesson .can { margin: 0 0 6px; padding-left: 18px; font-size: 14px; display: grid; gap: 1px; }
 .bar { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-top: 6px; }
 .bar i { display: block; height: 100%; background: var(--accent); }
@@ -260,16 +266,55 @@ footer { padding-block: 10px 30px; font-size: 13px; color: var(--muted); }
       });
     });
     main.appendChild(sec);
+    if (u === '1') main.appendChild(moduleSection());
   });
+  // "Pick a sensor": standalone modules between Part 1 and Part 2, greyed out until Lesson 7 is finished
+  function moduleSection() {
+    const open = C.moduleUnlocked();
+    const sec = document.createElement('section');
+    sec.className = 'unit modules';
+    sec.id = 'modules';
+    sec.innerHTML = `<div class="unit-head"><h2>Pick a sensor</h2><p>Standalone projects in any order: one new sensor with a light, a buzzer or a servo you already know.</p></div>
+      ${open ? '' : '<p class="unit-lock">🔒 Finish Lesson 7 to unlock</p>'}<ol class="trail"></ol>`;
+    const ol = sec.querySelector('ol');
+    C.modules.forEach((m) => {
+      const p = prog[m.slug] || {};
+      const ready = m.status === 'ready';
+      const waitFor = m.uses.map(C.moduleBySlug).filter((x) => x && !(prog[x.slug] || {}).done);
+      const go = ready && open && !waitFor.length;
+      const done = ready && p.done;
+      const pct = ready && p.steps ? Math.round(((p.step + 1) / p.steps) * 100) : 0;
+      let badge = '<span class="badge soon">Coming soon</span>';
+      if (ready && !open) badge = '<span class="badge lock">Finish Lesson 7 to unlock</span>';
+      else if (ready && waitFor.length) badge = `<span class="badge lock">Do ${esc(waitFor[0].title)} first</span>`;
+      else if (ready) badge = done ? '<span class="badge done">Finished ✓</span>' : p.steps ? `<span class="badge going">In progress · ${pct}%</span>` : '<span class="badge open">Ready</span>';
+      const first = m.uses.map(C.moduleBySlug).filter(Boolean).map((x) => `Do ${esc(x.title)} first`).join(' · ');
+      const li = document.createElement('li');
+      li.innerHTML = `<article class="lesson module ${go ? 'ready' : ''} ${done ? 'done' : ''} ${open ? '' : 'locked'}" data-module="${m.slug}">
+        <img class="badge-img ${done ? '' : 'locked'}" src="${C.badgeSrc(m)}" alt="${done ? esc(m.title) + ' badge earned' : ''}" width="52" height="52" onerror="this.remove()">
+        <div class="num">${done ? '✓' : C.short(m)}</div>
+        <div>${badge}
+          <h3>${go ? `<a href="lessons/${m.slug}/index.html">${esc(m.title)}</a>` : esc(m.title)}</h3>
+          <p class="flow">${esc(m.sensor)} → ${esc(m.output)}</p>
+          <p>${esc(m.idea)}</p>
+          <div class="meta">${first ? `<span><b>${first}</b></span>` : ''}${open ? '' : '<span>Finish Lesson 7 to unlock</span>'}<span>About ${m.minutes} minutes</span></div>
+          ${go && p.steps && !done ? `<div class="bar" aria-hidden="true"><i style="width:${pct}%"></i></div>` : ''}
+          ${done ? `<a class="cert-link" href="certificate.html?lesson=${m.slug}">🎓 Your certificate</a>` : ''}
+        </div></article>`;
+      ol.appendChild(li);
+    });
+    return sec;
+  }
   // badge shelf
-  const earnedList = C.lessons.filter((l) => (prog[l.slug] || {}).done);
-  document.getElementById('badgeRow').innerHTML = C.lessons.map((l) => {
+  const certItems = C.certItems(); // every lesson, plus every sensor module that is ready
+  const earnedList = certItems.filter((l) => (prog[l.slug] || {}).done);
+  document.getElementById('badgeRow').innerHTML = certItems.map((l) => {
     const got = (prog[l.slug] || {}).done;
     return `<img class="${got ? '' : 'locked'}" src="${C.badgeSrc(l)}" alt="${C.name(l)}: ${esc(l.title)}${got ? ' (earned)' : ' (not yet)'}" title="${C.name(l)}: ${esc(l.title)}">`;
   }).join('');
-  document.getElementById('badgeCount').textContent = `${earnedList.length} of ${C.lessons.length} earned`;
+  document.getElementById('badgeCount').textContent = `${earnedList.length} of ${certItems.length} earned`;
   const cc = document.getElementById('courseCert');
-  if (earnedList.length < C.lessons.length) { cc.textContent = '🔒 Course certificate'; cc.style.background = 'var(--muted)'; }
+  if (earnedList.length < certItems.length) { cc.textContent = '🔒 Course certificate'; cc.style.background = 'var(--muted)'; }
   // "Continue" points at the first ready lesson that isn't finished
   const next = C.lessons.find((l) => l.status === 'ready' && !(prog[l.slug] || {}).done);
   const btn = document.getElementById('startBtn'), note = document.getElementById('startNote');

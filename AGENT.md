@@ -43,6 +43,37 @@ https://nkiliyumwami.github.io/iot-kids-course/. Read this whole file and `ROADM
 - Labs appear in `course.js` with `label` ('Circuit Lab 1'), `short` ('L1') and `badge` ('lab1'); use `COURSE.name(l)`
   instead of writing "Lesson " + n.
 
+## Sensor modules (after lesson 7)
+
+- After Night Mode, learners can pick **sensor modules**: standalone projects, taken in any order. Lessons 8–10 stay
+  where they are; modules never change the lesson numbers or the "Next" links.
+- Each module starts from a **bare board** (not the traffic light) with **one new sensor plus one output the learner
+  already knows**: an LED on D25, D26 or D27 with a 330 Ω resistor, the buzzer on D13, or the servo from "Servo Says Hello".
+- Every module uses the shape from lesson 7: read the sensor → `if value < THRESHOLD:` → do something → `else:` → undo it.
+  The one new idea is the sensor itself (how to read it and what its numbers mean), never a new way to decide.
+- Start a new module from `lessons/_module-template/`, not from lesson 1. Keep its layout: story card, parts list,
+  3D scene with wiring, editable code panel, three challenges and "Why?" taps.
+- Look-alike sensors are a **"Swap the part"** box inside the parent module, never a module of their own
+  (tilt switch, rain sensor, water level, IR obstacle, radar motion).
+- Module pins (all checked against the rules below):
+
+  | Part | Pin | Why |
+  |---|---|---|
+  | Digital sensor (reed, tilt, PIR, IR obstacle) | D14 or D32, `Pin.IN, Pin.PULL_UP` | safe inputs with a built-in pull-up |
+  | Analog sensor (soil, sound, joystick) | D33, D34 or D35 | ADC1, so they still work with Wi-Fi on |
+  | SG90 servo signal | D18, PWM at 50 Hz | free pin, no start-up job |
+  | DHT11 data | D4 | free pin, one data wire |
+  | HC-SR04 | trig D19, echo D21 | two free pins side by side |
+
+- Power the servo's red wire from **VIN** (5 V from the USB cable), never from 3V3 or a GPIO pin. Grounds are shared.
+  A 5 V HC-SR04 echo needs a voltage divider (or use a 3.3 V HC-SR04P); say why in a "Why?" card.
+- **Safety:** no mains, no relays, no flame or gas sensors, no lasers. A pump is always pretend: a servo stands in for it.
+- Each module links to its project card on the landing page, and that card links back to the module.
+- Modules live in `course.js` under `modules` (not `lessons`, not `extras`), in `lessons/m-<slug>/`, with a badge at
+  `assets/badges/m-<slug>.svg` and 3 `skills`. They unlock when `COURSE.moduleUnlocked()` is true (lesson 7 done),
+  `uses` lists modules to finish first, and a 'ready' module counts for the course certificate like a lesson.
+  Use `COURSE.itemBySlug(slug)` when a page must find a lesson or a module.
+
 ## Hardware and code (keep consistent across lessons)
 
 - Board: **ESP32 DevKit V1, 30 pins**, pins pointing up, female-to-male jumper wires. Its 3D model in lesson 1

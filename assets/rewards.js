@@ -7,7 +7,7 @@
   const slug = m ? m[1] : null;
   function addReward(done) {
     if (!slug || !window.COURSE || done.querySelector('.reward')) return;
-    const lesson = window.COURSE.lessonBySlug(slug);
+    const lesson = (window.COURSE.itemBySlug || window.COURSE.lessonBySlug)(slug); // a lesson or a sensor module
     if (!lesson) return;
     window.COURSE.saveProgress(slug, { done: true });
     const box = document.createElement('div');
