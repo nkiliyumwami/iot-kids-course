@@ -137,6 +137,29 @@
     P('R14_GND', 'R', 14, 'GND', null, 'gnd', 'Another ground pin, 0 volts. All GND pins are joined inside the board.'),
     P('R15_3V3', 'R', 15, '3V3', null, 'power', 'Gives out 3.3 volts to power small sensors.', 'Never connect 3V3 straight to GND: that’s a short circuit.'),
   ];
+  /* ---------- the sensor modules (after Lesson 7): which pin each part uses, why, and its code ---------- */
+  const DIST = `from machine import Pin, time_pulse_us\nimport time\n\ntrig = Pin(19, Pin.OUT)   # we send the ping\necho = Pin(21, Pin.IN)    # we time the echo\n\ntrig.value(1)\ntime.sleep_us(10)\ntrig.value(0)\nt = time_pulse_us(echo, 1, 30000)\nprint(t / 58, 'cm')   # sound: 58 microseconds per cm there and back`;
+  const MODULE_PINS = {
+    D14: { part: 'digital sensors (motion, tilt, IR obstacle)', why: 'An input with a pull-up resistor inside. Its little start-up pulses don’t bother a sensor that only listens.',
+      code: `from machine import Pin\n\nsensor = Pin(14, Pin.IN, Pin.PULL_UP)\nif sensor.value() == 0:   # many sensors pull the pin LOW when they see something\n    print('Something is there!')` },
+    D32: { part: 'the reed switch in “Is the Door Open?”', why: 'An input with a pull-up resistor inside, like the button in Lesson 3. A magnet closes the reed switch, just like pressing a button.',
+      code: `from machine import Pin\n\ndoor = Pin(32, Pin.IN, Pin.PULL_UP)\nif door.value() == 1:   # magnet gone: the switch opened\n    print('The door is open!')` },
+    D33: { part: 'the soil probe in “The Thirsty Plant”', why: 'An ADC1 pin, so it can measure “how wet” even while Wi-Fi is on, like the light sensor in Lesson 6.',
+      code: `from machine import ADC, Pin\n\nsoil = ADC(Pin(33))\nsoil.atten(ADC.ATTN_11DB)   # read the full 0-3.3 V\nDRY = 3000                  # higher number = drier soil\nif soil.read() > DRY:\n    print('Water me!')` },
+    D34: { part: 'the sound sensor in “Clap On Clap Off”', why: 'A listening-only ADC1 pin: perfect for a sensor, and it can never be an output by mistake.',
+      code: `from machine import ADC, Pin\n\nmic = ADC(Pin(34))\nmic.atten(ADC.ATTN_11DB)\nLOUD = 2500\nif mic.read() > LOUD:\n    print('Clap!')` },
+    D35: { part: 'the joystick in “Follow My Hand”', why: 'A listening-only ADC1 pin that reads how far you push the stick: 0 one way, about 4095 the other.',
+      code: `from machine import ADC, Pin\n\nstick = ADC(Pin(35))\nstick.atten(ADC.ATTN_11DB)\nx = stick.read()             # 0 to 4095\nangle = x * 180 // 4095      # turn it into 0 to 180 degrees\nprint(angle)` },
+    D18: { part: 'the servo’s signal wire (orange)', why: 'A free output with no start-up job. It only carries the message “turn to this angle”: the servo’s power comes from VIN.',
+      code: `from machine import Pin, PWM\n\nservo = PWM(Pin(18), freq=50)   # servos want 50 pulses a second\n\ndef turn(angle):\n    # 0 degrees = 0.5 ms pulse, 180 degrees = 2.5 ms pulse\n    servo.duty_u16(int(1638 + angle / 180 * 6554))\n\nturn(90)` },
+    D4: { part: 'the DHT11 temperature sensor in “Too Hot in Here”', why: 'A free pin with no start-up job. The DHT11 sends its numbers down one data wire, so one pin is enough.',
+      code: `from machine import Pin\nimport dht\n\nsensor = dht.DHT11(Pin(4))\nsensor.measure()\nprint(sensor.temperature(), '°C')\nprint(sensor.humidity(), '%')` },
+    D19: { part: 'the distance sensor’s TRIG wire', why: 'A free output beside D21. TRIG sends the 10-microsecond “shout”.', code: DIST },
+    D21: { part: 'the distance sensor’s ECHO wire', why: 'A free input beside D19. ECHO stays high while the sound travels. Use a 3.3 V HC-SR04P: a 5 V one sends back too many volts for this pin.', code: DIST },
+    VIN: { part: 'the servo’s red power wire', why: 'Motors are hungry: VIN gives about 5 volts straight from USB. Never power a servo from 3V3 or a GPIO pin.' },
+  };
+  PINS.forEach((p) => { if (MODULE_PINS[p.printed]) p.module = MODULE_PINS[p.printed]; });
+
   const findPin = (q) => {
     if (q == null) return null;
     const s = String(q).trim().toLowerCase();
@@ -165,6 +188,7 @@
   }
   function examples(p) {
     const g = p.gpio, a = abilities(p), out = [];
+    if (p.module && p.module.code) out.push([`Sensor modules: ${p.module.part}`, p.module.code]);
     if (a.includes('out')) out.push(['Blink an LED', `from machine import Pin\nimport time\n\nled = Pin(${g}, Pin.OUT)   # GPIO ${g} is an output\nwhile True:\n    led.value(1)   # on\n    time.sleep(0.5)\n    led.value(0)   # off\n    time.sleep(0.5)`]);
     if (a.includes('in')) out.push(['Read a button', g >= 34
       ? `from machine import Pin\n\n# no built-in pull-up here: add a 10 kΩ resistor to 3V3\nbutton = Pin(${g}, Pin.IN)\nprint(button.value())   # 1 or 0`

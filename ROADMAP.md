@@ -40,6 +40,40 @@ One new idea per lesson. Each daily run takes the first unchecked item. See `AGE
 - [x] **10. Control It From Your Phone** (`10-phone-control`): buttons on the web page send commands; the safety rules
   (never red and green together, pedestrians get their full time) still win.
 
+## Part 1½: Sensor modules (any order, unlocked by lesson 7)
+
+Standalone projects from a bare board: one new sensor plus one output the learner already knows (LED on D25/D26/D27 with
+330 Ω, buzzer on D13, or the servo). Every module keeps lesson 7's shape: read → `if value < THRESHOLD:` → do → `else:` → undo.
+Start each from `lessons/_module-template/`; look-alike parts go in its "Swap the part" box. Rules in `AGENT.md`, "Sensor modules".
+
+- [ ] **Servo Says Hello** (`m-servo`): new part: SG90 servo, signal on D18, red wire on VIN (never 3V3). New code idea:
+  `PWM(Pin(18), freq=50)` and `duty_u16()`, an angle as a pulse length. If-line: none (output module; it sets up
+  `if … : turn(90) else: turn(0)`). Swap the part: none. 3D scene: a waving arm on the desk.
+- [ ] **The Parking Gate** (`m-parking-gate`, needs `m-servo`): new part: HC-SR04P distance sensor (3.3 V version), TRIG on
+  D19, ECHO on D21 (a 5 V HC-SR04 needs a 1 kΩ/2 kΩ divider on ECHO). New code idea: `time_pulse_us()` and `t / 58` for
+  centimetres. If-line: `if d < NEAR:` → gate(90), else gate(0). Swap the part: IR obstacle sensor or radar motion sensor on D14.
+  3D scene: the gate (the template's scene, `assets/models/modules/parking-gate.glb`).
+- [ ] **The Thirsty Plant** (`m-thirsty-plant`): new part: soil moisture probe on D33 (ADC1, powered from 3V3). New code
+  idea: reading a probe and choosing a "too dry" number from real readings. If-line: `if soil.read() > DRY:` → LED on D25,
+  else off. Swap the part: rain sensor, water level sensor (same analog read). 3D scene: a garden bed.
+- [ ] **Catch My Sibling** (`m-catch-my-sibling`): new part: PIR motion sensor (HC-SR501, 5 V power, 3.3 V output) on D14
+  (`Pin.IN`). New code idea: a sensor that needs a minute to settle, and its own "hold" time. If-line:
+  `if pir.value() == 1:` → buzzer on D13 beeps, else silent. Swap the part: radar motion sensor (RCWL-0516). 3D scene:
+  a bedroom at night.
+- [ ] **Is the Door Open?** (`m-door`): new part: reed switch and magnet on D32 (`Pin.IN, Pin.PULL_UP`). New code idea:
+  a magnet as a button nobody presses. If-line: `if door.value() == 1:` → LED on D25, else off. Swap the part: tilt
+  switch. 3D scene: a door.
+- [ ] **Too Hot in Here** (`m-too-hot`): new part: DHT11 on D4. New code idea: `import dht`, `measure()`,
+  `temperature()`. If-line: `if t > HOT:` → RGB LED red, else green. Replaces the landing page's smoke-alarm card as a heat
+  alarm (no flame or gas sensors). Swap the part: none. 3D scene: a kitchen.
+- [ ] **Clap On Clap Off** (`m-clap`): new part: sound sensor on D34 (ADC1, listening-only). New code idea: a toggle,
+  `on = not on`. If-line: `if mic.read() > LOUD:` → toggle the LED on D25. Swap the part: none. 3D scene: a bedroom at night.
+- [ ] **Follow My Hand** (`m-joystick`, needs `m-servo`): new part: joystick X on D35 (ADC1). New code idea: turning a
+  reading into an angle, `x * 180 // 4095`. If-line: `if x < MIDDLE:` → servo left, else right (then the smooth version).
+  Swap the part: a potentiometer. 3D scene: the desk with a pointer arm.
+- [ ] **Landing page**: smoke-alarm card → heat alarm, goal-counter card → IR obstacle (not laser), link each project card
+  to its module, update the kit checklist.
+
 ## After lesson 10
 
 When every lesson above is ticked, use each run to improve one existing lesson: clearer "Why?" answers,
@@ -84,3 +118,4 @@ an extra interactive demo, or fixes from the course owner's comments. Add any ne
 - 2026-10-15: Built lesson 9 (`09-status-page`). No new hardware. New idea: a tiny web server. Code: `import socket`, `socket.socket()`, `bind(("", 80))`, `listen(1)`, `settimeout(0.2)`, `accept()` / `recv()` / `send()` / `close()` inside `try` / `except OSError`, and a `serve(seconds, light)` helper that listens while the light stays on; the page is HTML with a refresh line and `background:<light>`. Read-only (lesson 10 adds buttons). 3D: a pretend phone beside the router whose screen follows the page. Demos: a message-by-message visit, text-in/page-out card, a pretend phone with Reload, sliders for green time, heading words and refresh. Added words Web server, Browser, Request, Response, HTML. Not yet run on a real board (needs Wi-Fi and a phone).
 - 2026-10-16: Built lesson 10 (`10-phone-control`). No new hardware. New idea: reading the request. Code: `request = client.recv(1024)`, `if b"GET /walk" in request and light == "green":` sets the `waiting` flag (`global waiting`), `client.settimeout(1)` so a silent visitor cannot freeze the lights, a link `<a href='/walk'>` on the page, `content='2;url=/'` so the refresh never repeats /walk, and a lights loop that gives at least 4 s green, 2 s yellow and the full red before clearing the flag. Safety rules live in the program: the phone can only ask, unknown paths (e.g. /make-green) change nothing, presses during yellow/red are ignored. Added word Path. Demos: address picker (/, /walk, /make-green), a "try to break the crossing" card (press, press 5 times, sneaky address), pretend phone with a clickable button, sliders for walking time and button words. Checked with `tools/check.sh` (desktop and 400 px, no script errors, no sideways scroll), simulated presses in green/yellow/red and the quiz. Left to do: not run on a real board and phone (needs Wi-Fi); no story chapter yet. Part 2 is complete.
 - 2026-10-17: All ten lessons are built, so this run improved lesson 9 (`09-status-page`): the "Lights and page together" step now has a "The page will not open? Check these, in order" card (same Wi-Fi, exact http:// address, program still running, IP address may have changed) for learners testing on a real phone. Checked with `tools/check.sh` (desktop and 400 px, no script errors, no sideways scroll) and confirmed the card appears. Left to do: story chapters for lessons 5–10; real-board tests of lessons 8–10.
+- 2026-10-18: Groundwork for sensor modules (no module built yet). `AGENT.md` has a "Sensor modules (after lesson 7)" section (bare board, read/if/do/else/undo, swap boxes, pins, servo on VIN, safety list). `course.js` has a `modules` list (Servo Says Hello, The Parking Gate, The Thirsty Plant, Catch My Sibling, all planned) with `moduleBySlug()`, `moduleUnlocked()` and `itemBySlug()`; ready modules count for the course certificate. `lessons.html` has a "Pick a sensor" section between Part 1 and Part 2 (locked until lesson 7, "Do … first", "Coming soon"). New `lessons/_module-template/` page built from the parking-gate preview, ported from three.js r170 to r128 (story, parts, 3D gate and wiring views, the real MicroPython runner as the code panel, Why taps, swap box, three challenges, quiz, badge); its model is now `assets/models/modules/parking-gate.glb` (Draco, 686 KB, was 3.5 MB inside a 4.7 MB page). Four module badges and module pin facts in `PINS` (shown in the Pin Explorer and Lesson 0). Checked at desktop and 400 px. Left to do: every module page; no module wiring is tested on hardware.

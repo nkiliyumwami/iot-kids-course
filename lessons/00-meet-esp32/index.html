@@ -295,7 +295,7 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(330px, 420px)
           if (this.completed) return;
           seen.add(p); flash(el, true); selectedPins.add(p); repaint();
           taskBody(`<span class="count">${seen.size} of 3</span>`);
-          if (seen.size < 3) say(`That’s <b>${esc(p.printed)}</b>. Try another one!`, true);
+          if (seen.size < 3) say(`That’s <b>${esc(p.printed)}</b>.${p.module ? ` Later, in the sensor modules, it’s for ${esc(p.module.part)}.` : ''} Try another one!`, true);
           else { selectedPins.clear(); repaint(); complete(['pin', 'header'], 'Detective count: <b>30 pins</b>, 15 on each side. A row of pins is called a <b>header</b>, so this board has two headers.'); }
         };
       } },
@@ -391,7 +391,7 @@ led = Pin(2, Pin.OUT)   # pin 2 sends electricity out</pre>
           if (E.groupOf(p) !== 'special') { flash(el, false); say(`${esc(p.printed)} isn’t orange. Try an orange one!`, false); return; }
           flash(el, true);
           const word = { care: 'boot', comm: 'serial', ctrl: 'reset', inonly: 'input' }[p.type];
-          complete([word], `<b>${esc(p.printed)}:</b> ${E.linkWords(p.text)}`);
+          complete([word], `<b>${esc(p.printed)}:</b> ${E.linkWords(p.text)}${p.module ? ` <br>🧩 Later, in the sensor modules, it is ${esc(p.module.part)}.` : ''}`);
         };
       } },
 
