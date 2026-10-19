@@ -68,7 +68,8 @@ https://nkiliyumwami.github.io/iot-kids-course/. Read this whole file and `ROADM
   | DHT11 data | D4 | free pin, one data wire |
   | HC-SR04 | trig D19, echo D21 | two free pins side by side |
 
-- Power the servo's red wire from **VIN** (5 V from the USB cable), never from 3V3 or a GPIO pin. Grounds are shared.
+- Power the servo's red wire from a **regulated 5 V supply** with its − joined to the ESP32's GND (see `m-servo`). VIN (about 5 V from
+  USB on most DevKit V1 boards, through a diode) is only a quick test for one SG90 with a light arm. Never 3V3 or a GPIO pin. Grounds are shared.
   A 5 V HC-SR04 echo needs a voltage divider (or use a 3.3 V HC-SR04P); say why in a "Why?" card.
 - **Safety:** no mains, no relays, no flame or gas sensors, no lasers. A pump is always pretend: a servo stands in for it.
 - Each module links to its project card on the landing page, and that card links back to the module.

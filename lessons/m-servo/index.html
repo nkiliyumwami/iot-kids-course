@@ -1,0 +1,1346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Servo Says Hello · IoT for Young Makers</title>
+<script src="../../assets/brand.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<!--
+  SENSOR MODULE: Servo Says Hello (m-servo). Built from lessons/_module-template/ (same tokens, header, stage and cards),
+  with six missions instead of the template's scrolling cards because this module teaches a new output from scratch.
+  3D: assets/models/modules/sg90-servo.glb (tools/blender/servo.py) on a code-built desk, and the course's ESP32 model
+  for the wiring. Everything the learner reads is in the STEPS / PARTS / FAULTS lists below.
+-->
+<style>
+:root {
+  --bg: #E3EBF0; --surface: #FFFFFF; --surface-2: #F1F5F8; --ink: #15202A; --muted: #526170; --line: #D2DCE3;
+  --accent: #0A7480; --accent-strong: #075A63; --accent-soft: #DAEEF0; --red: #C93131; --green: #16834A; --hl: #F2B705;
+  --orange: #F08A24; --servo: #2C62D6;
+  --font-display: 'Baloo 2', 'Trebuchet MS', system-ui, sans-serif;
+  --font-body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --font-code: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16.5px; line-height: 1.55; overflow-x: hidden; }
+h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.15; margin: 0; }
+a { color: var(--accent-strong); }
+code { font-family: var(--font-code); font-size: .92em; background: var(--surface-2); border-radius: 5px; padding: 0 4px; overflow-wrap: anywhere; }
+pre.code { font-family: var(--font-code); font-size: 13.5px; line-height: 1.5; background: #13202A; color: #E3ECF1; border-radius: 12px; padding: 10px 12px; margin: 8px 0; overflow-x: auto; max-width: 100%; }
+pre.code .new { background: rgba(242,183,5,.28); display: inline-block; min-width: 100%; border-radius: 4px; }
+pre.code .cm { color: #8FB3C4; }
+header.top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 12px 18px; background: var(--surface); border-bottom: 1px solid var(--line); }
+header.top .title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+header.top h1 { font-size: 24px; }
+header.top p { margin: 0; color: var(--muted); font-size: 14px; }
+.home-link { font-weight: 800; font-size: 14px; text-decoration: none; }
+.progress { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-left: auto; }
+.progress .bar { width: 160px; height: 10px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.progress .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .4s; }
+.progress span { font-weight: 700; font-size: 13px; color: var(--muted); }
+main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; padding: 18px; max-width: 1400px; margin: 0 auto; align-items: start; }
+.stage { position: sticky; top: 12px; display: grid; gap: 10px; min-width: 0; }
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.tabs button { font: inherit; font-weight: 800; border: 2px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 16px; cursor: pointer; color: var(--ink); }
+.tabs button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tabs .sp { flex: 1; }
+.tabs .mini { padding: 5px 12px; font-size: 14px; }
+.view { position: relative; height: min(58vh, 560px); min-height: 300px; border-radius: 18px; overflow: hidden; background: #dfe8ee; border: 1px solid var(--line); }
+.view canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.view .msg { position: absolute; inset: 0; display: grid; place-items: center; color: #334; font-weight: 700; padding: 20px; text-align: center; }
+.view .hint { position: absolute; left: 10px; bottom: 10px; font-size: 13px; background: rgba(255,255,255,.85); padding: 3px 9px; border-radius: 8px; pointer-events: none; }
+.view .tag { position: absolute; left: 10px; top: 10px; font-size: 13px; font-weight: 800; background: rgba(21,32,42,.78); color: #fff; padding: 3px 10px; border-radius: 8px; pointer-events: none; max-width: calc(100% - 20px); }
+.view .readout { position: absolute; right: 10px; top: 10px; font: 600 13px var(--font-code); background: #13202A; color: #E3ECF1; padding: 6px 10px; border-radius: 8px; pointer-events: none; white-space: pre; }
+.view .readout b { color: #FFB25C; font-weight: 600; } .view .readout i { color: #9FE3B4; font-style: normal; }
+.view .readout .warn { color: #FF8A8A; }
+.labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.lbl { position: absolute; transform: translate(-50%, -100%); font-size: 12.5px; font-weight: 800; color: #fff; background: rgba(21,32,42,.86); border-radius: 8px; padding: 2px 8px; white-space: nowrap; pointer-events: auto; cursor: pointer; border: 2px solid transparent; }
+.lbl::after { content: ''; position: absolute; left: 50%; bottom: -6px; width: 2px; height: 6px; background: rgba(21,32,42,.86); }
+.lbl.found { background: var(--green); } .lbl.sel { border-color: var(--hl); }
+.lbl.pin { background: #fff; color: var(--ink); border-color: var(--line); pointer-events: none; }
+.lbl.pin.ok { border-color: var(--green); } .lbl.pin.bad { border-color: var(--red); background: #FBE9E9; }
+.controls { display: grid; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 10px 12px; }
+.controls .row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.controls label.sl { display: flex; align-items: center; gap: 10px; font-weight: 800; flex: 1 1 260px; min-width: 0; }
+.controls input[type=range] { flex: 1; min-width: 0; accent-color: var(--orange); height: 28px; }
+.controls output { font: 700 16px var(--font-code); min-width: 52px; text-align: right; }
+.chk { display: inline-flex; gap: 6px; align-items: center; font-weight: 700; font-size: 14.5px; cursor: pointer; }
+.chk input { width: 18px; height: 18px; accent-color: var(--accent); }
+.btn { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 8px 16px; font: inherit; font-weight: 800; background: var(--accent); color: #fff; border: 2px solid var(--accent); text-decoration: none; cursor: pointer; }
+.btn.ghost { background: var(--surface); color: var(--accent-strong); border-color: var(--line); }
+.btn.small { padding: 5px 12px; font-size: 14px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.note { font-size: 13.5px; color: var(--muted); margin: 0; }
+.cards { display: grid; gap: 14px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; min-width: 0; }
+.card p { margin: 0 0 8px; }
+.story { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 12px; align-items: start; }
+.guide img, .guide svg { width: 88px; height: auto; display: block; }
+.step-title { font-size: 22px; margin-bottom: 6px; }
+.say { background: var(--accent-soft); border-radius: 14px; padding: 10px 12px; }
+.say p:last-child { margin-bottom: 0; }
+.voice-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; }
+.listen { font: inherit; font-weight: 800; border: 2px solid var(--accent); background: var(--surface); color: var(--accent-strong); border-radius: 999px; padding: 4px 12px; cursor: pointer; font-size: 14px; }
+.readme { font-size: 14px; font-weight: 700; display: inline-flex; gap: 6px; align-items: center; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.pills button { font: inherit; font-weight: 800; font-size: 13.5px; border: 2px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+.pills button[aria-current="step"] { border-color: var(--accent); background: var(--accent-soft); }
+.pills button.done { border-color: var(--green); color: var(--green); }
+.pills button.done::before { content: '✓ '; }
+.nav { display: flex; gap: 10px; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.step h3 { font-size: 18px; margin: 12px 0 6px; }
+.parts { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.parts li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; align-items: start; background: var(--surface-2); border-radius: 12px; padding: 8px 10px; }
+.parts .ic { font-size: 22px; line-height: 1.2; text-align: center; }
+.parts .nm { display: block; font-weight: 800; }
+.new-tag { display: inline-block; font-size: 11.5px; font-weight: 800; background: #FFF1C2; color: #7A5400; border-radius: 99px; padding: 0 8px; margin-left: 4px; vertical-align: 1px; }
+.safety { background: #FFF6D6; border-left: 5px solid var(--hl); border-radius: 12px; padding: 8px 12px; margin: 10px 0; font-size: 15px; }
+.danger { background: #FBE9E9; border-left: 5px solid var(--red); border-radius: 12px; padding: 8px 12px; margin: 10px 0; font-size: 15px; }
+.task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.task-grid button, .tasks li { font: inherit; text-align: left; border: 2px solid var(--line); background: var(--surface-2); border-radius: 12px; padding: 7px 10px; cursor: pointer; font-weight: 800; color: var(--ink); }
+.task-grid button.found, .tasks li.ok { border-color: var(--green); background: #E3F5EA; }
+.task-grid button.found::before, .tasks li.ok::before { content: '✓ '; color: var(--green); }
+.task-grid button i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 6px; vertical-align: 0; }
+.tasks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.tasks li { cursor: default; font-weight: 700; }
+.info { background: var(--surface-2); border-radius: 14px; padding: 10px 12px; margin-top: 10px; border: 1px solid var(--line); }
+.info h4 { font-size: 17px; margin-bottom: 4px; }
+.why { display: grid; gap: 6px; margin-top: 10px; }
+.why-item button { width: 100%; text-align: left; font: inherit; font-weight: 800; color: var(--accent-strong); background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 7px 12px; cursor: pointer; }
+.why-item button::before { content: '❓ '; }
+.why-item.now button { background: var(--accent-soft); border-color: var(--accent); }
+.why-item .ans { padding: 8px 12px 4px; font-size: 15px; }
+.pin-link { font-weight: 800; white-space: nowrap; }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.seg button { font: inherit; font-weight: 800; font-size: 14px; border: 2px solid var(--line); background: var(--surface); border-radius: 12px; padding: 6px 10px; cursor: pointer; color: var(--ink); text-align: left; }
+.seg button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.wire-btns { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 8px 0; }
+.wire-btns button { font: inherit; text-align: left; border: 2px solid var(--line); background: var(--surface); border-radius: 12px; padding: 7px 10px; cursor: pointer; color: var(--ink); }
+.wire-btns button b { display: block; font-size: 14.5px; }
+.wire-btns button span { font-size: 13.5px; color: var(--muted); font-weight: 700; }
+.wire-btns button[aria-pressed="true"] { border-color: var(--hl); box-shadow: 0 0 0 3px rgba(242,183,5,.35); }
+.wire-btns button.ok { border-color: var(--green); } .wire-btns button.bad { border-color: var(--red); }
+.wire-btns i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.pick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-weight: 700; font-size: 15px; }
+.pick select { font: inherit; padding: 5px 8px; border-radius: 10px; border: 2px solid var(--line); max-width: 100%; }
+.results { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.results li { border-radius: 12px; padding: 7px 10px; font-size: 15px; }
+.results li.ok { background: #E3F5EA; } .results li.bad { background: #FFF6D6; } .results li.danger { background: #FBE9E9; }
+.feedback { border-radius: 12px; padding: 8px 12px; margin-top: 8px; font-size: 15px; }
+.feedback.good { background: #E3F5EA; border-left: 5px solid var(--green); }
+.feedback.try { background: #FFF6D6; border-left: 5px solid var(--hl); }
+.subnav { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+.subnav button { font: inherit; font-weight: 800; font-size: 13px; border: 2px solid var(--line); background: var(--surface); border-radius: 999px; padding: 2px 10px; cursor: pointer; color: var(--ink); }
+.subnav button[aria-current="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.subnav button.seen { color: var(--green); }
+.pulse-svg { width: 100%; height: auto; display: block; background: #13202A; border-radius: 12px; margin: 6px 0; }
+.sim { background: #0E1820; color: #CFE3EA; border-radius: 12px; padding: 8px 10px; font: 13px/1.45 var(--font-code); min-height: 46px; max-height: 160px; overflow: auto; white-space: pre-wrap; margin-top: 8px; }
+.sim .ln { color: #FFB25C; } .sim .warn { color: #FFD479; }
+.fault-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.opts { display: grid; gap: 6px; margin-top: 8px; }
+.opts button, .q button { text-align: left; font: inherit; border: 2px solid var(--line); background: var(--surface); border-radius: 12px; padding: 7px 12px; cursor: pointer; color: var(--ink); }
+.opts button.right, .q button.right { border-color: var(--green); background: #E3F5EA; }
+.opts button.wrong, .q button.wrong { border-color: var(--red); background: #FBE9E9; }
+.moves { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 6px; counter-reset: mv; }
+.moves li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto auto; gap: 8px; align-items: center; background: var(--surface-2); border-radius: 12px; padding: 6px 8px; }
+.moves li::before { counter-increment: mv; content: counter(mv); font-weight: 800; color: var(--muted); text-align: center; }
+.moves li.now { outline: 3px solid var(--hl); }
+.moves label { display: flex; align-items: center; gap: 8px; min-width: 0; font-weight: 800; font-size: 14px; }
+.moves input[type=range] { flex: 1; min-width: 0; accent-color: var(--orange); }
+.moves select { font: inherit; font-size: 14px; border-radius: 8px; border: 1px solid var(--line); padding: 2px 4px; }
+.moves .x { border: 0; background: transparent; font-size: 18px; cursor: pointer; padding: 0 4px; }
+.challenges { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.challenges li { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+.challenges label { display: flex; gap: 10px; align-items: flex-start; font-weight: 700; cursor: pointer; }
+.challenges input { width: 20px; height: 20px; margin-top: 3px; flex: none; accent-color: var(--green); }
+.challenges details { margin: 6px 0 0 30px; font-size: 15px; }
+.challenges summary { cursor: pointer; color: var(--accent-strong); font-weight: 800; }
+.q { margin-bottom: 12px; }
+.q > p { font-weight: 800; margin-bottom: 6px; }
+.q .qopts { display: grid; gap: 6px; }
+.achieve { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 6px; }
+.achieve li { background: var(--surface-2); border-radius: 12px; padding: 7px 10px; font-weight: 700; }
+.achieve li.ok { background: #E3F5EA; } .achieve li.ok::before { content: '🏅 '; } .achieve li:not(.ok)::before { content: '⬜ '; }
+.kkb-open { margin-left: 4px; }
+@media (max-width: 900px) {
+  main { grid-template-columns: minmax(0, 1fr); padding: 12px; }
+  .stage { position: static; }
+  .view { height: 48vh; min-height: 280px; }
+  .progress { margin-left: 0; flex: 1 1 100%; }
+  .progress .bar { flex: 1; width: auto; }
+}
+@media (max-width: 440px) {
+  header.top { padding: 10px 12px; }
+  header.top h1 { font-size: 21px; }
+  .story { grid-template-columns: 64px minmax(0, 1fr); }
+  .guide img, .guide svg { width: 64px; }
+  .card { padding: 13px; }
+  .view .readout { font-size: 11.5px; }
+  .moves li { grid-template-columns: 22px minmax(0, 1fr) auto; }
+  .moves li .x { grid-column: 3; grid-row: 1; }
+  .moves li select { grid-column: 2; justify-self: start; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="title">
+    <div>
+      <a class="home-link" href="../../lessons.html#modules">← All lessons</a>
+      <h1 id="modTitle">Servo Says Hello</h1>
+      <p id="modSub">Sensor module · an output module → SG90 servo</p>
+    </div>
+  </div>
+  <div class="progress" aria-live="polite">
+    <div class="bar" role="progressbar" aria-label="Module progress"><i id="progressFill"></i></div>
+    <span id="progressText">Step 1 of 9</span>
+  </div>
+</header>
+
+<main>
+  <section class="stage" aria-label="3D scene">
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" id="tabServo" aria-selected="true" aria-controls="viewServo">⚙️ The servo</button>
+      <button type="button" role="tab" id="tabWire" aria-selected="false" aria-controls="viewWire">🔧 The wiring</button>
+      <span class="sp"></span>
+      <button type="button" class="btn ghost mini" id="resetView">⟲ Reset view</button>
+    </div>
+    <div class="view" id="viewServo" role="tabpanel" aria-labelledby="tabServo">
+      <div class="msg" id="servoMsg">Loading the 3D servo…</div>
+      <div class="labels" id="servoLabels"></div>
+      <span class="tag" id="servoTag">3D simulation: tap a part</span>
+      <div class="readout" id="servoReadout" aria-hidden="true"></div>
+      <span class="hint">Drag to turn · pinch or scroll to zoom</span>
+    </div>
+    <div class="view" id="viewWire" role="tabpanel" aria-labelledby="tabWire" hidden>
+      <div class="msg" id="wireMsg">Loading the wiring desk…</div>
+      <div class="labels" id="wireLabels"></div>
+      <span class="tag" id="wireTag">Your desk: ESP32, servo and a 5 V supply</span>
+      <span class="hint">Drag to turn · pinch or scroll to zoom · tap a pin</span>
+    </div>
+    <div class="controls" id="controls">
+      <div class="row">
+        <label class="sl" for="angle">Angle <input type="range" id="angle" min="0" max="180" step="1" value="90" aria-describedby="angleHelp"><output id="angleOut" for="angle">90°</output></label>
+      </div>
+      <div class="row">
+        <button type="button" class="btn small" id="waveBtn">👋 Wave hello</button>
+        <button type="button" class="btn ghost small" id="resetServo">↺ Reset</button>
+        <label class="chk"><input type="checkbox" id="slowMo"> 🐢 Slow motion</label>
+        <label class="chk"><input type="checkbox" id="realServo"> Real servo stops</label>
+        <label class="chk"><input type="checkbox" id="showLabels" checked> Labels</label>
+      </div>
+      <p class="note" id="angleHelp">Orange pointer = the angle you asked for. White horn = where the servo really is.</p>
+    </div>
+    <p class="note">The 3D servo is an educational simulation, not a safety test. Ask an adult to check your real circuit before you plug it in.</p>
+  </section>
+
+  <div class="cards">
+    <article class="card">
+      <div class="story">
+        <div class="guide">
+          <svg viewBox="0 0 58 70" aria-hidden="true"><rect x="12" y="44" width="34" height="26" rx="10" fill="#2C4E9E"/><circle cx="29" cy="30" r="16" fill="#F2C9A0"/><circle cx="23" cy="31" r="2.2" fill="#15202A"/><circle cx="35" cy="31" r="2.2" fill="#15202A"/><path d="M23 37 q6 5 12 0" stroke="#15202A" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <h2 class="step-title" id="stepTitle">Servo Says Hello</h2>
+          <div class="say" id="say"></div>
+          <div class="voice-row"><button class="listen" id="listenBtn" type="button" aria-pressed="false">🔊 Listen</button><label class="readme"><input type="checkbox" id="readToMe"> Read every step to me</label></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="card">
+      <ol class="pills" id="pills" aria-label="Missions"></ol>
+      <div id="steps"></div>
+      <div class="nav">
+        <button type="button" class="btn ghost" id="prevBtn">← Back</button>
+        <button type="button" class="btn ghost small" id="restart" title="Start the module again (your badge stays)">↺ Start again</button>
+        <button type="button" class="btn" id="nextBtn">Next →</button>
+      </div>
+    </article>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
+<script src="../../course.js"></script>
+<script src="../../assets/ohm/ohm.js"></script>
+<script src="../../assets/rewards.js"></script>
+<script src="../../assets/esp32/board.js"></script>
+<script src="../../assets/voice/voice.js?v=naledi1"></script>
+<script>
+(function () {
+  'use strict';
+  const LESSON_SLUG = 'm-servo';
+  const $ = (id) => document.getElementById(id);
+  const W = (k, t) => (window.ESP32 && ESP32.WORDS[k] ? ESP32.chip(k, t) : (t || k)); // tappable maker word
+  const PIN = (n, text) => `<a class="pin-link" href="../../pins.html?pin=D${n}" target="_blank" rel="noopener">🔍 ${text || 'D' + n + ' in the Pin Explorer'}</a>`;
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  /* ================= 1. The program the learner builds (exactly what runs on the real board) ================= */
+  const HEADER = `from machine import Pin, PWM
+import time
+
+servo = PWM(Pin(18), freq=50)  # 50 pulses a second
+
+MIN_US = 500     # pulse for 0 degrees (microseconds)
+MAX_US = 2500    # pulse for 180 degrees
+
+def turn(angle):
+    angle = min(max(angle, 0), 180)  # keep 0 to 180
+    pulse_us = MIN_US + (MAX_US - MIN_US) * angle / 180
+    servo.duty_u16(int(pulse_us * 65535 / 20000))
+`;
+  const PROGRAM = HEADER + `
+turn(90)               # point straight up
+time.sleep(1)
+
+for wave in range(3):  # wave hello three times
+    turn(60)
+    time.sleep(0.4)
+    turn(120)
+    time.sleep(0.4)
+
+turn(90)
+time.sleep(0.5)
+servo.deinit()         # stop the pulses: the servo relaxes
+`;
+  const WIRING_ONE_LINE = 'Servo orange (signal) → D18, brown (ground) → GND, red (power) → + of a regulated 5 V supply whose − is joined to the ESP32’s GND. (Quick test only: red → VIN on a USB-powered DevKit V1.)';
+  // pulse maths shared by the readouts and the simulator: the same numbers as turn()
+  const pulseUs = (a) => 500 + 2000 * Math.min(180, Math.max(0, a)) / 180;
+  const dutyU16 = (a) => Math.floor(pulseUs(a) * 65535 / 20000);
+
+  /* ================= 2. What the learner reads ================= */
+  const PARTS = {
+    case: { name: 'Case', c: '#2C62D6', title: 'The case', text: 'The blue box. Inside are a small motor, a stack of plastic gears that make it strong but slow, and a tiny circuit that listens to your signal. The two tabs with holes are for screws.' },
+    shaft: { name: 'Output shaft', c: '#E8E4D8', title: 'The output shaft', text: 'The white post with little teeth. The gears turn it. Its teeth (engineers call them a <b>spline</b>) grip the horn so it can’t slip.' },
+    horn: { name: 'Horn', c: '#FFFFFF', title: 'The horn', text: 'The arm pushed onto the shaft. It’s the part you see move: it can lift a gate, push a latch or wave a hand. Servos come with a few horn shapes.' },
+    signal: { name: 'Orange wire: signal', c: '#F08A24', title: 'Orange wire: signal', text: 'Carries the message “turn to this angle” as pulses from a GPIO pin. Hardly any current flows in it: it’s a message, not food for the motor.' },
+    power: { name: 'Red wire: power +', c: '#C8262C', title: 'Red wire: power (+)', text: 'Feeds the motor about 5 volts. A motor needs far more current than a GPIO pin can give, so this wire goes to a 5 V supply.' },
+    ground: { name: 'Brown wire: ground −', c: '#6B4226', title: 'Brown wire: ground (−)', text: 'The road home for the current, at 0 volts. It is joined to the ESP32’s GND so both agree what “0 volts” means.' },
+  };
+  const EXTRA_PARTS = {
+    plug: { title: 'The plug', text: 'Three holes in a row: brown, red, orange. A jumper wire with a pin on one end pushes into each hole.' },
+    stand: { title: 'The bracket', text: 'Plywood that holds the servo by its tabs, so the horn can push without the servo twisting itself round. It is not part of the servo: you can make one from cardboard.' },
+  };
+  const NODE_PART = { Servo_Case: 'case', Servo_Label: 'case', Servo_Shaft: 'shaft', Horn: 'horn', Hand: 'horn', Wire_Signal: 'signal', Wire_Power: 'power', Wire_Ground: 'ground', Connector: 'plug', Stand: 'stand' };
+
+  const STEPS = [
+    { id: 'start', pill: 'Start', title: 'Servo Says Hello', tab: 'servo',
+      say: `<p><b>Officer Ohm:</b> “Last time, in Night Mode, your ESP32 made a decision from a sensor. Today it <b>moves</b> something!”</p><p>A ${W('servo')} is a little motor that turns to the angle you choose and holds it there. By the end of six missions, yours will wave hello.</p>` },
+    { id: 'm1', pill: '1 Meet', title: 'Mission 1 · Meet the servo', tab: 'servo',
+      say: '<p>Drag to turn the servo, and pinch or scroll to zoom. Tap each part to find out what it does. Find all six!</p>' },
+    { id: 'm2', pill: '2 Turn', title: 'Mission 2 · Make it turn', tab: 'servo',
+      say: '<p>Drag the <b>Angle</b> slider under the 3D view. You ask for an angle; the servo turns its horn there and holds it. The orange pointer shows what you asked for. The white horn shows where it really is.</p>' },
+    { id: 'm3', pill: '3 Wire', title: 'Mission 3 · Connect the wires', tab: 'wire',
+      say: '<p>Unplug the USB cable first, every time. Pick a wire below, then tap where it goes on the 3D desk, or choose from the list. Then press <b>Check my wiring</b>.</p>' },
+    { id: 'm4', pill: '4 Code', title: 'Mission 4 · Write the code', tab: 'servo',
+      say: '<p>Six small ideas, one at a time: from “what is an angle?” to a program that waves. Tap <b>Next idea</b> to go on.</p>' },
+    { id: 'm5', pill: '5 Fix', title: 'Mission 5 · Fix it', tab: 'wire',
+      say: '<p>Three friends built a servo, and each one has a problem. Look at their wiring in 3D, read what happens, and pick the cause.</p>' },
+    { id: 'm6', pill: '6 Yours', title: 'Mission 6 · Make it yours', tab: 'servo',
+      say: '<p>Design your own wave! Add moves, choose how long each one waits, and play it on the 3D servo. Then send it to your real board.</p>' },
+    { id: 'quiz', pill: 'Quiz', title: 'Quick quiz', tab: 'servo',
+      say: '<p>Three questions. A wrong answer gives you a hint and another try.</p>' },
+    { id: 'done', pill: '🏅', title: 'You did it!', tab: 'servo',
+      say: '<p>Look what you can do now. Your servo is ready for the next modules: gates, roofs and cranes that move by themselves.</p>' },
+  ];
+  const MISSIONS = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6'];
+  const MISSION_NAMES = { m1: 'Met the servo and its six parts', m2: 'Turned the horn to an angle and found the stops', m3: 'Wired the servo safely: signal, power and a shared ground', m4: 'Wrote a MicroPython program with PWM on GPIO18', m5: 'Fixed three broken servo circuits', m6: 'Designed your own waving sequence' };
+
+  /* ================= 3. Saved state (in the course's progress store, under this module's slug) ================= */
+  const S = { step: 0, done: {}, found: {}, m2: {}, wiring: { mode: 'supply', signal: null, power: null, ground: null, share: null }, m4: { sub: 0, seen: {}, ran: false }, m5: {}, seq: null, rep: 2, hand: false, quiz: false };
+  const saved = (window.COURSE && COURSE.readProgress()[LESSON_SLUG]) || {};
+  if (saved.servo) { try { Object.assign(S, JSON.parse(JSON.stringify(saved.servo))); } catch (e) { /* start fresh */ } }
+  if (typeof saved.step === 'number' && saved.step < STEPS.length) S.step = saved.step;
+  function save(extra) {
+    if (!window.COURSE) return;
+    COURSE.saveProgress(LESSON_SLUG, Object.assign({ step: S.step, steps: STEPS.length, servo: S }, extra || {}));
+  }
+
+  /* ================= 4. The servo simulation (shared by every mission) ================= */
+  const LIM = [4, 176];   // where this pretend SG90's internal stops are, in "Real servo stops" mode
+  const SV = { target: 90, actual: 90, relaxed: false, stalled: false, buzz: 0, player: null, sag: 0 };
+  function setTarget(a, fromSlider) {
+    SV.target = Math.max(0, Math.min(180, Math.round(a)));
+    SV.relaxed = false;
+    if (!fromSlider) { $('angle').value = SV.target; }
+    $('angleOut').textContent = SV.target + '°';
+    onServoChange();
+  }
+  function updateServo(dt) {
+    if (SV.player) stepPlayer(dt);
+    const speed = $('slowMo').checked ? 45 : 400;   // degrees a second (a real SG90: about 600)
+    const real = $('realServo').checked;
+    if (SV.relaxed) { SV.sag = Math.min(1, SV.sag + dt * 1.5); SV.stalled = false; return; }
+    SV.sag = Math.max(0, SV.sag - dt * 4);
+    const goal = real ? Math.max(LIM[0], Math.min(LIM[1], SV.target)) : SV.target;
+    const d = goal - SV.actual, stepA = speed * dt;
+    SV.actual += Math.abs(d) <= stepA ? d : Math.sign(d) * stepA;
+    SV.stalled = real && Math.abs(goal - SV.actual) < 0.01 && (SV.target < LIM[0] || SV.target > LIM[1]);
+    SV.buzz += dt;
+  }
+  function hornAngle() { // what the 3D horn shows: a stalled servo trembles, a relaxed one droops a little
+    let a = SV.actual;
+    if (SV.stalled) a += Math.sin(SV.buzz * 90) * 0.6;
+    if (SV.relaxed) a += -6 * SV.sag * Math.cos(a * Math.PI / 180) + Math.sin(SV.buzz * 3) * 0.4 * SV.sag; // gravity pulls the arm down a little
+    return a;
+  }
+  function readoutText() {
+    const req = `asked for   <b>${String(SV.target).padStart(3)}°</b>`;
+    const now = `horn is at  <i>${String(Math.round(SV.actual)).padStart(3)}°</i>`;
+    let tail = `pulse ${(pulseUs(SV.target) / 1000).toFixed(2)} ms`;
+    if (SV.relaxed) tail = '<span class="warn">no pulses: relaxed</span>';
+    else if (SV.stalled) tail = '<span class="warn">⚠ pushing on its stop!</span>';
+    return `${req}\n${now}\n${tail}`;
+  }
+
+  // a program timeline: [{t:'turn', a, line}, {t:'sleep', s, line}, {t:'print', text}, {t:'deinit'}]
+  function play(events, opts) {
+    stopPlayer();
+    SV.player = { ev: events, i: 0, wait: 0, opts: opts || {} };
+  }
+  function stopPlayer() { if (SV.player && SV.player.opts.onStop) SV.player.opts.onStop(); SV.player = null; }
+  function stepPlayer(dt) {
+    const p = SV.player;
+    if (p.wait > 0) { p.wait -= dt; if (p.wait > 0) return; }
+    while (p.i < p.ev.length) {
+      const e = p.ev[p.i++];
+      if (p.opts.onEvent) p.opts.onEvent(e, p.i - 1);
+      if (e.t === 'turn') { SV.relaxed = false; SV.target = Math.max(0, Math.min(180, Math.round(e.a))); $('angle').value = SV.target; $('angleOut').textContent = SV.target + '°'; onServoChange(); }
+      else if (e.t === 'deinit') SV.relaxed = true;
+      else if (e.t === 'sleep') { p.wait = e.s; return; }
+    }
+    const done = p.opts.onDone; SV.player = null; if (done) done();
+  }
+  const WAVE = [{ t: 'turn', a: 90 }, { t: 'sleep', s: 0.6 }].concat(...[0, 1, 2].map(() => [{ t: 'turn', a: 60 }, { t: 'sleep', s: 0.4 }, { t: 'turn', a: 120 }, { t: 'sleep', s: 0.4 }]), [{ t: 'turn', a: 90 }, { t: 'sleep', s: 0.4 }]);
+
+  /* ================= 5. A tiny MicroPython reader for the 3D simulator (turn, sleep, loops, duty_u16, deinit) ================= */
+  function simulate(code) {
+    const out = { events: [], notes: [], pin: null, freq: null };
+    const src = code.replace(/\t/g, '    ').split('\n').map((raw, i) => {
+      let t = raw.replace(/#.*$/, ''); // comments go (no '#' inside our strings)
+      return { n: i + 1, ind: (t.match(/^ */) || [''])[0].length, text: t.trim() };
+    }).filter((l) => l.text);
+    function block(i, ind) { // lines with this indent, each with the deeper lines under it
+      const list = [];
+      while (i < src.length && src[i].ind >= ind) {
+        if (src[i].ind > ind) { out.notes.push(`line ${src[i].n}: unexpected indent, the simulator skipped it`); i++; continue; }
+        const st = { line: src[i], body: [] }; i++;
+        if (/:$/.test(st.line.text)) { const deeper = i < src.length && src[i].ind > ind ? src[i].ind : null; if (deeper != null) { const r = block(i, deeper); st.body = r.list; i = r.i; } }
+        list.push(st);
+      }
+      return { list, i };
+    }
+    const env = {}, fns = {};
+    const FN = { min: Math.min, max: Math.max, int: Math.trunc, abs: Math.abs, round: Math.round };
+    function val(expr, n) {
+      const e = expr.replace(/\/\//g, '/').replace(/[A-Za-z_]\w*/g, (w) => {
+        if (FN[w]) return w; if (w in env) return '(' + env[w] + ')';
+        throw new Error(`line ${n}: the simulator doesn’t know “${w}” yet`);
+      });
+      if (!/^[\d\s+\-*/().,a-z]*$/.test(e)) throw new Error(`line ${n}: the simulator can only work out numbers here`);
+      const v = Function('min', 'max', 'int', 'abs', 'round', '"use strict"; return (' + e + ');')(FN.min, FN.max, FN.int, FN.abs, FN.round);
+      if (typeof v !== 'number' || !isFinite(v)) throw new Error(`line ${n}: that isn’t a number`);
+      return v;
+    }
+    let time = 0, steps = 0;
+    function run(list) {
+      for (const st of list) {
+        if (++steps > 600 || time > 90) throw new Error('stop');
+        const { n, text } = st.line; let m;
+        if (/^(from|import)\s/.test(text) || text === 'pass') continue;
+        if ((m = text.match(/^def\s+(\w+)\s*\(/))) { fns[m[1]] = true; continue; }
+        if ((m = text.match(/^(\w+)\s*=\s*PWM\(\s*Pin\(\s*(\d+)\s*\)\s*(?:,\s*freq\s*=\s*([\d.]+)\s*)?\)$/))) { out.pin = +m[2]; out.freq = m[3] ? +m[3] : null; env[m[1]] = 0; continue; }
+        if ((m = text.match(/^for\s+(\w+)\s+in\s+range\((.+)\)\s*:$/))) {
+          const a = m[2].split(',').map((x) => val(x, n)); const [s, e, k] = a.length === 1 ? [0, a[0], 1] : [a[0], a[1], a[2] || 1];
+          let c = 0; for (let x = s; k > 0 ? x < e : x > e; x += k) { if (++c > 40) { out.notes.push(`line ${n}: the simulator stopped this loop after 40 rounds`); break; } env[m[1]] = x; run(st.body); }
+          continue;
+        }
+        if (/^while\s+True\s*:$/.test(text)) { for (let r = 0; r < 3; r++) run(st.body); out.notes.push(`line ${n}: “while True” repeats for ever on your board; the simulator shows 3 rounds`); continue; }
+        if ((m = text.match(/^turn\((.+)\)$/))) { if (!fns.turn) throw new Error(`line ${n}: turn() isn’t defined yet: keep the “def turn(angle):” part`); out.events.push({ t: 'turn', a: Math.max(0, Math.min(180, val(m[1], n))), line: n }); continue; }
+        if ((m = text.match(/^\w+\.duty_u16\((.+)\)$/))) { const us = val(m[1], n) / 65535 * 20000; out.events.push({ t: 'turn', a: Math.max(0, Math.min(180, (us - 500) / 2000 * 180)), line: n }); continue; }
+        if (/^\w+\.deinit\(\)$/.test(text)) { out.events.push({ t: 'deinit', line: n }); continue; }
+        if ((m = text.match(/^time\.sleep(_ms)?\((.+)\)$/))) { const s = Math.min(5, val(m[2], n) / (m[1] ? 1000 : 1)); time += s; out.events.push({ t: 'sleep', s, line: n }); continue; }
+        if ((m = text.match(/^print\((.*)\)$/))) { out.events.push({ t: 'print', text: m[1].replace(/^['"]|['"]$/g, ''), line: n }); continue; }
+        if ((m = text.match(/^([A-Za-z_]\w*)\s*=\s*(.+)$/))) { try { env[m[1]] = val(m[2], n); } catch (e) { out.notes.push(e.message); } continue; }
+        if (/^(if|elif|else|while)\b/.test(text)) { out.notes.push(`line ${n}: the simulator skips “${text.split(/[\s(:]/)[0]}” blocks; your real board runs them`); continue; }
+        out.notes.push(`line ${n}: the simulator skipped “${text.slice(0, 30)}”`);
+      }
+    }
+    try { run(block(0, 0).list); } catch (e) { if (e.message !== 'stop') { out.error = e.message; } else out.notes.push('the simulator stopped after 90 seconds of moves'); }
+    if (out.pin == null && !out.error) out.error = 'There is no “servo = PWM(Pin(18), freq=50)” line, so nothing makes pulses.';
+    else if (out.pin !== 18 && !out.error) { out.dead = `Your code makes pulses on Pin(${out.pin}), but the orange wire is on D18. A real servo would not move.`; }
+    else if (out.freq !== 50 && !out.error) { out.dead = `freq=${out.freq == null ? '(none)' : out.freq}: a servo expects 50 pulses a second (freq=50), so it would not understand.`; }
+    return out;
+  }
+
+  /* ================= 6. Wiring rules: what each wire end means ================= */
+  const PADS = window.ESP32 ? ESP32.PINS : [];
+  function pinInfo(id) {
+    if (id === 'SUP+') return { id, printed: '5 V supply +', kind: 'sup+' };
+    if (id === 'SUP-') return { id, printed: '5 V supply −', kind: 'sup-' };
+    const p = PADS.find((x) => x.node === id); if (!p) return null;
+    return { id, printed: p.printed, gpio: p.gpio, kind: p.printed === 'GND' ? 'gnd' : p.printed === 'VIN' ? 'vin' : p.printed === '3V3' ? '3v3' : p.printed === 'EN' ? 'en' : p.gpio >= 34 ? 'inonly' : (p.gpio === 1 || p.gpio === 3) ? 'serial' : [2, 5, 12, 15].includes(p.gpio) ? 'startup' : 'gpio' };
+  }
+  const nameOf = (id) => (id ? (pinInfo(id) || { printed: id }).printed : '—');
+  function checkWiring(w) {
+    const R = [], sup = w.mode === 'supply';
+    const add = (wire, level, msg) => R.push({ wire, level, msg });
+    // the orange signal wire
+    const s = pinInfo(w.signal);
+    if (!s) add('signal', 'bad', 'The orange <b>signal</b> wire isn’t connected yet.');
+    else if (w.signal === 'R07_GPIO18') add('signal', 'ok', 'Orange → <b>D18</b>: the pin our program sends pulses on. ✓');
+    else if (s.kind === 'gpio') add('signal', 'bad', `Orange → <b>${s.printed}</b>. That pin can make pulses too, but our program says <code>Pin(18)</code>. Wire and code must match: move it to <b>D18</b>.`);
+    else if (s.kind === 'startup') add('signal', 'bad', `<b>${s.printed}</b> is a start-up pin: it can wiggle while the board starts, so the servo could jump. Use <b>D18</b>.`);
+    else if (s.kind === 'inonly') add('signal', 'bad', `<b>${s.printed}</b> can only listen. It can’t send pulses. Use <b>D18</b>.`);
+    else if (s.kind === 'serial') add('signal', 'bad', `<b>${s.printed}</b> is busy talking to your computer over USB. Use <b>D18</b>.`);
+    else if (s.kind === 'en') add('signal', 'bad', '<b>EN</b> restarts the board. It isn’t a GPIO pin. Use <b>D18</b>.');
+    else if (s.kind === 'gnd' || s.kind === 'sup-') add('signal', 'bad', 'The signal wire is on ground, so the servo only hears silence. Use <b>D18</b>.');
+    else add('signal', 'danger', `⚠ The signal wire is on a <b>power</b> pin (${s.printed}). The servo gets power instead of a message. Move it to <b>D18</b>.`);
+    // the red power wire
+    const p = pinInfo(w.power);
+    if (!p) add('power', 'bad', 'The red <b>power</b> wire isn’t connected yet.');
+    else if (sup && w.power === 'SUP+') add('power', 'ok', 'Red → <b>5 V supply +</b>: the motor gets its own food. ✓');
+    else if (!sup && p.kind === 'vin') add('power', 'ok', 'Red → <b>VIN</b>: about 5 V from USB. OK for a quick test with one SG90 and a light arm. ✓');
+    else if (sup && p.kind === 'vin') add('power', 'bad', 'You chose a separate 5 V supply, so put red on the supply’s <b>+</b>. (VIN is only for a quick test.)');
+    else if (p.kind === '3v3') add('power', 'danger', '⚠ <b>Not safe:</b> 3V3 comes from the board’s small regulator, which feeds the ESP32 chip. A motor can make the board restart and the regulator overheat.');
+    else if (p.kind === 'gnd' || p.kind === 'sup-') add('power', 'bad', 'Red is on ground, so the servo gets no power at all.');
+    else add('power', 'danger', `⚠ <b>Never!</b> ${p.printed} is a signal pin. It can give only a few milliamps, and a motor would pull far more and could damage the pin.`);
+    // the brown ground wire
+    const g = pinInfo(w.ground), shareOK = sup && pinInfo(w.share) && pinInfo(w.share).kind === 'gnd';
+    if (!g) add('ground', 'bad', 'The brown <b>ground</b> wire isn’t connected yet.');
+    else if (g.kind === 'gnd' || (sup && g.kind === 'sup-')) {
+      if (sup && g.kind === 'gnd' && !shareOK) add('ground', 'bad', 'Brown → ESP32 GND, but the supply’s − isn’t joined to it yet, so the motor current has no road home to the supply. Add the shared-ground wire.');
+      else add('ground', 'ok', `Brown → <b>${g.printed}</b>: the road home, at 0 volts. ✓`);
+    } else if (g.kind === 'sup-') add('ground', 'bad', 'In this setup there’s no supply: brown goes to an ESP32 <b>GND</b> pin.');
+    else if (['sup+', 'vin', '3v3'].includes(g.kind)) add('ground', 'danger', `⚠ Brown is ground. On <b>${g.printed}</b> the servo gets power backwards, which can damage it.`);
+    else add('ground', 'bad', `<b>${g.printed}</b> isn’t ground. Brown goes to <b>GND</b>${sup ? ' or the supply’s −' : ''}.`);
+    // the shared ground (separate supply only)
+    if (sup) {
+      const sh = pinInfo(w.share);
+      if (!sh) add('share', 'bad', '<b>Shared ground missing.</b> The ESP32 measures its pulses from its own GND. Join the supply’s − to a GND pin, or the servo can’t read them and twitches.');
+      else if (sh.kind === 'gnd') add('share', 'ok', 'Supply − → <b>GND</b>: the ESP32 and the servo agree what 0 volts is. ✓');
+      else if (['vin', '3v3'].includes(sh.kind)) add('share', 'danger', `⚠ That joins the supply’s − to <b>${sh.printed}</b>, a power pin: a short circuit. It must go to <b>GND</b>.`);
+      else add('share', 'bad', `The shared-ground wire must go to a <b>GND</b> pin, not ${sh.printed}.`);
+    }
+    return { list: R, ok: R.every((r) => r.level === 'ok') };
+  }
+
+  /* ================= 7. Fix-it faults (Mission 5) ================= */
+  const FAULTS = [
+    { who: 'Amani’s twitchy servo', symptom: 'The servo twitches and jumps to random angles. It has its own 5 V supply.', show: 'twitch',
+      wiring: { mode: 'supply', signal: 'R07_GPIO18', power: 'SUP+', ground: 'SUP-', share: null },
+      opts: ['The supply’s − is not joined to the ESP32’s GND', 'The signal wire is on the wrong pin', 'The horn is too heavy'], right: 0,
+      hints: [null, 'Look again: the orange wire is on D18, just like the code.', 'The horn is tiny. Look at the ground wires: how many go to the ESP32?'],
+      fix: 'Add one wire from the supply’s − to a GND pin. Now the ESP32 and the servo agree what 0 volts is, and the pulses make sense.',
+      fixed: { share: 'R14_GND' } },
+    { who: 'Keza’s sleepy servo', symptom: 'Nothing moves at all. The code says servo = PWM(Pin(18), freq=50).', show: 'still',
+      wiring: { mode: 'supply', signal: 'R06_GPIO19', power: 'SUP+', ground: 'SUP-', share: 'R14_GND' },
+      opts: ['The orange wire is on D19, but the code talks to D18', 'freq=50 is too slow for a servo', 'The brown wire should be on 3V3'], right: 0,
+      hints: [null, 'freq=50 is exactly what servos expect: one pulse every 20 ms.', 'Brown is ground and must stay on ground. Follow the orange wire instead.'],
+      fix: 'Move the orange wire to D18, or change the code to Pin(19). The wire and the code must always match.',
+      fixed: { signal: 'R07_GPIO18' } },
+    { who: 'Gatete’s restarting board', symptom: 'Every time the servo moves, the board restarts and the servo feels weak. The board’s little regulator chip gets warm.', show: 'reset',
+      wiring: { mode: 'vin', signal: 'R07_GPIO18', power: 'R15_3V3', ground: 'L14_GND', share: null },
+      opts: ['The red wire is on 3V3, and the board’s small regulator can’t feed a motor', 'The servo needs a faster freq', 'The ground is on the wrong GND pin'], right: 0,
+      hints: [null, 'Changing freq won’t help: a servo listens for 50 pulses a second.', 'Both GND pins are the same ground, so either one works. Follow the red wire.'],
+      fix: '⚠ That one is unsafe. Unplug first, then move red to a 5 V supply (or to VIN for a quick test). 3V3 is only for the ESP32 and small sensors.',
+      fixed: { power: 'L15_VIN' } },
+  ];
+
+  /* ================= 8. Building each step's panel ================= */
+  const stepsHost = $('steps');
+  const panels = STEPS.map((s, i) => { const d = document.createElement('section'); d.className = 'step'; d.dataset.step = i; d.hidden = true; stepsHost.appendChild(d); return d; });
+  const P = (id) => panels[STEPS.findIndex((s) => s.id === id)];
+  function whyList(list) {
+    return `<div class="why">${list.map((w) => `<div class="why-item"><button type="button" aria-expanded="false">${w.q}</button><div class="ans" hidden>${w.a}</div></div>`).join('')}</div>`;
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.why-item > button'); if (!b) return;
+    const item = b.parentElement, ans = item.querySelector('.ans'), open = ans.hidden;
+    document.querySelectorAll('.why-item.now').forEach((x) => x.classList.remove('now'));
+    ans.hidden = !open; b.setAttribute('aria-expanded', String(open)); item.classList.toggle('now', open);
+  });
+
+  // --- start
+  P('start').innerHTML = `
+    <h3>You already know</h3>
+    <p>${W('pwm')} from Lesson 5 (the buzzer switched on and off very fast), and ${W('gnd', 'GND')}, ${W('vin', 'VIN')} and ${W('gpio', 'GPIO')} pins from Pin Detective. Today they work together.</p>
+    <h3>What you need</h3>
+    <ul class="parts">
+      <li><span class="ic" aria-hidden="true">🧠</span><span><span class="nm">ESP32 DevKit V1 + USB data cable</span>Your board from every lesson. Start from a bare board: nothing else plugged in.</span></li>
+      <li><span class="ic" aria-hidden="true">⚙️</span><span><span class="nm">SG90 micro servo<span class="new-tag">NEW</span></span>A small motor with gears and a tiny control circuit inside. It turns its arm to an angle and holds it.</span></li>
+      <li><span class="ic" aria-hidden="true">🔋</span><span><span class="nm">A regulated 5 V supply</span>For example a USB power bank with a USB breakout board, or a 5 V, 2 A adapter. Motors are hungry: their own supply keeps the ESP32 from restarting.</span></li>
+      <li><span class="ic" aria-hidden="true">🧵</span><span><span class="nm">4 male–female jumper wires</span>The servo’s plug has holes and the ESP32 has pins. Three wires for the servo, one to join the grounds.</span></li>
+    </ul>
+    <div class="safety">⚡ <b>The big rule today:</b> a GPIO pin sends the <b>message</b>, never the <b>power</b>. Motors get their power from a 5 V supply.</div>`;
+
+  // --- mission 1
+  P('m1').innerHTML = `
+    <p><b>Find the parts:</b> tap them on the 3D servo, or tap a name here.</p>
+    <div class="task-grid" id="partBtns">${Object.entries(PARTS).map(([k, p]) => `<button type="button" data-part="${k}"><i style="background:${p.c};border:1px solid #9aa"></i>${p.name}</button>`).join('')}</div>
+    <div class="info" id="partInfo"><h4>Tap a part</h4><p>Officer Ohm will tell you what it does and why it’s there.</p></div>
+    <p class="note" id="m1Count" aria-live="polite"></p>`;
+
+  // --- mission 2
+  P('m2').innerHTML = `
+    <ul class="tasks" id="m2Tasks">
+      <li data-t="t30">Send the horn to <b>30°</b></li>
+      <li data-t="t150">Send it to <b>150°</b></li>
+      <li data-t="t90">Back to the middle: <b>90°</b></li>
+      <li data-t="stall">Tick <b>Real servo stops</b>, then ask for <b>180°</b>. What happens?</li>
+    </ul>
+    <div class="seg" style="margin-top:8px" aria-label="Quick angles">${[0, 30, 60, 90, 120, 150, 180].map((a) => `<button type="button" data-goto="${a}">${a}°</button>`).join('')}</div>
+    ${whyList([
+      { q: 'Why doesn’t the horn jump there straight away?', a: 'A motor needs time to speed up, and the gears slow it down so it’s strong. A real SG90 needs about a tenth of a second for 60°. Tick 🐢 <b>Slow motion</b> to see the gap between what you asked for and where the horn is.' },
+      { q: 'What happens at 0° and 180°?', a: 'Inside, a little plastic stop keeps the arm from going round and round. Many SG90s stop a few degrees before 0° or 180°. Ask for more and the motor keeps pushing and buzzing. That wastes power and wears out the gears, so pick angles a bit inside, like 10° to 170°.' },
+      { q: 'Does the servo know where it is?', a: 'Yes! Inside, a little sensor turns with the shaft. The circuit compares where the shaft <i>is</i> with where you <i>asked</i>, and drives the motor until they match. Push the horn and it pushes back.' },
+    ])}`;
+
+  // --- mission 3
+  P('m3').innerHTML = `
+    <div class="danger">🔌 <b>Unplug the USB cable</b> (and the 5 V supply) before you move any wire.</div>
+    <p><b>1. Where does the servo’s power come from?</b></p>
+    <div class="seg" id="modeBtns">
+      <button type="button" data-mode="supply">🔋 Separate 5 V supply <small>(best)</small></button>
+      <button type="button" data-mode="vin">🔌 VIN, from USB <small>(quick test)</small></button>
+    </div>
+    <p style="margin-top:10px"><b>2. Pick a wire, then tap where it goes</b> (tap a pin on the 3D desk, or choose from the list):</p>
+    <div class="wire-btns" id="wireBtns"></div>
+    <div class="pick"><label for="pinPick">Connect it to:</label><select id="pinPick"></select></div>
+    <div class="nav" style="border:0;margin-top:6px;padding-top:0">
+      <button type="button" class="btn" id="checkWires">✅ Check my wiring</button>
+      <button type="button" class="btn ghost small" id="clearWires">Clear wires</button>
+    </div>
+    <ul class="results" id="wireResults" aria-live="polite"></ul>
+    ${whyList([
+      { q: 'Why D18 for the signal?', a: `D18 is a ${W('gpio', 'GPIO')} pin with no start-up job, so the servo won’t jump while the board starts. It sends the pulses: the message, not the power. In code, <code>Pin(18)</code> means GPIO 18, printed <b>D18</b>. ${PIN(18)}` },
+      { q: 'Why never power a servo from a GPIO pin or 3V3?', a: 'A GPIO pin can give only a few milliamps: enough to whisper a message, nowhere near enough for a motor. An SG90 can pull hundreds of milliamps when it starts or when something blocks it. 3V3 comes from the board’s small regulator, which feeds the ESP32 chip: a motor there can make the board restart, and the regulator can overheat.' },
+      { q: 'Why a separate 5 V supply?', a: 'Motors take big gulps of current when they start and when something blocks them. A regulated 5 V supply gives the servo its own food, so the ESP32 keeps running smoothly. “Regulated” means it holds 5 V steady.' },
+      { q: 'Why must the grounds be joined?', a: `The ESP32 measures its pulses from its own ${W('gnd', 'GND')}. The servo measures them from its brown wire. Join the grounds and both agree where 0 volts is. Without it the servo sees nonsense and twitches, or ignores you.` },
+      { q: 'What about VIN?', a: `On many DevKit V1 boards, ${W('vin', 'VIN')} is joined to the USB’s 5 volts through a small diode, so it gives about 4.5–5 V while the USB cable is plugged in. But not every board is wired the same way, and a computer’s USB port gives only about half an amp. VIN is fine for a quick test with one SG90 moving a light arm. If the board restarts when the servo moves, use a separate supply. Ask an adult to check.` },
+    ])}`;
+
+  // --- mission 4: six ideas
+  const SUBS = [
+    { t: 'An angle', html: `<p>An angle says how far the horn turns, in degrees (°). Half a circle is 180°: <b>0°</b> points right, <b>90°</b> points straight up, <b>180°</b> points left (look at the protractor on the bracket).</p>
+      <p>In code you’ll write <code>turn(90)</code>. It doesn’t mean “turn 90 more”: it means <b>go to 90° and stay there</b>.</p>
+      <div class="seg">${[0, 45, 90, 135, 180].map((a) => `<button type="button" data-goto="${a}">turn(${a})</button>`).join('')}</div>` },
+    { t: 'PWM', html: `<p>Remember the buzzer in Lesson 5? ${W('pwm')} means switching a pin ON (3.3 volts) and OFF (0 volts) very fast. Each ON part is a <b>pulse</b>.</p>
+      <svg class="pulse-svg" id="pwmSvg" viewBox="0 0 400 110" role="img" aria-label="A square wave: the pin switching on and off"></svg>
+      <p>For the buzzer, <i>how often</i> the pulses come made the pitch. For a servo, <b>how long each pulse lasts</b> is the message.</p>` },
+    { t: 'Pulses, again and again', html: `<p>The servo listens for one pulse every 20 milliseconds: 50 pulses a second. Engineers write <code>freq=50</code>. The pulse’s length is the angle: engineers call it the ${W('pulse', 'pulse width')}.</p>
+      <svg class="pulse-svg" id="frameSvg" viewBox="0 0 400 130" role="img" aria-label="Pulses 20 milliseconds apart"></svg>
+      <p class="note">Move the Angle slider: 0.5 ms → 0°, 1.5 ms → 90°, 2.5 ms → 180°.</p>
+      <p>The pulses must keep coming: they are how the servo knows to <b>hold</b> its position. Stop them and it relaxes.</p>
+      <button type="button" class="btn ghost small" id="relaxBtn">⏸ Stop the pulses</button>` },
+    { t: 'PWM on GPIO18', html: `<p>Two lines make GPIO 18 a pulse maker:</p>
+      <pre class="code"><span class="new">from machine import Pin, PWM</span>
+import time
+
+<span class="new">servo = PWM(Pin(18), freq=50)</span>  <span class="cm"># 50 pulses a second</span></pre>
+      ${whyList([
+        { q: 'What does PWM(Pin(18), freq=50) do?', a: 'It hands GPIO 18 to the ESP32’s pulse maker and sets its rhythm to 50 pulses a second. The chip makes the pulses by itself, so your program is free to do other things.' },
+        { q: 'Why is there import time?', a: 'We’ll need <code>time.sleep()</code> to wait between moves, just like the traffic light.' },
+      ])}` },
+    { t: 'Safe angles', html: `<p>A function turns an angle into a pulse:</p>
+      <pre class="code">MIN_US = 500     <span class="cm"># pulse for 0 degrees (microseconds)</span>
+MAX_US = 2500    <span class="cm"># pulse for 180 degrees</span>
+
+<span class="new">def turn(angle):</span>
+<span class="new">    angle = min(max(angle, 0), 180)</span>  <span class="cm"># keep 0 to 180</span>
+<span class="new">    pulse_us = MIN_US + (MAX_US - MIN_US) * angle / 180</span>
+<span class="new">    servo.duty_u16(int(pulse_us * 65535 / 20000))</span></pre>
+      <div class="seg">${[30, 90, 150].map((a) => `<button type="button" data-goto="${a}">turn(${a})</button>`).join('')}</div>
+      <p class="sim" id="mathOut" aria-live="polite"></p>
+      ${whyList([
+        { q: 'What is duty_u16?', a: '<code>duty_u16()</code> wants the pulse as a share of the 20 ms frame, from 0 (never on) to 65535 (always on). 1.5 ms out of 20 ms is 7.5%, and 7.5% of 65535 is 4915.' },
+        { q: 'What does min(max(angle, 0), 180) do?', a: 'It’s a fence for numbers: anything below 0 becomes 0 and anything above 180 becomes 180, so a typo can’t send a wild pulse.' },
+        { q: 'My real servo buzzes at 0° or 180°. Why?', a: 'It’s pushing on its stop. Every servo is a bit different. Change <code>MIN_US</code> to 600 and <code>MAX_US</code> to 2400, or use angles from 10 to 170. Never force the horn past where it wants to stop.' },
+        { q: 'My board says duty_u16 doesn’t exist.', a: 'Very old MicroPython (before 1.18) only has <code>duty()</code> from 0 to 1023. Use <b>🧰 Prepare my board</b> to install a new MicroPython.' },
+      ])}` },
+    { t: 'Wave hello!', html: `<p>Put it together: point up, wave three times, then rest. <code>servo.deinit()</code> stops the pulses at the end.</p>
+      <section id="codePanel" aria-label="Your MicroPython program"></section>
+      <div class="nav" style="border:0;margin-top:4px;padding-top:0"><button type="button" class="btn" id="simRun">▶ Run in the 3D simulator</button><button type="button" class="btn ghost small" id="simStop">■ Stop</button></div>
+      <div class="sim" id="simOut" aria-live="polite">The simulator shows each line as the 3D servo runs it.</div>
+      <p class="note">The simulator is pretend. To run it for real, connect your board in the panel above, or use <b>🔌 Try it on my real board</b> at the top.</p>` },
+  ];
+  P('m4').innerHTML = `<div class="subnav" id="subnav">${SUBS.map((s, i) => `<button type="button" data-sub="${i}">${i + 1}. ${s.t}</button>`).join('')}</div>
+    ${SUBS.map((s, i) => `<div class="sub" data-sub="${i}" hidden><h3>${i + 1}. ${s.t}</h3>${s.html}</div>`).join('')}
+    <div class="nav" style="margin-top:8px"><button type="button" class="btn ghost small" id="subPrev">← Idea</button><button type="button" class="btn small" id="subNext">Next idea →</button></div>`;
+
+  // --- mission 5
+  P('m5').innerHTML = `<div class="fault-tabs seg" id="faultTabs">${FAULTS.map((f, i) => `<button type="button" data-f="${i}">${'ABC'[i]}. ${f.who}</button>`).join('')}</div>
+    <div id="faultBody"></div>`;
+
+  // --- mission 6
+  const PRESETS = {
+    wave: { name: '👋 Wave hello', rep: 3, moves: [[60, 0.4], [120, 0.4]] },
+    sleepy: { name: '😴 Sleepy wave', rep: 2, moves: [[50, 1.0], [130, 1.0]] },
+    no: { name: '🙅 Shake “no”', rep: 4, moves: [[75, 0.2], [105, 0.2]] },
+    sweep: { name: '🌈 Slow sweep', rep: 1, moves: [[20, 0.6], [60, 0.6], [100, 0.6], [140, 0.6], [160, 0.8]] },
+  };
+  if (!S.seq) { S.seq = PRESETS.wave.moves.map((m) => m.slice()); S.rep = PRESETS.wave.rep; }
+  P('m6').innerHTML = `
+    <div class="seg" id="presetBtns">${Object.entries(PRESETS).map(([k, p]) => `<button type="button" data-preset="${k}">${p.name}</button>`).join('')}</div>
+    <ol class="moves" id="moves"></ol>
+    <div class="row" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+      <button type="button" class="btn ghost small" id="addMove">+ Add a move</button>
+      <label class="chk">Repeat <select id="rep">${[1, 2, 3, 4, 5].map((n) => `<option>${n}</option>`).join('')}</select> times</label>
+      <label class="chk"><input type="checkbox" id="handToggle"> ✋ Glue on the cardboard hand</label>
+    </div>
+    <div class="nav" style="border:0;margin-top:8px;padding-top:0"><button type="button" class="btn" id="playSeq">▶ Play it in 3D</button><button type="button" class="btn ghost small" id="useSeq">🔌 Use it on my real board</button></div>
+    <p class="note">Moves stay between 10° and 170°, a little inside the servo’s stops.</p>
+    <pre class="code" id="seqCode"></pre>
+    <h3>Three challenges</h3>
+    <ol class="challenges" id="challenges"></ol>`;
+
+  // --- quiz
+  const QUIZ = [
+    { q: 'A servo gets one pulse every 20 ms. Which pulse asks it to point to the middle (90°)?', opts: ['0.5 ms', '1.5 ms', '20 ms'], right: 1, why: '0.5 ms is 0°, 2.5 ms is 180°, so 1.5 ms is right in the middle: 90°.' , hint: 'Half-way between 0.5 ms (0°) and 2.5 ms (180°)…' },
+    { q: 'Where should the servo’s red power wire go?', opts: ['The 3V3 pin', 'GPIO 18', 'A regulated 5 V supply (with the grounds joined)'], right: 2, why: 'Motors need their own 5 V power. GPIO 18 only carries the message, and 3V3 is for the ESP32 chip itself.', hint: 'Remember the big rule: a GPIO pin sends the message, never the power.' },
+    { q: 'A servo with its own 5 V supply twitches at random. What is most likely wrong?', opts: ['The supply’s − isn’t joined to the ESP32’s GND', 'freq is set to 50', 'The horn is white'], right: 0, why: 'Without a shared ground, the servo can’t measure the ESP32’s pulses properly, so it reads nonsense.', hint: 'Think about Amani’s servo in Mission 5.' },
+  ];
+  P('quiz').innerHTML = `<div id="quiz">${QUIZ.map((q, qi) => `<div class="q" data-q="${qi}"><p>${qi + 1}. ${q.q}</p><div class="qopts">${q.opts.map((o, i) => `<button type="button" data-o="${i}">${o}</button>`).join('')}</div><div class="fb"></div></div>`).join('')}</div><div id="quizEnd"></div>`;
+
+  // --- done
+  P('done').innerHTML = `<ul class="achieve" id="achieve"></ul><div id="badgeHost"></div>
+    <h3>Next</h3><p>Your servo is ready to lift <b>The Parking Gate</b>, swing a roof in <b>Rain, Rain, Go Away</b> and follow your hand in <b>Follow My Hand</b>. They’ll use the same <code>turn()</code> with an <code>if … else</code> from Night Mode.</p>
+    <p><a class="btn ghost" href="../../lessons.html#modules">← Pick another sensor</a></p>`;
+
+  /* ================= 9. Navigation, progress and narration ================= */
+  const pills = $('pills');
+  pills.innerHTML = STEPS.map((s, i) => `<li><button type="button" data-go="${i}">${s.pill}</button></li>`).join('');
+  pills.addEventListener('click', (e) => { const b = e.target.closest('[data-go]'); if (b) go(+b.dataset.go); });
+  $('prevBtn').addEventListener('click', () => go(S.step - 1));
+  $('nextBtn').addEventListener('click', () => go(S.step + 1));
+  let enterHooks = {};
+  function go(i) {
+    i = Math.max(0, Math.min(STEPS.length - 1, i));
+    const leaving = STEPS[S.step].id;
+    if (leaving === 'm5' && i !== S.step) restoreLearnerWiring();
+    S.step = i;
+    const st = STEPS[i];
+    panels.forEach((p, k) => { p.hidden = k !== i; });
+    $('stepTitle').textContent = st.title;
+    $('say').innerHTML = st.say;
+    $('progressText').textContent = `Step ${i + 1} of ${STEPS.length}`;
+    $('progressFill').style.width = Math.round(((i + 1) / STEPS.length) * 100) + '%';
+    $('prevBtn').disabled = i === 0;
+    $('nextBtn').disabled = i === STEPS.length - 1;
+    $('nextBtn').textContent = i === 0 ? 'Start Mission 1 →' : i === 6 ? 'Quiz →' : 'Next →';
+    pills.querySelectorAll('button').forEach((b, k) => { b.toggleAttribute('aria-current', k === i); if (k === i) b.setAttribute('aria-current', 'step'); b.classList.toggle('done', !!S.done[STEPS[k].id]); });
+    showTab(st.tab);
+    $('controls').hidden = st.tab !== 'servo';
+    if (enterHooks[st.id]) enterHooks[st.id]();
+    save();
+    if (window.KKVoice) { KKVoice.stop(); setListening(false); if ($('readToMe').checked) listen(); }
+  }
+  function complete(id) {
+    if (S.done[id]) return;
+    S.done[id] = true;
+    pills.querySelectorAll('button')[STEPS.findIndex((s) => s.id === id)].classList.add('done');
+    save(); maybeFinish();
+  }
+  // Officer Ohm's voice (browser speech: this module has no recorded MP3s yet)
+  const listenBtn = $('listenBtn'), readToMe = $('readToMe');
+  try { readToMe.checked = localStorage.getItem('kk-read-to-me') === '1'; } catch (e) { /* fine */ }
+  readToMe.addEventListener('change', () => { try { localStorage.setItem('kk-read-to-me', readToMe.checked ? '1' : '0'); } catch (e) { /* fine */ } if (readToMe.checked) listen(); else stopTalking(); });
+  function setListening(on) { listenBtn.setAttribute('aria-pressed', String(on)); listenBtn.textContent = on ? '■ Stop' : '🔊 Listen'; }
+  function stopTalking() { if (window.KKVoice) KKVoice.stop(); setListening(false); }
+  function listen() { if (!window.KKVoice) return; const t = STEPS[S.step].title; setListening(true); KKVoice.say(t + (/[.!?]$/.test(t) ? ' ' : '. ') + $('say').textContent, { base: '../../', onend: () => setListening(false) }); }
+  listenBtn.addEventListener('click', () => (listenBtn.getAttribute('aria-pressed') === 'true' ? stopTalking() : listen()));
+  $('restart').addEventListener('click', () => {
+    stopPlayer();
+    Object.assign(S, { done: {}, found: {}, m2: {}, wiring: { mode: 'supply', signal: null, power: null, ground: null, share: null }, m4: { sub: 0, seen: {}, ran: false }, m5: {}, seq: PRESETS.wave.moves.map((m) => m.slice()), rep: 3, hand: false, quiz: false });
+    refreshAll(); go(0);
+  });
+
+  /* ================= 10. Mission logic ================= */
+  // Mission 1: find the parts
+  let selPart = null;
+  function selectPart(k) {
+    selPart = k;
+    const info = PARTS[k] || EXTRA_PARTS[k]; if (!info) return;
+    $('partInfo').innerHTML = `<h4>${info.title}</h4><p>${info.text}</p>`;
+    if (PARTS[k] && !S.found[k]) { S.found[k] = true; save(); }
+    refreshM1(); highlight(k);
+    if (STEPS[S.step].id !== 'm1') { $('servoTag').textContent = info.title; }
+  }
+  $('partBtns').addEventListener('click', (e) => { const b = e.target.closest('[data-part]'); if (b) selectPart(b.dataset.part); });
+  function refreshM1() {
+    const n = Object.keys(PARTS).filter((k) => S.found[k]).length;
+    $('partBtns').querySelectorAll('[data-part]').forEach((b) => b.classList.toggle('found', !!S.found[b.dataset.part]));
+    $('m1Count').innerHTML = n === 6 ? '<b>You found all six parts!</b> Next: make it turn.' : `Found ${n} of 6.`;
+    labelEls.forEach((el, k) => el.classList.toggle('found', !!S.found[k]));
+    if (n === 6) complete('m1');
+  }
+
+  // Mission 2 and the slider
+  $('angle').addEventListener('input', (e) => { stopPlayer(); setTarget(+e.target.value, true); });
+  document.addEventListener('click', (e) => { const b = e.target.closest('[data-goto]'); if (b) { stopPlayer(); setTarget(+b.dataset.goto); } });
+  $('resetServo').addEventListener('click', () => { stopPlayer(); SV.relaxed = false; updateRelaxBtn(); setTarget(90); });
+  $('waveBtn').addEventListener('click', () => { SV.relaxed = false; updateRelaxBtn(); play(WAVE); });
+  $('realServo').addEventListener('change', onServoChange);
+  function onServoChange() { /* readouts are drawn every frame; this keeps the maths text in step */ const m = $('mathOut'); if (m) m.innerHTML = `turn(${SV.target}) → pulse_us = 500 + 2000 × ${SV.target} / 180 = <b>${Math.round(pulseUs(SV.target))} µs</b>\nduty_u16(${dutyU16(SV.target)})  (${(pulseUs(SV.target) / 200).toFixed(1)}% of 20 ms)`; drawFrame(); }
+  function checkM2() { // runs every frame while Mission 2 is open
+    if (STEPS[S.step].id !== 'm2') return;
+    const at = (a) => Math.abs(SV.target - a) <= 2 && Math.abs(SV.actual - SV.target) < 1.5 && !SV.player;
+    let ch = false;
+    if (!S.m2.t30 && at(30)) { S.m2.t30 = ch = true; }
+    if (!S.m2.t150 && at(150)) { S.m2.t150 = ch = true; }
+    if (!S.m2.t90 && (S.m2.t30 || S.m2.t150) && at(90)) { S.m2.t90 = ch = true; }
+    if (!S.m2.stall && SV.stalled && SV.target >= 178) { S.m2.stall = ch = true; }
+    if (ch) { refreshM2(); save(); }
+  }
+  function refreshM2() {
+    $('m2Tasks').querySelectorAll('li').forEach((li) => li.classList.toggle('ok', !!S.m2[li.dataset.t]));
+    if (S.m2.t30 && S.m2.t150 && S.m2.t90 && S.m2.stall) complete('m2');
+  }
+
+  // Mission 3: wiring
+  const WIRES = {
+    signal: { c: '#F08A24', name: 'Orange · signal' }, power: { c: '#C8262C', name: 'Red · power' },
+    ground: { c: '#6B4226', name: 'Brown · ground' }, share: { c: '#22262B', name: 'Black · shared ground', from: 'supply −' },
+  };
+  let selWire = 'signal', wiringShown = null, lastCheck = null;
+  function wiresFor(w) { return Object.keys(WIRES).filter((k) => k !== 'share' || w.mode === 'supply'); }
+  function refreshM3() {
+    const w = S.wiring;
+    $('modeBtns').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === w.mode)));
+    if (!wiresFor(w).includes(selWire)) selWire = 'signal';
+    $('wireBtns').innerHTML = wiresFor(w).map((k) => {
+      const r = lastCheck && lastCheck.list.find((x) => x.wire === k);
+      return `<button type="button" data-wire="${k}" aria-pressed="${k === selWire}" class="${r ? (r.level === 'ok' ? 'ok' : 'bad') : ''}"><b><i style="background:${WIRES[k].c}"></i>${WIRES[k].name}</b><span>${k === 'share' ? 'supply − → ' : 'plug → '}${nameOf(w[k])}</span></button>`;
+    }).join('');
+    const opts = ['<option value="">— choose a pin —</option>'];
+    if (w.mode === 'supply') opts.push('<optgroup label="5 V supply"><option value="SUP+">5 V supply +</option><option value="SUP-">5 V supply −</option></optgroup>');
+    ['L', 'R'].forEach((side) => opts.push(`<optgroup label="ESP32 ${side === 'L' ? 'EN … VIN side' : 'D23 … 3V3 side'}">${PADS.filter((p) => p.side === side).map((p) => `<option value="${p.node}">${p.printed}</option>`).join('')}</optgroup>`));
+    $('pinPick').innerHTML = opts.join('');
+    $('pinPick').value = w[selWire] || '';
+    if (wiringShown === 'learner') drawWiring(w);
+  }
+  $('modeBtns').addEventListener('click', (e) => { const b = e.target.closest('[data-mode]'); if (!b) return; S.wiring.mode = b.dataset.mode; if (b.dataset.mode === 'vin') { ['power', 'ground'].forEach((k) => { if (/^SUP/.test(S.wiring[k] || '')) S.wiring[k] = null; }); S.wiring.share = null; } lastCheck = null; $('wireResults').innerHTML = ''; save(); refreshM3(); });
+  $('wireBtns').addEventListener('click', (e) => { const b = e.target.closest('[data-wire]'); if (!b) return; selWire = b.dataset.wire; refreshM3(); });
+  $('pinPick').addEventListener('change', (e) => connect(e.target.value || null));
+  $('clearWires').addEventListener('click', () => { Object.keys(WIRES).forEach((k) => { S.wiring[k] = null; }); lastCheck = null; $('wireResults').innerHTML = ''; save(); refreshM3(); });
+  function connect(id) {
+    if (STEPS[S.step].id !== 'm3') return;
+    if (id === 'SUP+' || id === 'SUP-') { if (S.wiring.mode !== 'supply') return; }
+    S.wiring[selWire] = id; lastCheck = null; $('wireResults').innerHTML = '';
+    const order = wiresFor(S.wiring), next = order.find((k) => !S.wiring[k]);
+    if (next && id) selWire = next;
+    save(); refreshM3();
+  }
+  $('checkWires').addEventListener('click', () => {
+    lastCheck = checkWiring(S.wiring);
+    $('wireResults').innerHTML = lastCheck.list.map((r) => `<li class="${r.level}">${r.msg}</li>`).join('') +
+      (lastCheck.ok ? '<li class="ok"><b>Perfect wiring!</b> Signal on D18, power from 5 V, grounds joined. Now ask an adult to check it on your real desk.</li>' : '');
+    refreshM3();
+    if (lastCheck.ok) complete('m3');
+  });
+
+  // Mission 4: the six ideas
+  function showSub(i) {
+    i = Math.max(0, Math.min(SUBS.length - 1, i));
+    S.m4.sub = i; S.m4.seen[i] = true;
+    P('m4').querySelectorAll('.sub').forEach((d) => { d.hidden = +d.dataset.sub !== i; });
+    $('subnav').querySelectorAll('button').forEach((b) => { b.setAttribute('aria-current', String(+b.dataset.sub === i)); b.classList.toggle('seen', !!S.m4.seen[b.dataset.sub]); });
+    $('subPrev').disabled = i === 0; $('subNext').disabled = i === SUBS.length - 1;
+    if (i === 1) drawPWM(); if (i === 2) drawFrame(); if (i === 4) onServoChange();
+    if (i === 5 && !codePanel) mountCodePanel();
+    save(); checkM4();
+  }
+  $('subnav').addEventListener('click', (e) => { const b = e.target.closest('[data-sub]'); if (b) showSub(+b.dataset.sub); });
+  $('subPrev').addEventListener('click', () => showSub(S.m4.sub - 1));
+  $('subNext').addEventListener('click', () => showSub(S.m4.sub + 1));
+  function checkM4() { if (SUBS.every((s, i) => S.m4.seen[i]) && S.m4.ran) complete('m4'); }
+  function updateRelaxBtn() { const b = $('relaxBtn'); if (b) b.textContent = SV.relaxed ? '▶ Start the pulses again' : '⏸ Stop the pulses'; }
+  $('relaxBtn').addEventListener('click', () => { stopPlayer(); if (SV.relaxed) { SV.relaxed = false; setTarget(SV.target); } else SV.relaxed = true; updateRelaxBtn(); drawFrame(); });
+  function drawPWM() {
+    const svg = $('pwmSvg'); if (!svg) return;
+    let d = 'M10 80'; for (let k = 0; k < 8; k++) { const x = 10 + k * 48; d += ` L${x} 80 L${x} 30 L${x + 24} 30 L${x + 24} 80`; }
+    svg.innerHTML = `<path d="${d} L394 80" fill="none" stroke="#FFB25C" stroke-width="3"/><text x="10" y="22" fill="#CFE3EA" font-size="12" font-family="monospace">ON 3.3 V</text><text x="10" y="100" fill="#CFE3EA" font-size="12" font-family="monospace">OFF 0 V</text>`;
+  }
+  function drawFrame() {
+    const svg = $('frameSvg'); if (!svg) return;
+    const w = (pulseUs(SV.target) / 20000) * 180; // 180 px = 20 ms
+    let d = 'M10 90';
+    for (let k = 0; k < 2; k++) { const x = 10 + k * 180; d += SV.relaxed ? ` L${x + 180} 90` : ` L${x} 90 L${x} 40 L${x + w} 40 L${x + w} 90 L${x + 180} 90`; }
+    svg.innerHTML = `<path d="${d}" fill="none" stroke="#FFB25C" stroke-width="3"/>
+      <line x1="10" y1="112" x2="190" y2="112" stroke="#8FB3C4"/><text x="70" y="126" fill="#8FB3C4" font-size="11" font-family="monospace">20 ms frame</text>
+      ${SV.relaxed ? '<text x="120" y="62" fill="#FF8A8A" font-size="13" font-family="monospace">no pulses: the servo relaxes</text>' : `<text x="${14 + w}" y="34" fill="#FFB25C" font-size="12" font-family="monospace">${(pulseUs(SV.target) / 1000).toFixed(2)} ms → ${SV.target}°</text>`}`;
+  }
+  let codePanel = null;
+  function mountCodePanel() {
+    if (window.RunPanel && window.BoardLink) codePanel = RunPanel.mount($('codePanel'), { id: 'm-servo-code', base: '../../', code: PROGRAM, fresh: true });
+    else $('codePanel').innerHTML = `<pre class="code">${esc(PROGRAM)}</pre>`;
+  }
+  const currentCode = () => (codePanel ? codePanel.code : PROGRAM);
+  function runSim(code, outEl, opts) {
+    const r = simulate(code), lines = code.split('\n');
+    const log = [];
+    const show = () => { outEl.innerHTML = log.slice(-7).join('\n'); outEl.scrollTop = outEl.scrollHeight; };
+    if (r.error) { outEl.innerHTML = `<span class="warn">⚠ ${esc(r.error)}</span>`; return false; }
+    r.notes.slice(0, 3).forEach((n) => log.push(`<span class="warn">note: ${esc(n)}</span>`));
+    if (r.dead) { log.push(`<span class="warn">⚠ ${esc(r.dead)}</span>`); show(); return false; }
+    SV.relaxed = false; updateRelaxBtn();
+    play(r.events, {
+      onEvent: (e) => { if (e.line) log.push(`<span class="ln">${String(e.line).padStart(2)}</span> ${esc(lines[e.line - 1].trim())}`); if (e.t === 'print') log.push('   ' + esc(e.text)); show(); if (opts && opts.onEvent) opts.onEvent(e); },
+      onDone: () => { log.push('<span class="ln">✓</span> program finished'); show(); if (opts && opts.onDone) opts.onDone(); },
+    });
+    return true;
+  }
+  $('simRun').addEventListener('click', () => { if (runSim(currentCode(), $('simOut'), { onDone: () => { S.m4.ran = true; save(); checkM4(); } })) { /* running */ } });
+  $('simStop').addEventListener('click', () => stopPlayer());
+
+  // Mission 5: fix it
+  let fault = 0;
+  function showFault(i) {
+    fault = i; const f = FAULTS[i], st = S.m5[i] || {};
+    $('faultTabs').querySelectorAll('button').forEach((b) => { b.setAttribute('aria-pressed', String(+b.dataset.f === i)); b.textContent = `${S.m5[b.dataset.f] && S.m5[b.dataset.f].solved ? '✓ ' : ''}${'ABC'[b.dataset.f]}. ${FAULTS[b.dataset.f].who}`; });
+    $('faultBody').innerHTML = `<div class="info" style="margin-top:0"><h4>${f.who}</h4><p>${f.symptom}</p><p class="note">Wiring: ${wiringSentence(st.fixed ? Object.assign({}, f.wiring, f.fixed) : f.wiring)}</p></div>
+      <p style="margin-top:10px"><b>What’s the cause?</b></p>
+      <div class="opts">${f.opts.map((o, k) => `<button type="button" data-fo="${k}" class="${st.solved && k === f.right ? 'right' : ''}">${o}</button>`).join('')}</div>
+      <div id="faultFb">${st.solved ? `<div class="feedback good">${f.fix}</div>` : ''}</div>
+      <div class="nav" style="border:0;padding-top:0"><button type="button" class="btn" id="fixIt" ${st.solved && !st.fixed ? '' : 'hidden'}>🔧 Fix it</button>${i < FAULTS.length - 1 ? `<button type="button" class="btn ghost small" id="nextFault" ${st.fixed ? '' : 'hidden'}>Next problem →</button>` : ''}</div>`;
+    drawWiring(st.fixed ? Object.assign({}, f.wiring, f.fixed) : f.wiring, f.show && !st.fixed ? f.show : 'fine');
+    wiringShown = 'fault';
+  }
+  function wiringSentence(w) {
+    const parts = [`orange → ${nameOf(w.signal)}`, `red → ${nameOf(w.power)}`, `brown → ${nameOf(w.ground)}`];
+    if (w.mode === 'supply') parts.push(w.share ? `supply − → ${nameOf(w.share)}` : 'nothing from supply − to the ESP32');
+    return parts.join(', ') + '.';
+  }
+  $('faultTabs').addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if (b) showFault(+b.dataset.f); });
+  $('faultBody').addEventListener('click', (e) => {
+    const f = FAULTS[fault], st = S.m5[fault] = S.m5[fault] || {};
+    const o = e.target.closest('[data-fo]');
+    if (o && !st.solved) {
+      const k = +o.dataset.fo;
+      if (k === f.right) { st.solved = true; save(); showFault(fault); }
+      else { o.classList.add('wrong'); $('faultFb').innerHTML = `<div class="feedback try">Not quite. ${f.hints[k]}</div>`; }
+    }
+    if (e.target.id === 'fixIt') { st.fixed = true; save(); showFault(fault); if (FAULTS.every((x, i) => S.m5[i] && S.m5[i].fixed)) complete('m5'); }
+    if (e.target.id === 'nextFault') showFault(fault + 1);
+  });
+  function restoreLearnerWiring() { wiringShown = null; }
+
+  // Mission 6: make it yours
+  function genCode() {
+    const body = S.seq.map(([a, s]) => `    turn(${a})\n    time.sleep(${s})`).join('\n');
+    return HEADER + `\nturn(90)\ntime.sleep(0.5)\n\nfor i in range(${S.rep}):\n${body}\n\nturn(90)\ntime.sleep(0.5)\nservo.deinit()\n`;
+  }
+  function refreshM6() {
+    $('moves').innerHTML = S.seq.map(([a, s], i) => `<li data-i="${i}"><label>turn(<output>${a}</output>) <input type="range" min="10" max="170" step="5" value="${a}" aria-label="Move ${i + 1} angle"></label>
+      <select aria-label="Move ${i + 1} wait">${[0.2, 0.3, 0.4, 0.6, 0.8, 1.0, 1.5].map((v) => `<option value="${v}" ${v === s ? 'selected' : ''}>wait ${v} s</option>`).join('')}</select>
+      <button type="button" class="x" aria-label="Remove move ${i + 1}" ${S.seq.length <= 1 ? 'disabled' : ''}>✕</button></li>`).join('');
+    $('rep').value = String(S.rep);
+    $('handToggle').checked = !!S.hand; setHand(!!S.hand);
+    $('addMove').disabled = S.seq.length >= 8;
+    $('seqCode').textContent = genCode();
+  }
+  $('moves').addEventListener('input', (e) => {
+    const li = e.target.closest('li'); if (!li) return; const i = +li.dataset.i;
+    if (e.target.type === 'range') { S.seq[i][0] = +e.target.value; li.querySelector('output').textContent = e.target.value; stopPlayer(); setTarget(+e.target.value); }
+    $('seqCode').textContent = genCode(); save();
+  });
+  $('moves').addEventListener('change', (e) => { const li = e.target.closest('li'); if (!li || e.target.tagName !== 'SELECT') return; S.seq[+li.dataset.i][1] = +e.target.value; $('seqCode').textContent = genCode(); save(); });
+  $('moves').addEventListener('click', (e) => { if (!e.target.classList.contains('x')) return; S.seq.splice(+e.target.closest('li').dataset.i, 1); save(); refreshM6(); });
+  $('addMove').addEventListener('click', () => { const last = S.seq[S.seq.length - 1] || [90, 0.4]; S.seq.push([Math.max(10, Math.min(170, 180 - last[0])), last[1]]); save(); refreshM6(); });
+  $('rep').addEventListener('change', (e) => { S.rep = +e.target.value; save(); $('seqCode').textContent = genCode(); });
+  $('presetBtns').addEventListener('click', (e) => { const b = e.target.closest('[data-preset]'); if (!b) return; const p = PRESETS[b.dataset.preset]; S.seq = p.moves.map((m) => m.slice()); S.rep = p.rep; save(); refreshM6(); });
+  $('handToggle').addEventListener('change', (e) => { S.hand = e.target.checked; setHand(S.hand); save(); });
+  $('playSeq').addEventListener('click', () => {
+    const lis = $('moves').querySelectorAll('li');
+    const total = S.seq.length * S.rep;
+    runSim(genCode(), document.createElement('div'), {
+      onEvent: (e) => { if (e.t !== 'turn') return; lis.forEach((li) => li.classList.remove('now')); const k = S.seq.findIndex(([a]) => a === Math.round(e.a)); if (k >= 0 && lis[k]) lis[k].classList.add('now'); },
+      onDone: () => { lis.forEach((li) => li.classList.remove('now')); if (total >= 3) complete('m6'); },
+    });
+  });
+  let customProgram = null;
+  $('useSeq').addEventListener('click', () => { customProgram = genCode(); const b = document.querySelector('.kkb-open'); if (b) b.click(); });
+  const CHALLENGES = [
+    { t: 'Make a slow, sleepy wave: wait one second between moves.', hint: 'Pick <b>😴 Sleepy wave</b>, or set every “wait” to 1.0 s.' },
+    { t: 'Make it shake its head “no”: small, fast moves around 90°.', hint: 'Two moves, 75° and 105°, with a 0.2 s wait. Repeat 4 times.' },
+    { t: 'Get ready for the next modules: write <code>if light &lt; DARK: turn(150)</code> and <code>else: turn(30)</code> with the light sensor from Night Mode.', hint: 'Keep <code>def turn(angle):</code> from this module, add the LDR lines from Lesson 6 (<code>ADC(Pin(33))</code>), and put the <code>if … else</code> inside <code>while True:</code> with a short <code>time.sleep(0.2)</code>.' },
+  ];
+  const CH_KEY = 'iotkids.challenges.' + LESSON_SLUG;
+  let ticked = {}; try { ticked = JSON.parse(localStorage.getItem(CH_KEY) || '{}') || {}; } catch (e) { /* not remembered */ }
+  $('challenges').innerHTML = CHALLENGES.map((c, i) => `<li><label><input type="checkbox" data-c="${i}" ${ticked[i] ? 'checked' : ''}><span>${c.t}</span></label><details><summary>Need a hint?</summary>${c.hint}</details></li>`).join('');
+  $('challenges').addEventListener('change', (e) => { if (!e.target.matches('input')) return; ticked[e.target.dataset.c] = e.target.checked; try { localStorage.setItem(CH_KEY, JSON.stringify(ticked)); } catch (err) { /* not remembered */ } });
+
+  // Quiz and the badge
+  const quizRight = {};
+  $('quiz').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-o]'); if (!b) return;
+    const box = b.closest('.q'), qi = +box.dataset.q, q = QUIZ[qi]; if (box.dataset.done) return;
+    const ok = +b.dataset.o === q.right;
+    b.classList.add(ok ? 'right' : 'wrong');
+    box.querySelector('.fb').innerHTML = ok ? `<div class="feedback good">Yes! ${q.why}</div>` : `<div class="feedback try">Not quite. ${q.hint}</div>`;
+    if (ok) { box.dataset.done = '1'; quizRight[qi] = true; if (QUIZ.every((x, i) => quizRight[i])) { S.quiz = true; save(); maybeFinish(); } }
+  });
+  function maybeFinish() {
+    const missing = MISSIONS.filter((m) => !S.done[m]);
+    const end = $('quizEnd');
+    if (S.quiz) end.innerHTML = missing.length ? `<div class="feedback try"><b>Quiz done!</b> Finish ${missing.map((m) => 'Mission ' + m.slice(1)).join(', ')} to earn your badge.</div>` : '<div class="feedback good"><b>Quiz done!</b> Tap <b>Next →</b> to collect your badge.</div>';
+    refreshDone();
+    if (S.quiz && !missing.length && !$('quizDone')) {
+      S.done.quiz = true; S.done.done = true;
+      const d = document.createElement('div'); d.className = 'feedback good'; d.id = 'quizDone';
+      d.innerHTML = '<b>You finished Servo Says Hello!</b><p style="margin:4px 0 0">Your ESP32 can move things now. Great work, engineer!</p>';
+      $('badgeHost').appendChild(d); // rewards.js adds the badge and the certificate button
+      save({ done: true });
+      pills.querySelectorAll('button').forEach((b, k) => b.classList.toggle('done', !!S.done[STEPS[k].id]));
+    }
+  }
+  function refreshDone() {
+    $('achieve').innerHTML = MISSIONS.map((m) => `<li class="${S.done[m] ? 'ok' : ''}">Mission ${m.slice(1)}: ${MISSION_NAMES[m]}</li>`).join('') + `<li class="${S.quiz ? 'ok' : ''}">Answered the quiz</li>`;
+    if (!$('quizDone')) {
+      const missing = MISSIONS.filter((m) => !S.done[m]);
+      $('badgeHost').innerHTML = saved.done ? '<div class="feedback good">🏅 You already earned this badge. Replay the missions any time!</div>' : !missing.length && S.quiz ? '' : `<div class="feedback try">${missing.length ? `To earn the badge, finish ${missing.map((m) => `<a href="#" data-jump="${m}">Mission ${m.slice(1)}</a>`).join(', ')}` : ''}${missing.length && !S.quiz ? ' and ' : ''}${!S.quiz ? '<a href="#" data-jump="quiz">the quiz</a>' : ''}.</div>`;
+    }
+  }
+  document.addEventListener('click', (e) => { const a = e.target.closest('[data-jump]'); if (!a) return; e.preventDefault(); go(STEPS.findIndex((s) => s.id === a.dataset.jump)); });
+
+  enterHooks = {
+    m1: () => { $('showLabels').checked = true; },
+    m3: () => { wiringShown = 'learner'; drawWiring(S.wiring); refreshM3(); },
+    m4: () => { customProgram = null; showSub(S.m4.sub || 0); },
+    m5: () => showFault(Math.max(0, FAULTS.findIndex((f, i) => !(S.m5[i] && S.m5[i].fixed)))),
+    m6: () => refreshM6(),
+    done: () => refreshDone(),
+  };
+  function refreshAll() { refreshM1(); refreshM2(); refreshM3(); refreshM6(); refreshDone(); }
+
+  /* ================= 11. 3D: shared helpers (from the module template) ================= */
+  const LIB = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/';
+  const hasGL = !!(window.THREE && THREE.OrbitControls && THREE.GLTFLoader && THREE.DRACOLoader);
+  const lin = (hex) => new THREE.Color(hex).convertSRGBToLinear();
+  function gltfLoader() { const g = new THREE.GLTFLoader(), d = new THREE.DRACOLoader(); d.setDecoderPath(LIB + 'libs/draco/gltf/'); g.setDRACOLoader(d); return g; }
+  function makeView(host, opts) {
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    host.prepend(renderer.domElement);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(opts.fov || 36, 1, opts.near || 1, opts.far || 4000);
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    let visible = !host.hidden, onScreen = true, tick = null;
+    function size() { const w = host.clientWidth, h = host.clientHeight; if (!w || !h) return; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+    if ('ResizeObserver' in window) new ResizeObserver(size).observe(host); else addEventListener('resize', size);
+    if ('IntersectionObserver' in window) new IntersectionObserver((es) => { onScreen = es[0].isIntersecting; }).observe(host);
+    size();
+    const clock = new THREE.Clock();
+    renderer.setAnimationLoop(() => {
+      const dt = Math.min(0.05, clock.getDelta());
+      if (tick) tick(dt, visible && onScreen);
+      if (!visible || !onScreen) return; // only draw what the learner can see
+      controls.update(); renderer.render(scene, camera);
+    });
+    // stop any leftover spin from a drag (damping) before moving the camera home
+    const still = () => { controls.enableDamping = false; controls.update(); controls.enableDamping = true; };
+    return { renderer, scene, camera, controls, host, still, set tick(f) { tick = f; }, show(v) { visible = v; if (v) size(); } };
+  }
+  // tap (not drag) on a canvas → callback with the ray
+  function onTap(view, cb) {
+    let down = null; const el = view.renderer.domElement;
+    el.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY }; });
+    el.addEventListener('pointerup', (e) => {
+      if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 7) return; down = null;
+      const r = el.getBoundingClientRect(), v = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+      const ray = new THREE.Raycaster(); ray.setFromCamera(v, view.camera); cb(ray, e);
+    });
+  }
+  function projectLabel(view, el, pos) { // keep an HTML label on a 3D point, readable while the camera moves
+    const p = pos.clone().project(view.camera), w = view.host.clientWidth, h = view.host.clientHeight;
+    const vis = p.z < 1 && Math.abs(p.x) < 1.1 && Math.abs(p.y) < 1.1;
+    el.style.display = vis ? '' : 'none';
+    if (vis) { el.style.left = ((p.x + 1) / 2 * w) + 'px'; el.style.top = ((1 - p.y) / 2 * h) + 'px'; }
+  }
+  let servoGLTF = null; const servoWaiters = [];
+  function withServo(cb) { if (servoGLTF) cb(servoGLTF); else servoWaiters.push(cb); }
+  function loadServo(fail) {
+    gltfLoader().load('../../assets/models/modules/sg90-servo.glb', (g) => { servoGLTF = g; servoWaiters.splice(0).forEach((f) => f(g)); }, undefined, fail);
+  }
+  function woodTexture(c1, c2, lines) {
+    const cv = document.createElement('canvas'); cv.width = 512; cv.height = 512; const g = cv.getContext('2d');
+    g.fillStyle = c1; g.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < lines; i++) { g.strokeStyle = c2; g.globalAlpha = 0.12 + Math.random() * 0.18; g.lineWidth = 1 + Math.random() * 3; g.beginPath(); const y = Math.random() * 512; g.moveTo(0, y); for (let x = 0; x <= 512; x += 32) g.lineTo(x, y + Math.sin(x / 70 + i) * 6); g.stroke(); }
+    const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+  }
+
+  /* ================= 12. 3D: the servo on its workbench ================= */
+  let servoView = null, horn = null, ghost = null, handNode = null;
+  const partMeshes = [], labelEls = new Map(), partAnchors = {};
+  function buildServoView() {
+    const v = servoView = makeView($('viewServo'), { fov: 34, near: 2, far: 3000 });
+    const { renderer, scene, camera, controls } = v;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+    renderer.physicallyCorrectLights = true;
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    scene.background = lin(0xdfe8ee);
+    scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+    scene.add(new THREE.HemisphereLight(lin(0xffffff), lin(0xb7a58a), 0.8));
+    const key = new THREE.DirectionalLight(lin(0xfff4e6), 2.4); key.position.set(90, 220, 160); key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024); Object.assign(key.shadow.camera, { left: -120, right: 120, top: 140, bottom: -60, near: 50, far: 600 }); key.shadow.bias = -0.0005; key.shadow.normalBias = 0.4;
+    scene.add(key);
+    // the workbench: a wooden desk with a green cutting mat
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(700, 16, 420), new THREE.MeshStandardMaterial({ map: woodTexture('#c9a26e', '#7a5530', 60), roughness: 0.8 }));
+    desk.position.y = -12; desk.receiveShadow = true; scene.add(desk);
+    const matCv = document.createElement('canvas'); matCv.width = matCv.height = 512; const mg = matCv.getContext('2d');
+    mg.fillStyle = '#2f7d57'; mg.fillRect(0, 0, 512, 512); mg.strokeStyle = 'rgba(255,255,255,.35)'; mg.lineWidth = 1;
+    for (let k = 0; k <= 512; k += 32) { mg.beginPath(); mg.moveTo(k, 0); mg.lineTo(k, 512); mg.moveTo(0, k); mg.lineTo(512, k); mg.stroke(); }
+    const matTex = new THREE.CanvasTexture(matCv); matTex.encoding = THREE.sRGBEncoding;
+    const mat = new THREE.Mesh(new THREE.BoxGeometry(260, 1.2, 170), new THREE.MeshStandardMaterial({ map: matTex, roughness: 0.9 }));
+    mat.position.set(0, -4.6, 12); mat.receiveShadow = true; scene.add(mat);
+    camera.position.set(70, 85, 175); controls.target.set(0, 40, 10);
+    controls.minDistance = 45; controls.maxDistance = 420; controls.maxPolarAngle = Math.PI * 0.49;
+    v.home = () => { const k = Math.max(1, 1.25 / camera.aspect); camera.position.set(70 * k, 85 + 10 * (k - 1), 175 * k); controls.target.set(0, 40, 10); };
+    v.home();
+    withServo((g) => {
+      const root = g.scene; root.scale.setScalar(1000); scene.add(root); root.updateMatrixWorld(true);
+      root.traverse((o) => {
+        if (!o.isMesh) return;
+        o.castShadow = true; o.receiveShadow = true;
+        o.material = o.material.clone(); o.material.envMapIntensity = 0.7;
+        let n = o; while (n && !NODE_PART[n.name]) n = n.parent;
+        if (n) { o.userData.part = NODE_PART[n.name]; partMeshes.push(o); }
+      });
+      horn = root.getObjectByName('Horn'); handNode = root.getObjectByName('Hand');
+      setHand(!!S.hand);
+      // the paper protractor on the bracket, centred on the shaft
+      const shaft = new THREE.Vector3(); horn.getWorldPosition(shaft);
+      const R = 40, cv = document.createElement('canvas'); cv.width = 1024; cv.height = 512; const g2 = cv.getContext('2d');
+      const px = 1024 / (2 * R), cx = 512, cy = 512;
+      g2.fillStyle = 'rgba(255,255,255,.93)'; g2.beginPath(); g2.arc(cx, cy, 39 * px, Math.PI, 2 * Math.PI); g2.arc(cx, cy, 25.5 * px, 2 * Math.PI, Math.PI, true); g2.fill();
+      g2.strokeStyle = '#15202A'; g2.lineWidth = 3; g2.beginPath(); g2.arc(cx, cy, 39 * px, Math.PI, 2 * Math.PI); g2.stroke();
+      for (let a = 0; a <= 180; a += 5) {
+        const r0 = a % 30 === 0 ? 33 : a % 10 === 0 ? 35.5 : 37, t = a * Math.PI / 180;
+        g2.lineWidth = a % 30 === 0 ? 4 : 2; g2.beginPath(); g2.moveTo(cx + Math.cos(t) * r0 * px, cy - Math.sin(t) * r0 * px); g2.lineTo(cx + Math.cos(t) * 39 * px, cy - Math.sin(t) * 39 * px); g2.stroke();
+        if (a % 30 === 0) { g2.font = 'bold 34px Nunito, sans-serif'; g2.fillStyle = '#15202A'; g2.textAlign = 'center'; g2.textBaseline = 'middle'; g2.fillText(a + '°', cx + Math.cos(t) * 29.3 * px, cy - Math.sin(t) * 29.3 * px - (a === 0 || a === 180 ? 18 : 0)); }
+      }
+      const pt = new THREE.CanvasTexture(cv); pt.encoding = THREE.sRGBEncoding; pt.anisotropy = 4;
+      const prot = new THREE.Mesh(new THREE.PlaneGeometry(2 * R, R), new THREE.MeshStandardMaterial({ map: pt, transparent: true, roughness: 0.9 }));
+      prot.position.set(shaft.x, shaft.y + R / 2, 15.75); prot.receiveShadow = true; scene.add(prot); // on the bracket's front face
+      // the orange "asked for" pointer
+      ghost = new THREE.Group(); ghost.position.set(shaft.x, shaft.y, 16.4);
+      const sh = new THREE.Shape(); sh.moveTo(0, -1.4); sh.lineTo(31, -1.4); sh.lineTo(31, -3.2); sh.lineTo(38.5, 0); sh.lineTo(31, 3.2); sh.lineTo(31, 1.4); sh.lineTo(0, 1.4); sh.closePath();
+      ghost.add(new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshBasicMaterial({ color: lin(0xF08A24), transparent: true, opacity: 0.85, depthWrite: false })));
+      scene.add(ghost);
+      // where each part's label sits
+      const at = (name, dx, dy, dz) => { const o = root.getObjectByName(name); const b = new THREE.Box3().setFromObject(o); const c = b.getCenter(new THREE.Vector3()); return new THREE.Vector3(c.x + (dx || 0), (dy != null ? b.max.y + dy : c.y), c.z + (dz || 0)); };
+      Object.assign(partAnchors, {
+        case: () => { const b = new THREE.Box3().setFromObject(root.getObjectByName('Servo_Case')), c = b.getCenter(new THREE.Vector3()); return new THREE.Vector3(c.x - 9, c.y - 8, b.max.z); }, shaft: () => shaft.clone().add(new THREE.Vector3(0, -7, 0)),
+        horn: () => root.getObjectByName('Horn_Tip').getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 4, 2)),
+      });
+      const sock = (n) => root.getObjectByName(n).getWorldPosition(new THREE.Vector3());
+      partAnchors.signal = () => sock('Sock_Signal').add(new THREE.Vector3(-14, 4, -10));
+      partAnchors.power = () => sock('Sock_Power').add(new THREE.Vector3(-22, 3, -2));
+      partAnchors.ground = () => sock('Sock_Ground').add(new THREE.Vector3(-34, 2, 6));
+      Object.keys(PARTS).forEach((k) => {
+        const el = document.createElement('button'); el.type = 'button'; el.className = 'lbl'; el.textContent = PARTS[k].name; el.tabIndex = -1;
+        el.addEventListener('click', () => selectPart(k)); $('servoLabels').appendChild(el); labelEls.set(k, el);
+      });
+      refreshM1();
+      $('servoMsg').remove();
+      if (/#wave/.test(location.hash)) play(WAVE);
+    });
+    onTap(v, (ray) => {
+      const hit = ray.intersectObjects(partMeshes, false)[0];
+      if (hit) selectPart(hit.object.userData.part);
+    });
+    let glow = 0;
+    v.tick = (dt, drawing) => {
+      updateServo(dt); checkM2();
+      if (!horn) return;
+      horn.rotation.z = THREE.MathUtils.degToRad(hornAngle());
+      ghost.rotation.z = THREE.MathUtils.degToRad(SV.target);
+      ghost.visible = !SV.relaxed;
+      if (!drawing) return;
+      $('servoReadout').innerHTML = readoutText();
+      glow += dt;
+      partMeshes.forEach((m) => { const on = m.userData.part === selPart; m.material.emissive.setRGB(on ? 0.25 + 0.15 * Math.sin(glow * 6) : 0, on ? 0.18 + 0.1 * Math.sin(glow * 6) : 0, 0); });
+      const show = $('showLabels').checked;
+      labelEls.forEach((el, k) => { el.hidden = !show; if (show) { projectLabel(v, el, partAnchors[k]()); el.classList.toggle('sel', k === selPart); } });
+    };
+  }
+  function highlight(k) { selPart = k; }
+  function setHand(on) { if (handNode) handNode.visible = on; }
+
+  /* ================= 13. 3D: the wiring desk (the course's ESP32 model, the servo and a 5 V supply) ================= */
+  let wireView = null, pads = {}, socks = {}, supTerm = {}, wireGroup = null, supplyGroup = null, wireReady = false, pendingWiring = null, wireServoRoot = null, wireHorn = null, symptom = 'fine', boardLed = null;
+  const pinLabels = [];
+  function buildWireView() {
+    const v = wireView = makeView($('viewWire'), { fov: 34, near: 2, far: 3000 });
+    const { renderer, scene, camera, controls } = v;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.physicallyCorrectLights = true;
+    scene.background = lin(0xf0f4f7);
+    scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+    scene.add(new THREE.HemisphereLight(lin(0xffffff), lin(0xb8c4cc), 1.0));
+    const key = new THREE.DirectionalLight(lin(0xffffff), 1.6); key.position.set(60, 200, 120); scene.add(key);
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(420, 8, 240), new THREE.MeshStandardMaterial({ map: woodTexture('#d8c3a0', '#9b7a4f', 50), roughness: 0.85 }));
+    desk.position.set(-20, -8, 0); scene.add(desk);
+    controls.minDistance = 50; controls.maxDistance = 520; controls.maxPolarAngle = Math.PI * 0.48;
+    v.home = () => { const k = Math.max(1, 1.2 / camera.aspect); camera.position.set(-22, 190 * k, 235 * k); controls.target.set(-22, 8, 0); };
+    v.home();
+    wireGroup = new THREE.Group(); scene.add(wireGroup);
+    let pending = 2;
+    const ready = () => { if (--pending) return; wireReady = true; $('wireMsg').remove(); if (pendingWiring) drawWiring(pendingWiring.w, pendingWiring.show); };
+    new THREE.GLTFLoader().load('../../assets/models/esp32-devkit-v1.glb', (gltf) => {
+      const board = gltf.scene; board.scale.setScalar(1000); scene.add(board); board.updateMatrixWorld(true);
+      const pw = (n) => { const o = board.getObjectByName('pad_' + n); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
+      const L1 = pw('L01_EN'), L15 = pw('L15_VIN'), R1 = pw('R01_GPIO23');
+      if (!L1 || !L15 || !R1) { $('wireMsg').textContent = 'The board model has no pin pads.'; return; }
+      // turn the board so pin 1 → pin 15 runs left to right and the D23…3V3 header is at the back
+      const along = L15.clone().sub(L1).setY(0).normalize(), out = R1.clone().sub(L1).setY(0).normalize();
+      const q = new THREE.Quaternion().setFromUnitVectors(along, new THREE.Vector3(1, 0, 0));
+      if (out.clone().applyQuaternion(q).z > 0) q.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI));
+      board.quaternion.premultiply(q); board.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(board); const c = box.getCenter(new THREE.Vector3());
+      board.position.sub(new THREE.Vector3(c.x, box.min.y + 4, c.z)); board.updateMatrixWorld(true); // resting on the desk top (y = -4)
+      board.traverse((o) => { if (o.name === 'power_led' || /power_led/.test(o.name)) boardLed = o; });
+      PADS.forEach((p) => { const pos = pw(p.node); if (pos) pads[p.node] = pos; });
+      // a tap target on every pin
+      const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+      Object.entries(pads).forEach(([id, pos]) => { const s = new THREE.Mesh(new THREE.SphereGeometry(2.6, 8, 6), hitMat); s.position.copy(pos).add(new THREE.Vector3(0, 2, 0)); s.userData.pin = id; scene.add(s); pinHits.push(s); });
+      ready();
+    }, undefined, () => { $('wireMsg').textContent = 'The board model could not load. Please reload the page.'; });
+    withServo((g) => {
+      const root = wireServoRoot = g.scene.clone(true);
+      root.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.envMapIntensity = 0.7; } });
+      root.scale.setScalar(1000); root.position.set(-92, 0, -22); root.rotation.y = 0.35; scene.add(root); root.updateMatrixWorld(true);
+      wireHorn = root.getObjectByName('Horn'); wireHorn.rotation.z = Math.PI / 2;
+      const h = root.getObjectByName('Hand'); if (h) h.visible = false;
+      ['Ground', 'Power', 'Signal'].forEach((n) => { socks[n.toLowerCase()] = root.getObjectByName('Sock_' + n).getWorldPosition(new THREE.Vector3()); });
+      const conn = root.getObjectByName('Connector'), cb = new THREE.Box3().setFromObject(conn);
+      socks.dir = socks.power.clone().sub(cb.getCenter(new THREE.Vector3())).setY(0).normalize();
+      ready();
+    });
+    // the 5 V supply: a small black box with a two-screw terminal block (+ red, − black)
+    supplyGroup = new THREE.Group(); supplyGroup.position.set(70, -4, 18); scene.add(supplyGroup);
+    const sm = (c, r) => new THREE.MeshStandardMaterial({ color: lin(c), roughness: r == null ? 0.5 : r });
+    const body = new THREE.Mesh(new THREE.BoxGeometry(46, 18, 34), sm(0x23272c, 0.45)); body.position.y = 9; supplyGroup.add(body);
+    const term = new THREE.Mesh(new THREE.BoxGeometry(10, 9, 16), sm(0x2f9e5b, 0.5)); term.position.set(-20, 22, 0); supplyGroup.add(term);
+    [[-4, 0xC8262C, 'SUP+'], [4, 0x22262B, 'SUP-']].forEach(([z, col, id]) => {
+      const screw = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 1.4, 16), new THREE.MeshStandardMaterial({ color: 0xc9ced3, metalness: 1, roughness: 0.3 })); screw.position.set(-20, 27, z); supplyGroup.add(screw);
+      const dot = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 0.6, 12), sm(col)); dot.position.set(-12, 18.4, z); supplyGroup.add(dot);
+      const hit = new THREE.Mesh(new THREE.SphereGeometry(3.4, 8, 6), new THREE.MeshBasicMaterial({ visible: false })); hit.position.set(-20, 28, z); hit.userData.pin = id; supplyGroup.add(hit); pinHits.push(hit);
+    });
+    const tag = (text, bg) => { const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64; const g = cv.getContext('2d'); g.fillStyle = bg; g.fillRect(0, 0, 256, 64); g.fillStyle = '#fff'; g.font = 'bold 34px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 128, 33); const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; return t; };
+    const lab = new THREE.Mesh(new THREE.PlaneGeometry(36, 9), new THREE.MeshBasicMaterial({ map: tag('5 V · 2 A', '#23272c') })); lab.rotation.x = -Math.PI / 2; lab.position.set(4, 18.1, 0); supplyGroup.add(lab);
+    supplyGroup.updateMatrixWorld(true);
+    ['SUP+', 'SUP-'].forEach((id) => { const h = pinHits.find((x) => x.userData.pin === id); supTerm[id] = h.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, -1.5, 0)); });
+    // pin hover + tap
+    tip = document.createElement('div'); tip.className = 'lbl pin'; tip.hidden = true; $('wireLabels').appendChild(tip);
+    v.renderer.domElement.addEventListener('pointermove', (e) => {
+      const r = v.renderer.domElement.getBoundingClientRect(), ray = new THREE.Raycaster();
+      ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
+      const hit = ray.intersectObjects(pinHits.filter((h) => h.parent.visible !== false), false)[0];
+      tip.hidden = !hit || STEPS[S.step].id !== 'm3';
+      if (hit && !tip.hidden) { tip.textContent = nameOf(hit.object.userData.pin); tip.style.left = (e.clientX - r.left) + 'px'; tip.style.top = (e.clientY - r.top - 10) + 'px'; }
+      v.renderer.domElement.style.cursor = hit && !tip.hidden ? 'pointer' : '';
+    });
+    onTap(v, (ray) => {
+      const hit = ray.intersectObjects(pinHits.filter((h) => supplyGroup.visible || !/^SUP/.test(h.userData.pin)), false)[0];
+      if (hit) connect(hit.object.userData.pin);
+    });
+    let tt = 0;
+    v.tick = (dt, drawing) => {
+      tt += dt;
+      if (wireHorn) { // the symptom of the circuit on screen
+        let a = 90;
+        if (symptom === 'twitch') a = 90 + Math.sin(tt * 23) * 9 + Math.sin(tt * 7.3) * 14;
+        if (symptom === 'reset') a = 90 + ((tt % 2.2) < 0.25 ? -25 * Math.sin((tt % 2.2) / 0.25 * Math.PI) : 0);
+        wireHorn.rotation.z = THREE.MathUtils.degToRad(a);
+      }
+      if (boardLed && boardLed.material) boardLed.visible = !(symptom === 'reset' && (tt % 2.2) < 0.35);
+      if (!drawing) return;
+      pinLabels.forEach(([el, pos]) => projectLabel(v, el, pos));
+    };
+  }
+  const pinHits = [];
+  let tip = null;
+  function drawWiring(w, show) {
+    symptom = show || 'fine';
+    if (tip) tip.hidden = true;
+    if (!wireReady) { pendingWiring = { w, show }; return; }
+    pendingWiring = null;
+    while (wireGroup.children.length) { const c = wireGroup.children.pop(); c.geometry && c.geometry.dispose(); }
+    pinLabels.splice(0).forEach(([el]) => el.remove());
+    supplyGroup.visible = w.mode === 'supply';
+    const up = new THREE.Vector3(0, 1, 0), mat = (c) => new THREE.MeshStandardMaterial({ color: lin(c), roughness: 0.45 });
+    const endOf = (id) => (id === 'SUP+' || id === 'SUP-' ? (w.mode === 'supply' ? supTerm[id] : null) : pads[id] ? pads[id].clone() : null);
+    const result = lastCheck && wiringShown === 'learner' ? lastCheck : null;
+    const jumper = (a, aDir, b, color, label, level) => {
+      const shell = new THREE.MeshStandardMaterial({ color: 0x15181b, roughness: 0.5 });
+      // the black housing on the pin end, standing on the pin
+      const hb = new THREE.Mesh(new THREE.BoxGeometry(2.6, 12, 2.6), shell); hb.position.copy(b).add(new THREE.Vector3(0, 6.5, 0)); wireGroup.add(hb);
+      const top = b.clone().add(new THREE.Vector3(0, 12.5, 0));
+      let a2 = a.clone();
+      if (aDir) { const ha = new THREE.Mesh(new THREE.BoxGeometry(2.6, 2.6, 9), shell); ha.position.copy(a).addScaledVector(aDir, 4.5); ha.lookAt(ha.position.clone().add(aDir)); wireGroup.add(ha); a2 = a.clone().addScaledVector(aDir, 9); }
+      const mid = a2.clone().lerp(top, 0.5); mid.y = Math.max(a2.y, top.y) + 26;
+      const curve = new THREE.CatmullRomCurve3([a2, a2.clone().addScaledVector(aDir || up, 10).add(new THREE.Vector3(0, 8, 0)), mid, top.clone().add(new THREE.Vector3(0, 14, 0)), top]);
+      wireGroup.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 60, 0.95, 8, false), mat(color)));
+      const el = document.createElement('div'); el.className = 'lbl pin' + (level ? (level === 'ok' ? ' ok' : ' bad') : ''); el.textContent = label; $('wireLabels').appendChild(el);
+      pinLabels.push([el, b.clone().add(new THREE.Vector3(0, label === nameOf('SUP+') ? 24 : 15, 0))]); // the two supply labels stacked, not on top of each other
+    };
+    ['signal', 'power', 'ground'].forEach((k) => {
+      const b = endOf(w[k]); if (!b) return;
+      const r = result && result.list.find((x) => x.wire === k);
+      jumper(socks[k], socks.dir, b, WIRES[k].c, nameOf(w[k]), r && r.level);
+    });
+    if (w.mode === 'supply' && w.share) {
+      const b = endOf(w.share), r = result && result.list.find((x) => x.wire === 'share');
+      if (b) jumper(supTerm['SUP-'].clone().add(new THREE.Vector3(0, 0, 0)), null, b, 0x22262B, nameOf(w.share), r && r.level);
+    }
+    $('wireTag').textContent = wiringShown === 'fault' || show ? 'A friend’s wiring: what’s wrong?' : w.mode === 'supply' ? 'Your desk: ESP32, servo and a 5 V supply' : 'Your desk: ESP32 and servo (VIN quick test)';
+  }
+
+  /* ================= 14. Tabs, start-up ================= */
+  function showTab(which) {
+    const servo = which === 'servo';
+    $('tabServo').setAttribute('aria-selected', String(servo)); $('tabWire').setAttribute('aria-selected', String(!servo));
+    $('viewServo').hidden = !servo; $('viewWire').hidden = servo;
+    if (!hasGL) return;
+    if (!servo && !wireView) buildWireView();
+    if (servoView) servoView.show(servo);
+    if (wireView) wireView.show(!servo);
+  }
+  $('tabServo').addEventListener('click', () => { showTab('servo'); $('controls').hidden = false; });
+  $('tabWire').addEventListener('click', () => { showTab('wire'); $('controls').hidden = true; if (!wiringShown) { wiringShown = 'learner'; drawWiring(S.wiring); } });
+  $('resetView').addEventListener('click', () => { const v = $('viewServo').hidden ? wireView : servoView; if (v && v.home) { v.still(); v.home(); v.controls.update(); } });
+
+  if (window.innerWidth < 600) $('showLabels').checked = false; // phones: labels only in Mission 1, where they're the task
+  if (window.ESP32) ESP32.initWords();
+  window.__lessonProgram = () => customProgram || currentCode();
+  window.__module = { program: PROGRAM, wiringOneLine: WIRING_ONE_LINE };
+  // test hooks (tools/check.sh calls __lesson.goTo)
+  window.__lesson = { goTo: go, state: S, servo: SV, simulate, checkWiring, connect: (wire, id) => { selWire = wire; connect(id); }, showSub, steps: STEPS, views: () => ({ servo: servoView, wire: wireView, horn, pads, supTerm }) };
+  if (hasGL) { buildServoView(); loadServo(() => { $('servoMsg').textContent = 'The 3D servo could not load. Check your internet connection and reload the page.'; }); }
+  else { $('servoMsg').textContent = 'The 3D scene needs an internet connection. Everything else on this page still works.'; $('wireMsg').textContent = $('servoMsg').textContent; }
+  refreshAll();
+  if (saved.done) maybeFinish();
+  // after the run panel's scripts below have loaded, so Mission 4 can mount the real code panel
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => go(S.step)); else go(S.step);
+})();
+</script>
+<script src="../../assets/board-link.js"></script>
+<script src="../../assets/prepare-board.js"></script>
+<script src="../../assets/run-panel.js"></script>
+<script src="../../assets/board-drawer.js"></script>
+<script>
+  // "Try it on my real board": the module's program (or the learner's own sequence from Mission 6)
+  KKBoard.attach({ id: 'm-servo', base: '../../', buttonHost: 'header.top .progress', program: () => window.__lessonProgram(), wiring: window.__module.wiringOneLine });
+</script>
+</body>
+</html>
