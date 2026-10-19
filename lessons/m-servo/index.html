@@ -166,6 +166,74 @@ main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); g
 .achieve li { background: var(--surface-2); border-radius: 12px; padding: 7px 10px; font-weight: 700; }
 .achieve li.ok { background: #E3F5EA; } .achieve li.ok::before { content: '🏅 '; } .achieve li:not(.ok)::before { content: '⬜ '; }
 .kkb-open { margin-left: 4px; }
+.challenge { display: flex; gap: 12px; align-items: center; background: linear-gradient(135deg, #FFF6D6, #DAEEF0); border-radius: 16px; padding: 12px 14px; font-size: 17px; margin: 4px 0 10px; }
+.challenge .big { font-size: 34px; line-height: 1; flex: none; }
+.why3 { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 6px; }
+.why3 li, .outcomes li { display: flex; gap: 10px; align-items: baseline; }
+.why3 li > span:first-child, .outcomes li > span:first-child { flex: none; width: 24px; text-align: center; }
+.outcomes { margin: 0 0 8px; padding: 0; list-style: none; display: grid; gap: 4px; font-weight: 700; }
+details.more { margin-top: 10px; background: var(--surface-2); border-radius: 12px; padding: 8px 12px; }
+details.more summary { cursor: pointer; font-weight: 800; color: var(--accent-strong); }
+.cycle { display: flex; flex-wrap: wrap; gap: 4px; list-style: none; margin: 0 0 6px; padding: 0; counter-reset: cy; }
+.cycle li { font-size: 12.5px; font-weight: 800; color: var(--muted); background: var(--surface-2); border-radius: 99px; padding: 1px 10px; }
+.cycle li + li::before { content: '→ '; color: var(--line); }
+.cycle li.now { background: var(--accent-soft); color: var(--accent-strong); }
+.cycle li.ok { background: #E3F5EA; color: var(--green); }
+.phase { border-top: 1px dashed var(--line); padding-top: 6px; margin-top: 8px; }
+.phase:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
+.seg button.picked { border-color: var(--accent); background: var(--accent-soft); }
+.seg button.right, .opts button.right { border-color: var(--green); background: #E3F5EA; }
+.seg button.wrong { border-color: var(--red); background: #FBE9E9; }
+.seg button:disabled { cursor: default; opacity: .85; }
+.pred { background: var(--surface-2); border-radius: 12px; padding: 8px 10px; margin-top: 6px; display: grid; gap: 6px; }
+.pred .pfb { font-size: 15px; }
+.sl2 { display: flex; align-items: center; gap: 10px; font-weight: 800; margin: 6px 0; }
+.sl2 input { flex: 1; min-width: 0; accent-color: var(--orange); }
+.sl2 output { font: 700 15px var(--font-code); min-width: 44px; text-align: right; }
+.jobs { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.jobs li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; align-items: center; background: var(--surface-2); border-radius: 12px; padding: 7px 10px; }
+.jic { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 18px; }
+.wire-steps { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 6px; }
+.wire-steps li { border: 2px solid var(--line); border-radius: 12px; padding: 7px 10px; display: grid; gap: 2px; color: var(--muted); }
+.wire-steps li i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; }
+.wire-steps li b { color: var(--ink); }
+.wire-steps li span { font-size: 14.5px; }
+.wire-steps li.now { border-color: var(--hl); box-shadow: 0 0 0 3px rgba(242,183,5,.3); color: var(--ink); }
+.wire-steps li.ok { border-color: var(--green); background: #F2FAF5; color: var(--ink); }
+.wire-steps li.ok b::after { content: ' ✓'; color: var(--green); }
+.feedback.danger-fb { background: #FBE9E9; border-left: 5px solid var(--red); }
+.hintrow { margin-top: 8px; }
+.hint-out p { margin: 6px 0 0; background: #FFF6D6; border-radius: 10px; padding: 6px 10px; font-size: 15px; }
+.simnote { font-size: 13.5px; background: #EEF3FF; border-left: 5px solid var(--servo); border-radius: 10px; padding: 6px 10px; margin-bottom: 8px; }
+.flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 6px; align-items: center; margin-bottom: 8px; }
+.flow div { background: #13202A; color: #E3ECF1; border-radius: 10px; padding: 5px 8px; min-width: 0; }
+.flow small { display: block; font-size: 11px; color: #8FB3C4; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+.flow b { font: 600 13px var(--font-code); color: #FFB25C; overflow-wrap: anywhere; }
+.flow > span { font-weight: 800; color: var(--muted); }
+.numrow, .numgrid label { display: inline-flex; align-items: center; gap: 4px; font-size: 15px; }
+.numgrid { display: grid; gap: 6px; }
+.numrow input, .numgrid input { width: 70px; font: 600 15px var(--font-code); padding: 3px 6px; border: 2px solid var(--line); border-radius: 8px; }
+.numrow select, .numgrid select { font: 600 15px var(--font-code); border: 2px solid var(--line); border-radius: 8px; }
+pre.code .dim { color: #7F98A6; }
+.row6 { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin: 6px 0; }
+.sw { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 6px; }
+.moves li.empty { display: block; color: var(--muted); font-size: 14.5px; }
+.moves li.empty::before { content: none; }
+.q .skill { display: inline-block; font-size: 11.5px; font-weight: 800; background: var(--accent-soft); color: var(--accent-strong); border-radius: 99px; padding: 0 8px; margin-right: 6px; vertical-align: 2px; }
+.achieve li.ok::before, .achieve li:not(.ok)::before { content: none; }
+.achieve li:not(.ok) { color: var(--muted); }
+.ev { display: inline-block; font-size: 12px; font-weight: 800; border-radius: 99px; padding: 0 8px; margin-left: 4px; }
+.ev.ind { background: #FFF1C2; color: #7A5400; } .ev.sup { background: var(--accent-soft); color: var(--accent-strong); } .ev.no { background: var(--surface); color: var(--muted); border: 1px solid var(--line); }
+.next3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 8px 0 12px; }
+.next3 div { background: var(--surface-2); border-radius: 12px; padding: 8px; text-align: center; font-size: 13.5px; }
+.next3 svg { width: 100%; max-width: 110px; height: auto; display: block; margin: 0 auto 4px; }
+.teacher ul { margin: 4px 0 8px; padding-left: 20px; font-size: 14.5px; }
+.teacher p { font-size: 14.5px; }
+.toast { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 70; background: #fff; border: 2px solid var(--green); border-radius: 14px; padding: 8px 16px; box-shadow: 0 12px 30px rgba(21,32,42,.2); font-size: 15.5px; max-width: calc(100vw - 32px); animation: toastIn .35s ease-out; }
+.toast.star { border-color: var(--hl); background: #FFFBEA; }
+@keyframes toastIn { from { transform: translate(-50%, -20px); opacity: 0; } to { transform: translateX(-50%); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
+@media (max-width: 440px) { .flow { grid-template-columns: minmax(0, 1fr); } .flow > span { display: none; } .next3 { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 900px) {
   main { grid-template-columns: minmax(0, 1fr); padding: 12px; }
   .stage { position: static; }
@@ -192,7 +260,7 @@ main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); g
     <div>
       <a class="home-link" href="../../lessons.html#modules">← All lessons</a>
       <h1 id="modTitle">Servo Says Hello</h1>
-      <p id="modSub">Sensor module · an output module → SG90 servo</p>
+      <p id="modSub">Sensor module · teach a robot arm to wave with an SG90 servo</p>
     </div>
   </div>
   <div class="progress" aria-live="polite">
@@ -317,48 +385,63 @@ servo.deinit()         # stop the pulses: the servo relaxes
   const dutyU16 = (a) => Math.floor(pulseUs(a) * 65535 / 20000);
 
   /* ================= 2. What the learner reads ================= */
+  // Mission 1 introduces only the parts needed now; the three wires get their own jobs in Mission 3.
   const PARTS = {
-    case: { name: 'Case', c: '#2C62D6', title: 'The case', text: 'The blue box. Inside are a small motor, a stack of plastic gears that make it strong but slow, and a tiny circuit that listens to your signal. The two tabs with holes are for screws.' },
-    shaft: { name: 'Output shaft', c: '#E8E4D8', title: 'The output shaft', text: 'The white post with little teeth. The gears turn it. Its teeth (engineers call them a <b>spline</b>) grip the horn so it can’t slip.' },
-    horn: { name: 'Horn', c: '#FFFFFF', title: 'The horn', text: 'The arm pushed onto the shaft. It’s the part you see move: it can lift a gate, push a latch or wave a hand. Servos come with a few horn shapes.' },
-    signal: { name: 'Orange wire: signal', c: '#F08A24', title: 'Orange wire: signal', text: 'Carries the message “turn to this angle” as pulses from a GPIO pin. Hardly any current flows in it: it’s a message, not food for the motor.' },
-    power: { name: 'Red wire: power +', c: '#C8262C', title: 'Red wire: power (+)', text: 'Feeds the motor about 5 volts. A motor needs far more current than a GPIO pin can give, so this wire goes to a 5 V supply.' },
-    ground: { name: 'Brown wire: ground −', c: '#6B4226', title: 'Brown wire: ground (−)', text: 'The road home for the current, at 0 volts. It is joined to the ESP32’s GND so both agree what “0 volts” means.' },
+    horn: { name: 'Horn', c: '#FFFFFF', title: 'The horn: the part that waves', text: 'The white arm. It’s the part that moves: it can wave a hand, lift a gate or push a latch.' },
+    shaft: { name: 'Output shaft', c: '#E8E4D8', title: 'The output shaft', text: 'The white post the horn sits on. Gears inside the servo turn it, and its little teeth grip the horn so it can’t slip.' },
+    case: { name: 'Case', c: '#2C62D6', title: 'The case', text: 'The blue box stays still: it’s screwed to the bracket. Inside are a small motor, gears that make it strong, and a tiny circuit that listens to the ESP32.' },
+    cable: { name: 'Cable: 3 wires', c: '#F08A24', title: 'The cable', text: 'Three wires bring the servo its energy and the ESP32’s instructions. You’ll connect each one in Mission 3.' },
   };
   const EXTRA_PARTS = {
-    plug: { title: 'The plug', text: 'Three holes in a row: brown, red, orange. A jumper wire with a pin on one end pushes into each hole.' },
-    stand: { title: 'The bracket', text: 'Plywood that holds the servo by its tabs, so the horn can push without the servo twisting itself round. It is not part of the servo: you can make one from cardboard.' },
+    stand: { title: 'The bracket', text: 'Plywood that holds the servo by its tabs, so the horn can push without the servo twisting round. It isn’t part of the servo: you can make one from cardboard.' },
   };
-  const NODE_PART = { Servo_Case: 'case', Servo_Label: 'case', Servo_Shaft: 'shaft', Horn: 'horn', Hand: 'horn', Wire_Signal: 'signal', Wire_Power: 'power', Wire_Ground: 'ground', Connector: 'plug', Stand: 'stand' };
+  const NODE_PART = { Servo_Case: 'case', Servo_Label: 'case', Servo_Shaft: 'shaft', Horn: 'horn', Hand: 'horn', Wire_Signal: 'cable', Wire_Power: 'cable', Wire_Ground: 'cable', Connector: 'cable', Stand: 'stand' };
+
+  // the five things a learner can do at the end, and the mission that proves each one
+  const OUTCOMES = [
+    { m: 'm1', icon: '💡', can: 'Explain what a servo does', learned: 'I know how a servo moves.' },
+    { m: 'm2', icon: '📐', can: 'Program its movement using angles', learned: 'I can choose an angle.' },
+    { m: 'm3', icon: '🔌', can: 'Connect its signal, power and ground correctly', learned: 'I know why its three connections matter.' },
+    { m: 'm4', icon: '💻', can: 'Write code that moves it', learned: 'I can write code to move it.' },
+    { m: 'm5', icon: '🔧', can: 'Find and fix a simple servo problem', learned: 'I can troubleshoot a simple fault.' },
+    { m: 'm6', icon: '🎨', can: 'Create your own movement sequence', learned: 'I invented my own wave.' },
+  ];
 
   const STEPS = [
-    { id: 'start', pill: 'Start', title: 'Servo Says Hello', tab: 'servo',
-      say: `<p><b>Officer Ohm:</b> “Last time, in Night Mode, your ESP32 made a decision from a sensor. Today it <b>moves</b> something!”</p><p>A ${W('servo')} is a little motor that turns to the angle you choose and holds it there. By the end of six missions, yours will wave hello.</p>` },
-    { id: 'm1', pill: '1 Meet', title: 'Mission 1 · Meet the servo', tab: 'servo',
-      say: '<p>Drag to turn the servo, and pinch or scroll to zoom. Tap each part to find out what it does. Find all six!</p>' },
-    { id: 'm2', pill: '2 Turn', title: 'Mission 2 · Make it turn', tab: 'servo',
-      say: '<p>Drag the <b>Angle</b> slider under the 3D view. You ask for an angle; the servo turns its horn there and holds it. The orange pointer shows what you asked for. The white horn shows where it really is.</p>' },
-    { id: 'm3', pill: '3 Wire', title: 'Mission 3 · Connect the wires', tab: 'wire',
-      say: '<p>Unplug the USB cable first, every time. Pick a wire below, then tap where it goes on the 3D desk, or choose from the list. Then press <b>Check my wiring</b>.</p>' },
-    { id: 'm4', pill: '4 Code', title: 'Mission 4 · Write the code', tab: 'servo',
-      say: '<p>Six small ideas, one at a time: from “what is an angle?” to a program that waves. Tap <b>Next idea</b> to go on.</p>' },
-    { id: 'm5', pill: '5 Fix', title: 'Mission 5 · Fix it', tab: 'wire',
-      say: '<p>Three friends built a servo, and each one has a problem. Look at their wiring in 3D, read what happens, and pick the cause.</p>' },
-    { id: 'm6', pill: '6 Yours', title: 'Mission 6 · Make it yours', tab: 'servo',
-      say: '<p>Design your own wave! Add moves, choose how long each one waits, and play it on the 3D servo. Then send it to your real board.</p>' },
-    { id: 'quiz', pill: 'Quiz', title: 'Quick quiz', tab: 'servo',
-      say: '<p>Three questions. A wrong answer gives you a hint and another try.</p>' },
-    { id: 'done', pill: '🏅', title: 'You did it!', tab: 'servo',
-      say: '<p>Look what you can do now. Your servo is ready for the next modules: gates, roofs and cranes that move by themselves.</p>' },
+    { id: 'start', pill: 'Challenge', title: 'Can you teach a robot to wave hello?', tab: 'servo',
+      say: '<p><b>Officer Ohm:</b> “Robots need muscles to move. A servo is a robot muscle: it turns an arm to exactly the angle you choose, and your ESP32 tells it which angle. Today you’ll build and program this waving arm!”</p>' },
+    { id: 'm1', pill: '1 Meet', title: 'Mission 1 · Meet your robot’s arm', tab: 'servo',
+      say: '<p>Before you touch anything: when this robot waves, which part do you think moves? Make a guess!</p>' },
+    { id: 'm2', pill: '2 Angles', title: 'Mission 2 · Tell the arm where to go', tab: 'servo',
+      say: '<p>Servos think in angles, like the protractor behind the arm. Guess where the arm will point, then test your guess.</p>' },
+    { id: 'm3', pill: '3 Wire', title: 'Mission 3 · Give the servo its connections', tab: 'wire',
+      say: '<p>Three wires, three jobs. Learn the jobs, then connect one wire at a time. I’ll tell you why each one goes where it goes.</p>' },
+    { id: 'm4', pill: '4 Code', title: 'Mission 4 · Make code move the arm', tab: 'servo',
+      say: '<p>Now the ESP32 gives the orders. We’ll start with the smallest program that moves the arm, then grow it one line at a time.</p>' },
+    { id: 'm5', pill: '5 Fix', title: 'Mission 5 · Become a troubleshooter', tab: 'wire',
+      say: '<p>Three friends’ robots are misbehaving. Watch closely and say what you notice. Then find the cause and fix it yourself.</p>' },
+    { id: 'm6', pill: '6 Invent', title: 'Mission 6 · Invent your own wave', tab: 'servo',
+      say: '<p>A visitor is coming, and your robot will welcome them. There’s no recipe this time: you’re the engineer!</p>' },
+    { id: 'quiz', pill: 'Show it', title: 'Show what you know', tab: 'servo',
+      say: '<p>Five quick questions, one for each skill. A wrong answer gets a hint and another try.</p>' },
+    { id: 'done', pill: '🏅', title: 'You taught a robot to wave!', tab: 'servo',
+      say: '<p>You can now control movement! Here’s what you learned, what you built and what you can build next.</p>' },
   ];
   const MISSIONS = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6'];
-  const MISSION_NAMES = { m1: 'Met the servo and its six parts', m2: 'Turned the horn to an angle and found the stops', m3: 'Wired the servo safely: signal, power and a shared ground', m4: 'Wrote a MicroPython program with PWM on GPIO18', m5: 'Fixed three broken servo circuits', m6: 'Designed your own waving sequence' };
 
   /* ================= 3. Saved state (in the course's progress store, under this module's slug) ================= */
-  const S = { step: 0, done: {}, found: {}, m2: {}, wiring: { mode: 'supply', signal: null, power: null, ground: null, share: null }, m4: { sub: 0, seen: {}, ran: false }, m5: {}, seq: null, rep: 2, hand: false, quiz: false };
+  // v2 = the challenge-based missions. Saved state from the first version is not reused (its missions were different).
+  const fresh = () => ({ v: 2, step: 0, done: {}, hints: {}, ev: {},
+    m1: { pred: null, found: {}, check: false }, m2: { pred: {}, a: 60, b: 120, wave: false, stop: false },
+    wiring: { mode: 'supply', signal: null, power: null, ground: null, share: null }, m3: { ready: false, know: false, tries: {} },
+    m4: { sub: 0, seen: {}, pin: false, a1: 90, w: 1, t1: 90, t2: 1, t3: 120, task: false, ran: false },
+    m5: {}, m6: { a: 60, b: 120, speed: 0.4, waves: 3, mine: false, seq: null, solved: false }, hand: true, quiz: {} });
+  const S = fresh();
   const saved = (window.COURSE && COURSE.readProgress()[LESSON_SLUG]) || {};
-  if (saved.servo) { try { Object.assign(S, JSON.parse(JSON.stringify(saved.servo))); } catch (e) { /* start fresh */ } }
-  if (typeof saved.step === 'number' && saved.step < STEPS.length) S.step = saved.step;
+  if (saved.servo && saved.servo.v === 2) {
+    try { Object.assign(S, JSON.parse(JSON.stringify(saved.servo))); } catch (e) { /* start fresh */ }
+    if (typeof saved.step === 'number' && saved.step < STEPS.length) S.step = saved.step;
+  }
   function save(extra) {
     if (!window.COURSE) return;
     COURSE.saveProgress(LESSON_SLUG, Object.assign({ step: S.step, steps: STEPS.length, servo: S }, extra || {}));
@@ -533,26 +616,24 @@ servo.deinit()         # stop the pulses: the servo relaxes
     return { list: R, ok: R.every((r) => r.level === 'ok') };
   }
 
-  /* ================= 7. Fix-it faults (Mission 5) ================= */
+  /* ================= 7. Troubleshooting cases (Mission 5) ================= */
+  const NOTICE = ['The arm jitters and jumps about', 'The arm doesn’t move at all', 'The board keeps restarting, and the arm is weak'];
   const FAULTS = [
-    { who: 'Amani’s twitchy servo', symptom: 'The servo twitches and jumps to random angles. It has its own 5 V supply.', show: 'twitch',
+    { who: 'Amani’s robot', show: 'twitch', notice: 0,
       wiring: { mode: 'supply', signal: 'R07_GPIO18', power: 'SUP+', ground: 'SUP-', share: null },
-      opts: ['The supply’s − is not joined to the ESP32’s GND', 'The signal wire is on the wrong pin', 'The horn is too heavy'], right: 0,
-      hints: [null, 'Look again: the orange wire is on D18, just like the code.', 'The horn is tiny. Look at the ground wires: how many go to the ESP32?'],
-      fix: 'Add one wire from the supply’s − to a GND pin. Now the ESP32 and the servo agree what 0 volts is, and the pulses make sense.',
-      fixed: { share: 'R14_GND' } },
-    { who: 'Keza’s sleepy servo', symptom: 'Nothing moves at all. The code says servo = PWM(Pin(18), freq=50).', show: 'still',
-      wiring: { mode: 'supply', signal: 'R06_GPIO19', power: 'SUP+', ground: 'SUP-', share: 'R14_GND' },
-      opts: ['The orange wire is on D19, but the code talks to D18', 'freq=50 is too slow for a servo', 'The brown wire should be on 3V3'], right: 0,
-      hints: [null, 'freq=50 is exactly what servos expect: one pulse every 20 ms.', 'Brown is ground and must stay on ground. Follow the orange wire instead.'],
-      fix: 'Move the orange wire to D18, or change the code to Pin(19). The wire and the code must always match.',
-      fixed: { signal: 'R07_GPIO18' } },
-    { who: 'Gatete’s restarting board', symptom: 'Every time the servo moves, the board restarts and the servo feels weak. The board’s little regulator chip gets warm.', show: 'reset',
+      causes: ['The supply’s − is not joined to the ESP32’s GND', 'The signal wire is on the wrong pin', 'The horn is too heavy'], right: 0,
+      hints: ['Count the wires that touch the ESP32. Which jobs are covered?', 'The servo has its own supply. How does the ESP32 share its “0 volts” with it?', 'Look at the supply’s − terminal: nothing goes from it to an ESP32 GND pin.'],
+      fix: 'Now the supply’s − and the ESP32’s GND are joined, so both agree what 0 volts is and the pulses make sense.' },
+    { who: 'Keza’s robot', show: 'still', notice: 1,
+      wiring: { mode: 'supply', signal: 'R06_GPIO19', power: 'SUP+', ground: 'SUP-', share: 'R14_GND' }, code: 'servo = PWM(Pin(18), freq=50)',
+      causes: ['The orange wire is on D19, but the code talks to D18', 'freq=50 is too slow for a servo', 'The brown wire should be on 3V3'], right: 0,
+      hints: ['Power and ground look fine. Follow the instruction wire.', 'Read the code line, then read the pin label at the end of the orange wire.', 'The code says Pin(18). The orange wire is on D19.'],
+      fix: 'The orange wire is on D18 now, the same pin the code uses. Wire and code must always match.' },
+    { who: 'Gatete’s robot', show: 'reset', notice: 2,
       wiring: { mode: 'vin', signal: 'R07_GPIO18', power: 'R15_3V3', ground: 'L14_GND', share: null },
-      opts: ['The red wire is on 3V3, and the board’s small regulator can’t feed a motor', 'The servo needs a faster freq', 'The ground is on the wrong GND pin'], right: 0,
-      hints: [null, 'Changing freq won’t help: a servo listens for 50 pulses a second.', 'Both GND pins are the same ground, so either one works. Follow the red wire.'],
-      fix: '⚠ That one is unsafe. Unplug first, then move red to a 5 V supply (or to VIN for a quick test). 3V3 is only for the ESP32 and small sensors.',
-      fixed: { power: 'L15_VIN' } },
+      causes: ['The red wire is on 3V3, and the board’s small regulator can’t feed a motor', 'The servo needs a faster freq', 'The ground is on the wrong GND pin'], right: 0,
+      hints: ['Restarting usually means something is taking too much power.', 'Which wire gives the motor its energy? Where does it get it from?', 'The red wire is on 3V3, which is only for the ESP32 chip and small sensors.'],
+      fix: '⚠ That one was unsafe! Red now gets about 5 volts from VIN, so the board’s little 3V3 regulator isn’t overloaded. (A separate 5 V supply is even better.)' },
   ];
 
   /* ================= 8. Building each step's panel ================= */
@@ -568,154 +649,195 @@ servo.deinit()         # stop the pulses: the servo relaxes
     document.querySelectorAll('.why-item.now').forEach((x) => x.classList.remove('now'));
     ans.hidden = !open; b.setAttribute('aria-expanded', String(open)); item.classList.toggle('now', open);
   });
+  // the learning cycle shown at the top of each mission: only the stages that mission really has
+  const CYCLE = { m1: ['Predict', 'Try', 'Explain'], m2: ['Predict', 'Try', 'Observe', 'Apply'], m3: ['Learn', 'Try', 'Explain'],
+    m4: ['Try', 'Observe', 'Apply'], m5: ['Observe', 'Explain', 'Apply'], m6: ['Try', 'Observe', 'Apply'] };
+  const cycleHtml = (m) => `<ol class="cycle" id="cyc-${m}" aria-label="Learning steps">${CYCLE[m].map((c) => `<li>${c}</li>`).join('')}</ol>`;
+  const hintBox = (id) => `<div class="hintrow"><button type="button" class="btn ghost small hint-btn" data-hint="${id}">💡 Hint</button><div class="hint-out" id="hint-${id}" aria-live="polite"></div></div>`;
 
-  // --- start
+  // --- the opening challenge
+  const START_OUTCOMES = [['💡', 'Explain what a servo does'], ['🔌', 'Connect its signal, power and ground correctly'], ['📐', 'Program its movement using angles'], ['🔧', 'Find and fix a simple servo problem'], ['🎨', 'Create your own movement sequence']];
   P('start').innerHTML = `
-    <h3>You already know</h3>
-    <p>${W('pwm')} from Lesson 5 (the buzzer switched on and off very fast), and ${W('gnd', 'GND')}, ${W('vin', 'VIN')} and ${W('gpio', 'GPIO')} pins from Pin Detective. Today they work together.</p>
-    <h3>What you need</h3>
-    <ul class="parts">
-      <li><span class="ic" aria-hidden="true">🧠</span><span><span class="nm">ESP32 DevKit V1 + USB data cable</span>Your board from every lesson. Start from a bare board: nothing else plugged in.</span></li>
-      <li><span class="ic" aria-hidden="true">⚙️</span><span><span class="nm">SG90 micro servo<span class="new-tag">NEW</span></span>A small motor with gears and a tiny control circuit inside. It turns its arm to an angle and holds it.</span></li>
-      <li><span class="ic" aria-hidden="true">🔋</span><span><span class="nm">A regulated 5 V supply</span>For example a USB power bank with a USB breakout board, or a 5 V, 2 A adapter. Motors are hungry: their own supply keeps the ESP32 from restarting.</span></li>
-      <li><span class="ic" aria-hidden="true">🧵</span><span><span class="nm">4 male–female jumper wires</span>The servo’s plug has holes and the ESP32 has pins. Three wires for the servo, one to join the grounds.</span></li>
+    <div class="challenge"><span class="big" aria-hidden="true">🤖👋</span><div><b>Today’s challenge</b><br>Build and program a robot arm that waves hello.</div></div>
+    <ul class="why3">
+      <li><span aria-hidden="true">🦾</span><span>Robots need a way to <b>move</b>.</span></li>
+      <li><span aria-hidden="true">⚙️</span><span>A ${W('servo')} moves an arm to a <b>chosen position</b>.</span></li>
+      <li><span aria-hidden="true">🧠</span><span>The ESP32 <b>tells the servo</b> where to go.</span></li>
     </ul>
-    <div class="safety">⚡ <b>The big rule today:</b> a GPIO pin sends the <b>message</b>, never the <b>power</b>. Motors get their power from a 5 V supply.</div>`;
+    <h3>By the end, you can:</h3>
+    <ol class="outcomes">${START_OUTCOMES.map(([i, t]) => `<li><span aria-hidden="true">${i}</span>${t}</li>`).join('')}</ol>
+    <p class="note">Each mission asks you to <b>show</b> a skill, not just read about it. Hints are always there, and using them is fine.</p>
+    <details class="more"><summary>🧰 What you’ll need for the real build</summary>
+      <ul class="parts">
+        <li><span class="ic" aria-hidden="true">🧠</span><span><span class="nm">ESP32 DevKit V1 + USB data cable</span>Your board from every lesson, with nothing else plugged in.</span></li>
+        <li><span class="ic" aria-hidden="true">⚙️</span><span><span class="nm">SG90 micro servo<span class="new-tag">NEW</span></span>A small motor with gears and a tiny control circuit inside.</span></li>
+        <li><span class="ic" aria-hidden="true">🔋</span><span><span class="nm">A regulated 5 V supply</span>For example a USB power bank with a USB breakout board, or a 5 V, 2 A adapter.</span></li>
+        <li><span class="ic" aria-hidden="true">🧵</span><span><span class="nm">4 male–female jumper wires</span>Three for the servo and one to join the grounds.</span></li>
+        <li><span class="ic" aria-hidden="true">✂️</span><span><span class="nm">Cardboard and tape</span>For the hand (and a bracket, if you like).</span></li>
+      </ul>
+    </details>`;
 
-  // --- mission 1
-  P('m1').innerHTML = `
-    <p><b>Find the parts:</b> tap them on the 3D servo, or tap a name here.</p>
-    <div class="task-grid" id="partBtns">${Object.entries(PARTS).map(([k, p]) => `<button type="button" data-part="${k}"><i style="background:${p.c};border:1px solid #9aa"></i>${p.name}</button>`).join('')}</div>
-    <div class="info" id="partInfo"><h4>Tap a part</h4><p>Officer Ohm will tell you what it does and why it’s there.</p></div>
-    <p class="note" id="m1Count" aria-live="polite"></p>`;
+  // --- Mission 1
+  P('m1').innerHTML = `${cycleHtml('m1')}
+    <div class="phase" id="m1a"><h3>🤔 Predict</h3><p>When the robot waves hello, which part will move?</p>
+      <div class="seg" id="m1Pred"><button type="button" data-p="case">🟦 The blue case</button><button type="button" data-p="horn">🦾 The white arm</button><button type="button" data-p="cable">〰️ The wires</button></div>
+      <div id="m1PredFb" aria-live="polite"></div></div>
+    <div class="phase" id="m1b" hidden><h3>👆 Try: explore the parts</h3><p>Tap each part on the 3D servo (or here). Drag to turn it round, and pinch or scroll to zoom.</p>
+      <div class="task-grid" id="partBtns">${Object.entries(PARTS).map(([k, p]) => `<button type="button" data-part="${k}"><i style="background:${p.c};border:1px solid #9aa"></i>${p.name}</button>`).join('')}</div>
+      <div class="info" id="partInfo"><h4>Tap a part</h4><p>Find out what it does and why it’s there.</p></div></div>
+    <div class="phase" id="m1c" hidden><h3>💬 Explain</h3><p>Finish Officer Ohm’s sentence: <b>“A servo…”</b></p>
+      <div class="opts" id="m1Check">
+        <button type="button" data-o="0">…spins round and round as fast as it can.</button>
+        <button type="button" data-o="1">…turns its horn to the angle you choose, and holds it there.</button>
+        <button type="button" data-o="2">…lights up when it gets power.</button></div>
+      <div id="m1CheckFb" aria-live="polite"></div>${hintBox('m1')}</div>`;
 
-  // --- mission 2
-  P('m2').innerHTML = `
-    <ul class="tasks" id="m2Tasks">
-      <li data-t="t30">Send the horn to <b>30°</b></li>
-      <li data-t="t150">Send it to <b>150°</b></li>
-      <li data-t="t90">Back to the middle: <b>90°</b></li>
-      <li data-t="stall">Tick <b>Real servo stops</b>, then ask for <b>180°</b>. What happens?</li>
-    </ul>
-    <div class="seg" style="margin-top:8px" aria-label="Quick angles">${[0, 30, 60, 90, 120, 150, 180].map((a) => `<button type="button" data-goto="${a}">${a}°</button>`).join('')}</div>
-    ${whyList([
-      { q: 'Why doesn’t the horn jump there straight away?', a: 'A motor needs time to speed up, and the gears slow it down so it’s strong. A real SG90 needs about a tenth of a second for 60°. Tick 🐢 <b>Slow motion</b> to see the gap between what you asked for and where the horn is.' },
-      { q: 'What happens at 0° and 180°?', a: 'Inside, a little plastic stop keeps the arm from going round and round. Many SG90s stop a few degrees before 0° or 180°. Ask for more and the motor keeps pushing and buzzing. That wastes power and wears out the gears, so pick angles a bit inside, like 10° to 170°.' },
-      { q: 'Does the servo know where it is?', a: 'Yes! Inside, a little sensor turns with the shaft. The circuit compares where the shaft <i>is</i> with where you <i>asked</i>, and drives the motor until they match. Push the horn and it pushes back.' },
-    ])}`;
-
-  // --- mission 3
-  P('m3').innerHTML = `
-    <div class="danger">🔌 <b>Unplug the USB cable</b> (and the 5 V supply) before you move any wire.</div>
-    <p><b>1. Where does the servo’s power come from?</b></p>
-    <div class="seg" id="modeBtns">
-      <button type="button" data-mode="supply">🔋 Separate 5 V supply <small>(best)</small></button>
-      <button type="button" data-mode="vin">🔌 VIN, from USB <small>(quick test)</small></button>
-    </div>
-    <p style="margin-top:10px"><b>2. Pick a wire, then tap where it goes</b> (tap a pin on the 3D desk, or choose from the list):</p>
-    <div class="wire-btns" id="wireBtns"></div>
-    <div class="pick"><label for="pinPick">Connect it to:</label><select id="pinPick"></select></div>
-    <div class="nav" style="border:0;margin-top:6px;padding-top:0">
-      <button type="button" class="btn" id="checkWires">✅ Check my wiring</button>
-      <button type="button" class="btn ghost small" id="clearWires">Clear wires</button>
-    </div>
-    <ul class="results" id="wireResults" aria-live="polite"></ul>
-    ${whyList([
-      { q: 'Why D18 for the signal?', a: `D18 is a ${W('gpio', 'GPIO')} pin with no start-up job, so the servo won’t jump while the board starts. It sends the pulses: the message, not the power. In code, <code>Pin(18)</code> means GPIO 18, printed <b>D18</b>. ${PIN(18)}` },
-      { q: 'Why never power a servo from a GPIO pin or 3V3?', a: 'A GPIO pin can give only a few milliamps: enough to whisper a message, nowhere near enough for a motor. An SG90 can pull hundreds of milliamps when it starts or when something blocks it. 3V3 comes from the board’s small regulator, which feeds the ESP32 chip: a motor there can make the board restart, and the regulator can overheat.' },
-      { q: 'Why a separate 5 V supply?', a: 'Motors take big gulps of current when they start and when something blocks them. A regulated 5 V supply gives the servo its own food, so the ESP32 keeps running smoothly. “Regulated” means it holds 5 V steady.' },
-      { q: 'Why must the grounds be joined?', a: `The ESP32 measures its pulses from its own ${W('gnd', 'GND')}. The servo measures them from its brown wire. Join the grounds and both agree where 0 volts is. Without it the servo sees nonsense and twitches, or ignores you.` },
-      { q: 'What about VIN?', a: `On many DevKit V1 boards, ${W('vin', 'VIN')} is joined to the USB’s 5 volts through a small diode, so it gives about 4.5–5 V while the USB cable is plugged in. But not every board is wired the same way, and a computer’s USB port gives only about half an amp. VIN is fine for a quick test with one SG90 moving a light arm. If the board restarts when the servo moves, use a separate supply. Ask an adult to check.` },
-    ])}`;
-
-  // --- mission 4: six ideas
-  const SUBS = [
-    { t: 'An angle', html: `<p>An angle says how far the horn turns, in degrees (°). Half a circle is 180°: <b>0°</b> points right, <b>90°</b> points straight up, <b>180°</b> points left (look at the protractor on the bracket).</p>
-      <p>In code you’ll write <code>turn(90)</code>. It doesn’t mean “turn 90 more”: it means <b>go to 90° and stay there</b>.</p>
-      <div class="seg">${[0, 45, 90, 135, 180].map((a) => `<button type="button" data-goto="${a}">turn(${a})</button>`).join('')}</div>` },
-    { t: 'PWM', html: `<p>Remember the buzzer in Lesson 5? ${W('pwm')} means switching a pin ON (3.3 volts) and OFF (0 volts) very fast. Each ON part is a <b>pulse</b>.</p>
-      <svg class="pulse-svg" id="pwmSvg" viewBox="0 0 400 110" role="img" aria-label="A square wave: the pin switching on and off"></svg>
-      <p>For the buzzer, <i>how often</i> the pulses come made the pitch. For a servo, <b>how long each pulse lasts</b> is the message.</p>` },
-    { t: 'Pulses, again and again', html: `<p>The servo listens for one pulse every 20 milliseconds: 50 pulses a second. Engineers write <code>freq=50</code>. The pulse’s length is the angle: engineers call it the ${W('pulse', 'pulse width')}.</p>
+  // --- Mission 2
+  const PREDICT = [45, 90, 135];
+  const DIRS = [['→', 'right'], ['↗', 'up and right'], ['↑', 'straight up'], ['↖', 'up and left']];
+  const DIR_OF = { 45: 1, 90: 2, 135: 3 };
+  P('m2').innerHTML = `${cycleHtml('m2')}
+    <div class="phase"><h3>🤔 Predict, then 👆 test</h3><p>Look at the protractor behind the arm. Where will the arm point?</p>
+      ${PREDICT.map((a) => `<div class="pred" data-a="${a}"><b>turn to ${a}°</b><div class="seg">${DIRS.map(([s, t], i) => `<button type="button" data-d="${i}" title="${t}">${s} ${t}</button>`).join('')}</div><div class="pfb" aria-live="polite"></div></div>`).join('')}
+      ${hintBox('m2')}</div>
+    <div class="phase" id="m2b" hidden><h3>👀 Observe</h3><p>Move the <b>Angle</b> slider under the 3D view yourself. The orange pointer is the angle you <i>ask for</i>; the white arm is where the servo <i>really</i> is. Tick 🐢 <b>Slow motion</b> to see the arm catch up.</p>
+      <p class="note">🔍 Try this: tick <b>Real servo stops</b> and ask for 180°. Real servos have a stop inside, a few degrees before the end. <span id="m2Stop"></span></p></div>
+    <div class="phase" id="m2c" hidden><h3>🎯 Apply: a two-position wave</h3><p>A wave is just two angles, again and again. Pick yours:</p>
+      <label class="sl2">Position A <input type="range" id="m2A" min="10" max="170" step="5"><output id="m2Ao"></output></label>
+      <label class="sl2">Position B <input type="range" id="m2B" min="10" max="170" step="5"><output id="m2Bo"></output></label>
+      <button type="button" class="btn" id="m2Wave">▶ Wave between them</button>
+      <div id="m2Fb" aria-live="polite"></div></div>
+    <details class="more"><summary>🔬 Curious? How does the signal work?</summary>
+      <p>The ESP32 tells the servo the angle with ${W('pwm')}: it switches a pin on and off very fast. The servo looks at one pulse every 20 milliseconds (that’s 50 a second, <code>freq=50</code>). The length of the pulse is the angle: engineers call it the ${W('pulse', 'pulse width')}.</p>
       <svg class="pulse-svg" id="frameSvg" viewBox="0 0 400 130" role="img" aria-label="Pulses 20 milliseconds apart"></svg>
-      <p class="note">Move the Angle slider: 0.5 ms → 0°, 1.5 ms → 90°, 2.5 ms → 180°.</p>
-      <p>The pulses must keep coming: they are how the servo knows to <b>hold</b> its position. Stop them and it relaxes.</p>
-      <button type="button" class="btn ghost small" id="relaxBtn">⏸ Stop the pulses</button>` },
-    { t: 'PWM on GPIO18', html: `<p>Two lines make GPIO 18 a pulse maker:</p>
-      <pre class="code"><span class="new">from machine import Pin, PWM</span>
-import time
-
-<span class="new">servo = PWM(Pin(18), freq=50)</span>  <span class="cm"># 50 pulses a second</span></pre>
+      <p class="note">0.5 ms → 0°, 1.5 ms → 90°, 2.5 ms → 180°. Move the Angle slider and watch the pulse change.</p>
+      <p>The pulses must keep coming: they’re how the servo knows to <b>hold</b> its position. <button type="button" class="btn ghost small" id="relaxBtn">⏸ Stop the pulses</button></p>
       ${whyList([
-        { q: 'What does PWM(Pin(18), freq=50) do?', a: 'It hands GPIO 18 to the ESP32’s pulse maker and sets its rhythm to 50 pulses a second. The chip makes the pulses by itself, so your program is free to do other things.' },
-        { q: 'Why is there import time?', a: 'We’ll need <code>time.sleep()</code> to wait between moves, just like the traffic light.' },
-      ])}` },
-    { t: 'Safe angles', html: `<p>A function turns an angle into a pulse:</p>
-      <pre class="code">MIN_US = 500     <span class="cm"># pulse for 0 degrees (microseconds)</span>
-MAX_US = 2500    <span class="cm"># pulse for 180 degrees</span>
+        { q: 'Why doesn’t the arm jump there straight away?', a: 'A motor needs time to speed up, and the gears slow it down so it’s strong. A real SG90 needs about a tenth of a second for 60°.' },
+        { q: 'What happens at 0° and 180°?', a: 'A little plastic stop inside keeps the arm from going round and round. Many SG90s stop a few degrees early. Ask for more and the motor keeps pushing and buzzing, which wears out the gears, so pick angles a bit inside, like 10° to 170°.' },
+        { q: 'How does the servo know where it is?', a: 'A little sensor inside turns with the shaft. The circuit compares where the shaft <i>is</i> with where you <i>asked</i>, and drives the motor until they match.' },
+      ])}</details>`;
 
-<span class="new">def turn(angle):</span>
-<span class="new">    angle = min(max(angle, 0), 180)</span>  <span class="cm"># keep 0 to 180</span>
-<span class="new">    pulse_us = MIN_US + (MAX_US - MIN_US) * angle / 180</span>
-<span class="new">    servo.duty_u16(int(pulse_us * 65535 / 20000))</span></pre>
-      <div class="seg">${[30, 90, 150].map((a) => `<button type="button" data-goto="${a}">turn(${a})</button>`).join('')}</div>
-      <p class="sim" id="mathOut" aria-live="polite"></p>
-      ${whyList([
-        { q: 'What is duty_u16?', a: '<code>duty_u16()</code> wants the pulse as a share of the 20 ms frame, from 0 (never on) to 65535 (always on). 1.5 ms out of 20 ms is 7.5%, and 7.5% of 65535 is 4915.' },
-        { q: 'What does min(max(angle, 0), 180) do?', a: 'It’s a fence for numbers: anything below 0 becomes 0 and anything above 180 becomes 180, so a typo can’t send a wild pulse.' },
-        { q: 'My real servo buzzes at 0° or 180°. Why?', a: 'It’s pushing on its stop. Every servo is a bit different. Change <code>MIN_US</code> to 600 and <code>MAX_US</code> to 2400, or use angles from 10 to 170. Never force the horn past where it wants to stop.' },
-        { q: 'My board says duty_u16 doesn’t exist.', a: 'Very old MicroPython (before 1.18) only has <code>duty()</code> from 0 to 1023. Use <b>🧰 Prepare my board</b> to install a new MicroPython.' },
-      ])}` },
-    { t: 'Wave hello!', html: `<p>Put it together: point up, wave three times, then rest. <code>servo.deinit()</code> stops the pulses at the end.</p>
-      <section id="codePanel" aria-label="Your MicroPython program"></section>
-      <div class="nav" style="border:0;margin-top:4px;padding-top:0"><button type="button" class="btn" id="simRun">▶ Run in the 3D simulator</button><button type="button" class="btn ghost small" id="simStop">■ Stop</button></div>
-      <div class="sim" id="simOut" aria-live="polite">The simulator shows each line as the 3D servo runs it.</div>
-      <p class="note">The simulator is pretend. To run it for real, connect your board in the panel above, or use <b>🔌 Try it on my real board</b> at the top.</p>` },
-  ];
-  P('m4').innerHTML = `<div class="subnav" id="subnav">${SUBS.map((s, i) => `<button type="button" data-sub="${i}">${i + 1}. ${s.t}</button>`).join('')}</div>
-    ${SUBS.map((s, i) => `<div class="sub" data-sub="${i}" hidden><h3>${i + 1}. ${s.t}</h3>${s.html}</div>`).join('')}
-    <div class="nav" style="margin-top:8px"><button type="button" class="btn ghost small" id="subPrev">← Idea</button><button type="button" class="btn small" id="subNext">Next idea →</button></div>`;
-
-  // --- mission 5
-  P('m5').innerHTML = `<div class="fault-tabs seg" id="faultTabs">${FAULTS.map((f, i) => `<button type="button" data-f="${i}">${'ABC'[i]}. ${f.who}</button>`).join('')}</div>
-    <div id="faultBody"></div>`;
-
-  // --- mission 6
-  const PRESETS = {
-    wave: { name: '👋 Wave hello', rep: 3, moves: [[60, 0.4], [120, 0.4]] },
-    sleepy: { name: '😴 Sleepy wave', rep: 2, moves: [[50, 1.0], [130, 1.0]] },
-    no: { name: '🙅 Shake “no”', rep: 4, moves: [[75, 0.2], [105, 0.2]] },
-    sweep: { name: '🌈 Slow sweep', rep: 1, moves: [[20, 0.6], [60, 0.6], [100, 0.6], [140, 0.6], [160, 0.8]] },
+  // --- Mission 3
+  const JOBS = {
+    power: { icon: '⚡', c: '#C8262C', wire: 'Red', job: 'Power', text: 'gives the motor its <b>energy</b>.' },
+    ground: { icon: '⏚', c: '#6B4226', wire: 'Brown', job: 'Ground', text: 'is the shared <b>0-volt mark</b> everyone measures from, and the <b>road back</b> for the current.' },
+    signal: { icon: '📨', c: '#F08A24', wire: 'Orange', job: 'Signal', text: 'carries the ESP32’s <b>instruction</b>: which angle to turn to.' },
   };
-  if (!S.seq) { S.seq = PRESETS.wave.moves.map((m) => m.slice()); S.rep = PRESETS.wave.rep; }
-  P('m6').innerHTML = `
-    <div class="seg" id="presetBtns">${Object.entries(PRESETS).map(([k, p]) => `<button type="button" data-preset="${k}">${p.name}</button>`).join('')}</div>
-    <ol class="moves" id="moves"></ol>
-    <div class="row" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-      <button type="button" class="btn ghost small" id="addMove">+ Add a move</button>
-      <label class="chk">Repeat <select id="rep">${[1, 2, 3, 4, 5].map((n) => `<option>${n}</option>`).join('')}</select> times</label>
-      <label class="chk"><input type="checkbox" id="handToggle"> ✋ Glue on the cardboard hand</label>
-    </div>
-    <div class="nav" style="border:0;margin-top:8px;padding-top:0"><button type="button" class="btn" id="playSeq">▶ Play it in 3D</button><button type="button" class="btn ghost small" id="useSeq">🔌 Use it on my real board</button></div>
-    <p class="note">Moves stay between 10° and 170°, a little inside the servo’s stops.</p>
-    <pre class="code" id="seqCode"></pre>
-    <h3>Three challenges</h3>
-    <ol class="challenges" id="challenges"></ol>`;
+  P('m3').innerHTML = `${cycleHtml('m3')}
+    <div class="phase" id="m3a"><h3>📚 Three wires, three jobs</h3>
+      <ul class="jobs">${Object.values(JOBS).map((j) => `<li><span class="jic" style="background:${j.c}" aria-hidden="true">${j.icon}</span><span><b>${j.wire}: ${j.job}</b> ${j.text}</span></li>`).join('')}</ul>
+      <div class="danger">⚠ <b>Never power a servo from a GPIO pin or from 3V3.</b> A GPIO pin can only whisper a message, and 3V3 feeds the ESP32 chip itself. A motor there can damage the pin or make the board restart.</div>
+      <p><b>Quick check:</b> which wire carries the ESP32’s instruction?</p>
+      <div class="seg" id="m3Know"><button type="button" data-k="power">Red</button><button type="button" data-k="ground">Brown</button><button type="button" data-k="signal">Orange</button></div>
+      <div id="m3KnowFb" aria-live="polite"></div></div>
+    <div class="phase" id="m3b" hidden>
+      <div class="danger">🔌 On a real desk: <b>unplug the USB cable</b> (and the 5 V supply) before you move any wire.</div>
+      <p><b>Where will the servo’s energy come from?</b></p>
+      <div class="seg" id="modeBtns">
+        <button type="button" data-mode="supply">🔋 Separate 5 V supply <small>(recommended)</small></button>
+        <button type="button" data-mode="vin">🔌 VIN, from USB <small>(quick test only)</small></button>
+      </div>
+      <h3>👆 Connect one wire at a time</h3>
+      <ol class="wire-steps" id="wireSteps"></ol>
+      <div class="pick" id="pickRow"><label for="pinPick">Tap a pin on the 3D desk, or choose:</label><select id="pinPick"></select></div>
+      <div id="wireFb" aria-live="polite"></div>
+      ${hintBox('m3')}
+      <div class="nav" style="border:0;margin-top:6px;padding-top:0"><button type="button" class="btn ghost small" id="clearWires">↺ Start the wiring again</button></div>
+      <div id="m3Done"></div>
+      ${whyList([
+        { q: 'Why D18 for the signal?', a: `D18 is a ${W('gpio', 'GPIO')} pin with no start-up job, so the servo won’t jump while the board starts. In code, <code>Pin(18)</code> means GPIO 18, printed <b>D18</b>. ${PIN(18)}` },
+        { q: 'Why a separate 5 V supply?', a: 'Motors take big gulps of current when they start and when something blocks them. A regulated 5 V supply (it holds 5 V steady) gives the servo its own energy, so the ESP32 keeps running smoothly.' },
+        { q: 'What about VIN?', a: `On many DevKit V1 boards, ${W('vin', 'VIN')} is joined to the USB’s 5 volts through a small diode, so it gives about 4.5–5 V while USB is plugged in. Not every board is wired the same way, and a computer’s USB port gives only about half an amp. VIN is fine for a quick test with one SG90 moving a light arm. If the board restarts when the servo moves, use a separate supply.` },
+      ])}</div>`;
 
-  // --- quiz
-  const QUIZ = [
-    { q: 'A servo gets one pulse every 20 ms. Which pulse asks it to point to the middle (90°)?', opts: ['0.5 ms', '1.5 ms', '20 ms'], right: 1, why: '0.5 ms is 0°, 2.5 ms is 180°, so 1.5 ms is right in the middle: 90°.' , hint: 'Half-way between 0.5 ms (0°) and 2.5 ms (180°)…' },
-    { q: 'Where should the servo’s red power wire go?', opts: ['The 3V3 pin', 'GPIO 18', 'A regulated 5 V supply (with the grounds joined)'], right: 2, why: 'Motors need their own 5 V power. GPIO 18 only carries the message, and 3V3 is for the ESP32 chip itself.', hint: 'Remember the big rule: a GPIO pin sends the message, never the power.' },
-    { q: 'A servo with its own 5 V supply twitches at random. What is most likely wrong?', opts: ['The supply’s − isn’t joined to the ESP32’s GND', 'freq is set to 50', 'The horn is white'], right: 0, why: 'Without a shared ground, the servo can’t measure the ESP32’s pulses properly, so it reads nonsense.', hint: 'Think about Amani’s servo in Mission 5.' },
+  // --- Mission 4: the smallest program first, then one line at a time
+  const SUBS = [
+    { t: 'Choose the pin' }, { t: 'Create the PWM control' }, { t: 'Set a position' }, { t: 'Wait' }, { t: 'Change the position' }, { t: 'The whole wave' },
   ];
-  P('quiz').innerHTML = `<div id="quiz">${QUIZ.map((q, qi) => `<div class="q" data-q="${qi}"><p>${qi + 1}. ${q.q}</p><div class="qopts">${q.opts.map((o, i) => `<button type="button" data-o="${i}">${o}</button>`).join('')}</div><div class="fb"></div></div>`).join('')}</div><div id="quizEnd"></div>`;
+  P('m4').innerHTML = `${cycleHtml('m4')}
+    <div class="simnote">🧪 The <b>3D simulator</b> is pretend: it runs in your browser and understands only simple servo lines. Real MicroPython runs only on your ESP32.</div>
+    <div class="flow" id="flow" aria-live="polite"><div><small>Code</small><b id="flowCode">turn(90)</b></div><span aria-hidden="true">→</span><div><small>Signal</small><b id="flowSig">1.50 ms pulse</b></div><span aria-hidden="true">→</span><div><small>Servo</small><b id="flowArm">arm at 90°</b></div></div>
+    <div class="subnav" id="subnav">${SUBS.map((s, i) => `<button type="button" data-sub="${i}">${i + 1}. ${s.t}</button>`).join('')}</div>
+    <div class="sub" data-sub="0"><p>Your orange signal wire is plugged into <b>D18</b>. Which pin should the code use?</p>
+      <div class="seg" id="pinQ"><button type="button" data-q="18">Pin(18)</button><button type="button" data-q="3">Pin(3)</button><button type="button" data-q="5">Pin(5)</button></div><div id="pinFb" aria-live="polite"></div></div>
+    <div class="sub" data-sub="1" hidden><p><code>PWM</code> turns the pin into a pulse maker. <code>freq=50</code> means 50 pulses a second, the rhythm servos listen to. We also give you a helper called <code>turn()</code> that changes degrees into the right pulse.</p></div>
+    <div class="sub" data-sub="2" hidden><p>Change the number and watch the arm, the pulse and the code all change together:</p>
+      <label class="numrow"><code>turn(</code><input type="number" id="a1" min="0" max="180" step="5" inputmode="numeric"><code>)</code></label></div>
+    <div class="sub" data-sub="3" hidden><p>A servo needs time to get there, and your eyes need time to see it. <code>time.sleep()</code> makes the program wait.</p>
+      <label class="numrow"><code>time.sleep(</code><select id="w1">${[0.2, 0.5, 1, 2].map((v) => `<option value="${v}">${v}</option>`).join('')}</select><code>)</code></label></div>
+    <div class="sub" data-sub="4" hidden><p>Add a second position. <b>Your turn:</b> make the arm go to <b>30°</b>, wait <b>2 seconds</b>, then go to <b>150°</b>.</p>
+      <div class="numgrid"><label><code>turn(</code><input type="number" id="t1" min="0" max="180" step="5" inputmode="numeric"><code>)</code></label>
+        <label><code>time.sleep(</code><select id="t2">${[0.2, 0.5, 1, 2].map((v) => `<option value="${v}">${v}</option>`).join('')}</select><code>)</code></label>
+        <label><code>turn(</code><input type="number" id="t3" min="0" max="180" step="5" inputmode="numeric"><code>)</code></label></div>
+      <div id="taskFb" aria-live="polite"></div>${hintBox('m4')}</div>
+    <div class="sub" data-sub="5" hidden><p>The whole wave: point up, wave three times with a <code>for</code> loop, then rest. Change a number and run it again!</p>
+      <section id="codePanel" aria-label="Your MicroPython program"></section></div>
+    <pre class="code" id="codeSoFar"></pre>
+    <div class="nav" style="border:0;margin-top:4px;padding-top:0"><button type="button" class="btn" id="simRun">▶ Run in the 3D simulator</button><button type="button" class="btn ghost small" id="simStop">■ Stop</button></div>
+    <div class="sim" id="simOut" aria-live="polite">The simulator shows each line as the 3D arm runs it.</div>
+    <div class="nav" style="margin-top:8px"><button type="button" class="btn ghost small" id="subPrev">← Back a line</button><button type="button" class="btn small" id="subNext">Next line →</button></div>
+    ${whyList([
+      { q: 'How does turn() work inside?', a: 'It keeps the angle between 0 and 180, works out the pulse length (500 microseconds for 0°, 2500 for 180°), and gives it to <code>duty_u16()</code> as a share of the 20 ms frame, from 0 to 65535. 1.5 ms out of 20 ms is 7.5%, and 7.5% of 65535 is 4915.' },
+      { q: 'My real servo buzzes at 0° or 180°.', a: 'It’s pushing on its stop: every servo is a bit different. Change <code>MIN_US</code> to 600 and <code>MAX_US</code> to 2400, or use angles from 10 to 170.' },
+      { q: 'My board says duty_u16 doesn’t exist.', a: 'Very old MicroPython (before 1.18) only has <code>duty()</code>. Use <b>🧰 Prepare my board</b> to install a new MicroPython.' },
+    ])}`;
 
-  // --- done
-  P('done').innerHTML = `<ul class="achieve" id="achieve"></ul><div id="badgeHost"></div>
-    <h3>Next</h3><p>Your servo is ready to lift <b>The Parking Gate</b>, swing a roof in <b>Rain, Rain, Go Away</b> and follow your hand in <b>Follow My Hand</b>. They’ll use the same <code>turn()</code> with an <code>if … else</code> from Night Mode.</p>
-    <p><a class="btn ghost" href="../../lessons.html#modules">← Pick another sensor</a></p>`;
+  // --- Mission 5
+  P('m5').innerHTML = `${cycleHtml('m5')}<div class="fault-tabs seg" id="faultTabs">${FAULTS.map((f, i) => `<button type="button" data-f="${i}">${'ABC'[i]}. ${f.who}</button>`).join('')}</div><div id="faultBody"></div>`;
 
-  /* ================= 9. Navigation, progress and narration ================= */
+  // --- Mission 6
+  const SPEEDS = [[0.8, '🐢 Slow'], [0.4, '🙂 Medium'], [0.2, '⚡ Fast']];
+  P('m6').innerHTML = `${cycleHtml('m6')}
+    <div class="phase"><div class="challenge"><span class="big" aria-hidden="true">🚪🙋</span><div><b>The challenge:</b> your robot is welcoming a visitor. Create your own friendly waving movement.</div></div>
+      <label class="sl2">Starting angle <input type="range" id="w6a" min="10" max="170" step="5"><output id="w6ao"></output></label>
+      <label class="sl2">Second angle <input type="range" id="w6b" min="10" max="170" step="5"><output id="w6bo"></output></label>
+      <div class="row6"><span><b>Speed</b> <span class="seg" id="w6s">${SPEEDS.map(([v, t]) => `<button type="button" data-s="${v}">${t}</button>`).join('')}</span></span>
+        <label class="chk"><b>Waves</b> <select id="w6n">${[1, 2, 3, 4, 5].map((n) => `<option>${n}</option>`).join('')}</select></label>
+        <label class="chk"><input type="checkbox" id="handToggle"> ✋ Cardboard hand</label></div>
+      <div class="nav" style="border:0;margin-top:6px;padding-top:0"><button type="button" class="btn" id="w6play">▶ Play my wave</button><button type="button" class="btn ghost small" id="useMine">🔌 Use it on my real board</button></div>
+      <div id="w6fb" aria-live="polite"></div>
+      <details class="more"><summary>See the code for my wave</summary><pre class="code" id="mineCode"></pre></details></div>
+    <div class="phase" id="m6b" hidden><h3>🎯 New instruction from the visitor</h3>
+      <div class="challenge"><span class="big" aria-hidden="true">💬</span><div><b>“Make the robot wave slowly once, then quickly twice.”</b><br><span class="note">Build it from moves. Each wave is two moves: there and back.</span></div></div>
+      <ol class="moves" id="moves"></ol>
+      <div class="row6"><button type="button" class="btn ghost small" id="fromMine">Start from my wave</button><button type="button" class="btn ghost small" id="addMove">+ Add a move</button></div>
+      <div class="nav" style="border:0;margin-top:6px;padding-top:0"><button type="button" class="btn ghost" id="playSeq">▶ Play it</button><button type="button" class="btn" id="checkSeq">✅ Check my robot</button></div>
+      <div id="seqFb" aria-live="polite"></div>${hintBox('m6')}
+      <details class="more"><summary>See the code</summary><pre class="code" id="seqCode"></pre></details>
+      <h3>More challenges (optional)</h3>
+      <ol class="challenges" id="challenges"></ol></div>`;
+
+  // --- final check: one question per skill
+  const QUIZ = [
+    { skill: 'Servo function', q: 'What does <code>turn(90)</code> make a servo do?', opts: ['Spin round 90 times', 'Move its horn to 90° and hold it there', 'Turn 90° more every time'], right: 1, why: 'A servo goes to the angle you ask for and holds it. turn(90) twice still means “stay at 90°”.', hint: 'Remember Mission 1: does a servo keep spinning, or stop at a place?' },
+    { skill: 'Angle control', q: 'On the protractor, the arm points <b>straight left</b>. Which angle is that?', opts: ['0°', '90°', '180°'], right: 2, why: '0° points right, 90° points up and 180° points left.', hint: 'Look at the protractor behind the arm in 3D.' },
+    { skill: 'Electrical connections', q: 'Where should the servo’s red power wire go?', opts: ['The 3V3 pin', 'GPIO 18', 'A regulated 5 V supply, with the grounds joined'], right: 2, why: 'The motor needs its own 5 V energy. GPIO 18 only carries the instruction, and 3V3 is for the ESP32 chip.', hint: 'Red is the energy wire. Which choice can feed a motor?' },
+    { skill: 'Code-driven movement', q: 'This code runs: <code>turn(30)</code>, <code>time.sleep(1)</code>, <code>turn(150)</code>. What does the arm do?', opts: ['Goes to 30°, waits a second, then swings to 150°', 'Goes straight to 180° (30 + 150)', 'Waits 30 seconds, then turns 150 times'], right: 0, why: 'The lines run in order: a position, a wait, a new position.', hint: 'Read it one line at a time, like the simulator does.' },
+    { skill: 'Troubleshooting', q: 'A servo with its own 5 V supply twitches at random. What’s the most likely cause?', opts: ['The supply’s − isn’t joined to the ESP32’s GND', 'freq is set to 50', 'The horn is white'], right: 0, why: 'Without a shared ground, the servo can’t measure the ESP32’s pulses properly, so it reads nonsense.', hint: 'Think about Amani’s robot in Mission 5.' },
+  ];
+  P('quiz').innerHTML = `<div id="quiz">${QUIZ.map((q, qi) => `<div class="q" data-q="${qi}"><p><span class="skill">${q.skill}</span>${qi + 1}. ${q.q}</p><div class="qopts">${q.opts.map((o, i) => `<button type="button" data-o="${i}">${o}</button>`).join('')}</div><div class="fb"></div></div>`).join('')}</div><div id="quizEnd"></div>`;
+
+  // --- the takeaways
+  P('done').innerHTML = `<div id="badgeHost"></div>
+    <h3>✅ What I learned</h3><ul class="achieve" id="learned"></ul>
+    <h3>🤖 What I built</h3><ul class="achieve" id="built"></ul>
+    <h3>🚀 What I can build next</h3>
+    <p><b>You can now control movement!</b> This same servo can open a parking gate, move a robot arm or unlock a small cardboard safe.</p>
+    <div class="next3">
+      <div><svg viewBox="0 0 80 50" aria-hidden="true"><rect x="6" y="18" width="8" height="28" fill="#526170"/><rect x="10" y="20" width="64" height="5" rx="2" fill="#F2B705" transform="rotate(-28 10 22)"/><rect x="0" y="44" width="80" height="6" fill="#9aa"/></svg><b>Automatic parking gate</b></div>
+      <div><svg viewBox="0 0 80 50" aria-hidden="true"><rect x="14" y="6" width="52" height="40" rx="4" fill="#C79A5D"/><rect x="34" y="20" width="12" height="12" rx="2" fill="#2C62D6"/><rect x="44" y="24" width="18" height="4" fill="#fff"/></svg><b>Smart cardboard door lock</b></div>
+      <div><svg viewBox="0 0 80 50" aria-hidden="true"><rect x="24" y="38" width="32" height="10" rx="2" fill="#2C62D6"/><rect x="36" y="14" width="8" height="26" rx="3" fill="#526170" transform="rotate(18 40 38)"/><circle cx="48" cy="15" r="4" fill="#2C62D6"/><rect x="48" y="11" width="22" height="7" rx="3" fill="#526170" transform="rotate(-20 48 15)"/><path d="M68 4 l6 4 -6 4" stroke="#F2B705" stroke-width="3" fill="none"/></svg><b>Moving robot mechanisms</b></div>
+    </div>
+    <p><a class="btn ghost" href="../../lessons.html#modules">← Pick another module</a></p>
+    <details class="more teacher"><summary>👩‍🏫 For teachers and parents</summary>
+      <p><b>Learning objectives.</b> The learner can explain that a servo moves to and holds a chosen angle; choose angles on a 0–180° scale; connect signal (GPIO 18), power (a regulated 5 V supply) and ground (shared with the ESP32) and say why; write MicroPython that sets positions with waits; diagnose a missing shared ground, a wrong control pin and an unsafe 3V3 power wire; and design a movement sequence to meet a new instruction.</p>
+      <p><b>Evidence collected on this device:</b></p><ul id="evidence"></ul>
+      <p><b>Questions to ask while you watch:</b> “Why doesn’t the servo get its power from the ESP32’s pin?” · “What would happen if we removed this black wire?” · “Show me which number to change to make the wave bigger.” · “How did you know what was wrong with Amani’s robot?”</p>
+      <p><b>Not yet validated on real hardware.</b> Everything here runs in a browser simulation. The wiring and program follow the SG90 datasheet and MicroPython for the ESP32, but they have not been tested with a real servo on this course’s kit. Pulse limits (0.5–2.5 ms) may need adjusting for a particular servo. An adult should check the circuit before power is connected.</p>
+    </details>`;
+
+  /* ================= 9. Navigation, progress, narration and celebrations ================= */
   const pills = $('pills');
   pills.innerHTML = STEPS.map((s, i) => `<li><button type="button" data-go="${i}">${s.pill}</button></li>`).join('');
   pills.addEventListener('click', (e) => { const b = e.target.closest('[data-go]'); if (b) go(+b.dataset.go); });
@@ -724,8 +846,7 @@ MAX_US = 2500    <span class="cm"># pulse for 180 degrees</span>
   let enterHooks = {};
   function go(i) {
     i = Math.max(0, Math.min(STEPS.length - 1, i));
-    const leaving = STEPS[S.step].id;
-    if (leaving === 'm5' && i !== S.step) restoreLearnerWiring();
+    if (STEPS[S.step].id === 'm5' && i !== S.step) wiringShown = null;
     S.step = i;
     const st = STEPS[i];
     panels.forEach((p, k) => { p.hidden = k !== i; });
@@ -735,19 +856,48 @@ MAX_US = 2500    <span class="cm"># pulse for 180 degrees</span>
     $('progressFill').style.width = Math.round(((i + 1) / STEPS.length) * 100) + '%';
     $('prevBtn').disabled = i === 0;
     $('nextBtn').disabled = i === STEPS.length - 1;
-    $('nextBtn').textContent = i === 0 ? 'Start Mission 1 →' : i === 6 ? 'Quiz →' : 'Next →';
-    pills.querySelectorAll('button').forEach((b, k) => { b.toggleAttribute('aria-current', k === i); if (k === i) b.setAttribute('aria-current', 'step'); b.classList.toggle('done', !!S.done[STEPS[k].id]); });
+    $('nextBtn').textContent = i === 0 ? 'Accept the challenge →' : i === 6 ? 'Show what you know →' : 'Next →';
+    refreshPills();
     showTab(st.tab);
     $('controls').hidden = st.tab !== 'servo';
     if (enterHooks[st.id]) enterHooks[st.id]();
     save();
     if (window.KKVoice) { KKVoice.stop(); setListening(false); if ($('readToMe').checked) listen(); }
   }
+  function refreshPills() {
+    pills.querySelectorAll('button').forEach((b, k) => { if (k === S.step) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); b.classList.toggle('done', !!S.done[STEPS[k].id]); });
+  }
+  function toast(html, star) {
+    const t = document.createElement('div'); t.className = 'toast' + (star ? ' star' : ''); t.setAttribute('role', 'status'); t.innerHTML = html;
+    document.body.appendChild(t); setTimeout(() => t.remove(), 3600);
+    if (star && window.OHM) OHM.set('celebrate', 3000);
+  }
+  const usedHints = (m) => (S.hints[m] || 0) > 0;
   function complete(id) {
     if (S.done[id]) return;
     S.done[id] = true;
-    pills.querySelectorAll('button')[STEPS.findIndex((s) => s.id === id)].classList.add('done');
-    save(); maybeFinish();
+    S.ev[id] = usedHints(id) ? 'sup' : 'ind';
+    const n = id.slice(1);
+    if (S.ev[id] === 'ind') toast(`⭐ <b>Mission ${n} done, all on your own!</b>`, true);
+    else toast(`✅ <b>Mission ${n} done!</b> Using hints is what engineers do too.`);
+    refreshPills(); save(); maybeFinish();
+  }
+  // progressive hints: each tap shows the next, more specific one; hints are counted, never punished
+  const HINTS = {};
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.hint-btn'); if (!b) return;
+    const key = b.dataset.hint, list = (HINTS[key] && HINTS[key]()) || [];
+    if (!list.length) return;
+    const m = key.slice(0, 2), out = $('hint-' + key), n = +(out.dataset.n || 0);
+    out.dataset.n = Math.min(n + 1, list.length);
+    out.innerHTML = list.slice(0, n + 1).map((h, k) => `<p>💡 <b>Hint ${k + 1}:</b> ${h}</p>`).join('');
+    if (n < list.length) { S.hints[m] = (S.hints[m] || 0) + 1; save(); }
+    b.textContent = n + 1 >= list.length ? '💡 That’s every hint' : '💡 Another hint';
+  });
+  function resetHints(key) { const out = $('hint-' + key); if (!out) return; out.innerHTML = ''; out.dataset.n = 0; const b = document.querySelector(`[data-hint="${key}"]`); if (b) b.textContent = '💡 Hint'; }
+  function setCycle(m, k) { // k = how many stages are complete
+    const ol = $('cyc-' + m); if (!ol) return;
+    ol.querySelectorAll('li').forEach((li, i) => { li.classList.toggle('ok', i < k); li.classList.toggle('now', i === k); });
   }
   // Officer Ohm's voice (browser speech: this module has no recorded MP3s yet)
   const listenBtn = $('listenBtn'), readToMe = $('readToMe');
@@ -759,125 +909,247 @@ MAX_US = 2500    <span class="cm"># pulse for 180 degrees</span>
   listenBtn.addEventListener('click', () => (listenBtn.getAttribute('aria-pressed') === 'true' ? stopTalking() : listen()));
   $('restart').addEventListener('click', () => {
     stopPlayer();
-    Object.assign(S, { done: {}, found: {}, m2: {}, wiring: { mode: 'supply', signal: null, power: null, ground: null, share: null }, m4: { sub: 0, seen: {}, ran: false }, m5: {}, seq: PRESETS.wave.moves.map((m) => m.slice()), rep: 3, hand: false, quiz: false });
+    const f = fresh(); Object.keys(S).forEach((k) => delete S[k]); Object.assign(S, f);
+    document.querySelectorAll('.hint-out').forEach((o) => { o.innerHTML = ''; o.dataset.n = 0; });
     refreshAll(); go(0);
   });
 
   /* ================= 10. Mission logic ================= */
-  // Mission 1: find the parts
+  // --- the opening: the arm waves hello with its cardboard hand
+  let introPlayed = false;
+  const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // --- Mission 1
   let selPart = null;
   function selectPart(k) {
-    selPart = k;
     const info = PARTS[k] || EXTRA_PARTS[k]; if (!info) return;
-    $('partInfo').innerHTML = `<h4>${info.title}</h4><p>${info.text}</p>`;
-    if (PARTS[k] && !S.found[k]) { S.found[k] = true; save(); }
-    refreshM1(); highlight(k);
-    if (STEPS[S.step].id !== 'm1') { $('servoTag').textContent = info.title; }
+    selPart = k;
+    if (STEPS[S.step].id === 'm1' && S.m1.pred) {
+      $('partInfo').innerHTML = `<h4>${info.title}</h4><p>${info.text}</p>`;
+      if (PARTS[k] && !S.m1.found[k]) { S.m1.found[k] = true; save(); }
+      refreshM1();
+    } else if (STEPS[S.step].id === 'm1' && !S.m1.pred) predictM1(k === 'stand' ? 'case' : k);
+    else $('servoTag').textContent = info.title;
   }
+  function predictM1(p) {
+    if (S.m1.pred) return;
+    S.m1.pred = p; save();
+    selPart = 'horn'; SV.relaxed = false; play(WAVE);
+    refreshM1();
+    if (p === 'horn') toast('⭐ <b>Great prediction!</b> The white arm moves.', true);
+  }
+  $('m1Pred').addEventListener('click', (e) => { const b = e.target.closest('[data-p]'); if (b) predictM1(b.dataset.p); });
   $('partBtns').addEventListener('click', (e) => { const b = e.target.closest('[data-part]'); if (b) selectPart(b.dataset.part); });
+  HINTS.m1 = () => ['Watch the arm wave again (👋 Wave hello). Does it keep going round, or stop at places?', 'It moves to a position and stays there until it’s told to move again.'];
+  $('m1Check').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-o]'); if (!b || S.m1.check) return;
+    if (b.dataset.o === '1') { S.m1.check = true; save(); refreshM1(); }
+    else { b.classList.add('wrong'); $('m1CheckFb').innerHTML = `<div class="feedback try">${b.dataset.o === '0' ? 'That’s an ordinary motor, like in a fan. Watch the servo wave: does it keep spinning?' : 'Servos don’t make light. What did you see the arm do?'}</div>`; }
+  });
   function refreshM1() {
-    const n = Object.keys(PARTS).filter((k) => S.found[k]).length;
-    $('partBtns').querySelectorAll('[data-part]').forEach((b) => b.classList.toggle('found', !!S.found[b.dataset.part]));
-    $('m1Count').innerHTML = n === 6 ? '<b>You found all six parts!</b> Next: make it turn.' : `Found ${n} of 6.`;
-    labelEls.forEach((el, k) => el.classList.toggle('found', !!S.found[k]));
-    if (n === 6) complete('m1');
+    const m = S.m1, n = Object.keys(PARTS).filter((k) => m.found[k]).length;
+    $('m1Pred').querySelectorAll('button').forEach((b) => { b.disabled = !!m.pred; b.classList.toggle('picked', b.dataset.p === m.pred); });
+    $('m1PredFb').innerHTML = !m.pred ? '' : m.pred === 'horn'
+      ? '<div class="feedback good"><b>You’re right!</b> The white arm, called the <b>horn</b>, turns. The case is screwed down and stays still.</div>'
+      : `<div class="feedback try"><b>Good guess, now watch!</b> ${m.pred === 'case' ? 'The case is screwed to the bracket, so it stays still.' : 'The wires just carry energy and instructions.'} The white arm, called the <b>horn</b>, is what turns.</div>`;
+    $('m1b').hidden = !m.pred; $('m1c').hidden = n < 4;
+    $('partBtns').querySelectorAll('[data-part]').forEach((b) => b.classList.toggle('found', !!m.found[b.dataset.part]));
+    labelEls.forEach((el, k) => el.classList.toggle('found', !!m.found[k]));
+    $('m1Check').querySelectorAll('button').forEach((b) => { if (m.check && b.dataset.o === '1') b.classList.add('right'); });
+    if (m.check) $('m1CheckFb').innerHTML = '<div class="feedback good"><b>Exactly.</b> A servo turns its horn to the angle you choose and <b>holds</b> it there. That’s why robots use them for arms, gates and latches.</div>';
+    setCycle('m1', (m.pred ? 1 : 0) + (n >= 4 ? 1 : 0) + (m.check ? 1 : 0));
+    if (m.pred && n >= 4 && m.check) complete('m1');
   }
 
-  // Mission 2 and the slider
+  // --- the slider (every mission) and Mission 2
   $('angle').addEventListener('input', (e) => { stopPlayer(); setTarget(+e.target.value, true); });
   document.addEventListener('click', (e) => { const b = e.target.closest('[data-goto]'); if (b) { stopPlayer(); setTarget(+b.dataset.goto); } });
   $('resetServo').addEventListener('click', () => { stopPlayer(); SV.relaxed = false; updateRelaxBtn(); setTarget(90); });
   $('waveBtn').addEventListener('click', () => { SV.relaxed = false; updateRelaxBtn(); play(WAVE); });
   $('realServo').addEventListener('change', onServoChange);
-  function onServoChange() { /* readouts are drawn every frame; this keeps the maths text in step */ const m = $('mathOut'); if (m) m.innerHTML = `turn(${SV.target}) → pulse_us = 500 + 2000 × ${SV.target} / 180 = <b>${Math.round(pulseUs(SV.target))} µs</b>\nduty_u16(${dutyU16(SV.target)})  (${(pulseUs(SV.target) / 200).toFixed(1)}% of 20 ms)`; drawFrame(); }
-  function checkM2() { // runs every frame while Mission 2 is open
-    if (STEPS[S.step].id !== 'm2') return;
-    const at = (a) => Math.abs(SV.target - a) <= 2 && Math.abs(SV.actual - SV.target) < 1.5 && !SV.player;
-    let ch = false;
-    if (!S.m2.t30 && at(30)) { S.m2.t30 = ch = true; }
-    if (!S.m2.t150 && at(150)) { S.m2.t150 = ch = true; }
-    if (!S.m2.t90 && (S.m2.t30 || S.m2.t150) && at(90)) { S.m2.t90 = ch = true; }
-    if (!S.m2.stall && SV.stalled && SV.target >= 178) { S.m2.stall = ch = true; }
-    if (ch) { refreshM2(); save(); }
-  }
-  function refreshM2() {
-    $('m2Tasks').querySelectorAll('li').forEach((li) => li.classList.toggle('ok', !!S.m2[li.dataset.t]));
-    if (S.m2.t30 && S.m2.t150 && S.m2.t90 && S.m2.stall) complete('m2');
-  }
-
-  // Mission 3: wiring
-  const WIRES = {
-    signal: { c: '#F08A24', name: 'Orange · signal' }, power: { c: '#C8262C', name: 'Red · power' },
-    ground: { c: '#6B4226', name: 'Brown · ground' }, share: { c: '#22262B', name: 'Black · shared ground', from: 'supply −' },
-  };
-  let selWire = 'signal', wiringShown = null, lastCheck = null;
-  function wiresFor(w) { return Object.keys(WIRES).filter((k) => k !== 'share' || w.mode === 'supply'); }
-  function refreshM3() {
-    const w = S.wiring;
-    $('modeBtns').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === w.mode)));
-    if (!wiresFor(w).includes(selWire)) selWire = 'signal';
-    $('wireBtns').innerHTML = wiresFor(w).map((k) => {
-      const r = lastCheck && lastCheck.list.find((x) => x.wire === k);
-      return `<button type="button" data-wire="${k}" aria-pressed="${k === selWire}" class="${r ? (r.level === 'ok' ? 'ok' : 'bad') : ''}"><b><i style="background:${WIRES[k].c}"></i>${WIRES[k].name}</b><span>${k === 'share' ? 'supply − → ' : 'plug → '}${nameOf(w[k])}</span></button>`;
-    }).join('');
-    const opts = ['<option value="">— choose a pin —</option>'];
-    if (w.mode === 'supply') opts.push('<optgroup label="5 V supply"><option value="SUP+">5 V supply +</option><option value="SUP-">5 V supply −</option></optgroup>');
-    ['L', 'R'].forEach((side) => opts.push(`<optgroup label="ESP32 ${side === 'L' ? 'EN … VIN side' : 'D23 … 3V3 side'}">${PADS.filter((p) => p.side === side).map((p) => `<option value="${p.node}">${p.printed}</option>`).join('')}</optgroup>`));
-    $('pinPick').innerHTML = opts.join('');
-    $('pinPick').value = w[selWire] || '';
-    if (wiringShown === 'learner') drawWiring(w);
-  }
-  $('modeBtns').addEventListener('click', (e) => { const b = e.target.closest('[data-mode]'); if (!b) return; S.wiring.mode = b.dataset.mode; if (b.dataset.mode === 'vin') { ['power', 'ground'].forEach((k) => { if (/^SUP/.test(S.wiring[k] || '')) S.wiring[k] = null; }); S.wiring.share = null; } lastCheck = null; $('wireResults').innerHTML = ''; save(); refreshM3(); });
-  $('wireBtns').addEventListener('click', (e) => { const b = e.target.closest('[data-wire]'); if (!b) return; selWire = b.dataset.wire; refreshM3(); });
-  $('pinPick').addEventListener('change', (e) => connect(e.target.value || null));
-  $('clearWires').addEventListener('click', () => { Object.keys(WIRES).forEach((k) => { S.wiring[k] = null; }); lastCheck = null; $('wireResults').innerHTML = ''; save(); refreshM3(); });
-  function connect(id) {
-    if (STEPS[S.step].id !== 'm3') return;
-    if (id === 'SUP+' || id === 'SUP-') { if (S.wiring.mode !== 'supply') return; }
-    S.wiring[selWire] = id; lastCheck = null; $('wireResults').innerHTML = '';
-    const order = wiresFor(S.wiring), next = order.find((k) => !S.wiring[k]);
-    if (next && id) selWire = next;
-    save(); refreshM3();
-  }
-  $('checkWires').addEventListener('click', () => {
-    lastCheck = checkWiring(S.wiring);
-    $('wireResults').innerHTML = lastCheck.list.map((r) => `<li class="${r.level}">${r.msg}</li>`).join('') +
-      (lastCheck.ok ? '<li class="ok"><b>Perfect wiring!</b> Signal on D18, power from 5 V, grounds joined. Now ask an adult to check it on your real desk.</li>' : '');
-    refreshM3();
-    if (lastCheck.ok) complete('m3');
+  function onServoChange() { drawFrame(); if (STEPS[S.step].id === 'm4') showFlow(null, SV.target); }
+  HINTS.m2 = () => ['Look at the numbers on the protractor: 0° is on the right and 180° is on the left.', '90° is half of 180°, so it points straight up. 45° is halfway between 0° and 90°.'];
+  P('m2').addEventListener('click', (e) => {
+    const b = e.target.closest('.pred [data-d]'); if (!b) return;
+    const row = b.closest('.pred'), a = +row.dataset.a; if (S.m2.pred[a]) return;
+    const ok = +b.dataset.d === DIR_OF[a];
+    S.m2.pred[a] = { pick: +b.dataset.d, ok }; save();
+    stopPlayer(); setTarget(a);
+    refreshM2();
   });
-
-  // Mission 4: the six ideas
-  function showSub(i) {
-    i = Math.max(0, Math.min(SUBS.length - 1, i));
-    S.m4.sub = i; S.m4.seen[i] = true;
-    P('m4').querySelectorAll('.sub').forEach((d) => { d.hidden = +d.dataset.sub !== i; });
-    $('subnav').querySelectorAll('button').forEach((b) => { b.setAttribute('aria-current', String(+b.dataset.sub === i)); b.classList.toggle('seen', !!S.m4.seen[b.dataset.sub]); });
-    $('subPrev').disabled = i === 0; $('subNext').disabled = i === SUBS.length - 1;
-    if (i === 1) drawPWM(); if (i === 2) drawFrame(); if (i === 4) onServoChange();
-    if (i === 5 && !codePanel) mountCodePanel();
-    save(); checkM4();
+  function refreshM2() {
+    const m = S.m2;
+    P('m2').querySelectorAll('.pred').forEach((row) => {
+      const a = +row.dataset.a, p = m.pred[a];
+      row.querySelectorAll('[data-d]').forEach((b) => { b.disabled = !!p; b.classList.toggle('right', !!p && +b.dataset.d === DIR_OF[a]); b.classList.toggle('wrong', !!p && !p.ok && +b.dataset.d === p.pick); });
+      row.querySelector('.pfb').innerHTML = !p ? '' : p.ok ? `✓ <b>You predicted it!</b> ${a}° points ${DIRS[DIR_OF[a]][1]}.` : `Look at the arm: ${a}° points <b>${DIRS[DIR_OF[a]][1]}</b>. ${a === 45 ? '45° is halfway between right (0°) and up (90°).' : a === 135 ? '135° is halfway between up (90°) and left (180°).' : '90° is half of 180°.'}`;
+    });
+    const predicted = PREDICT.every((a) => m.pred[a]);
+    $('m2b').hidden = !predicted; $('m2c').hidden = !predicted;
+    $('m2A').value = m.a; $('m2B').value = m.b; $('m2Ao').textContent = m.a + '°'; $('m2Bo').textContent = m.b + '°';
+    $('m2Stop').innerHTML = m.stop ? '✓ <b>You found the stop:</b> the arm stopped at 176° and buzzed.' : '';
+    if (m.wave) $('m2Fb').innerHTML = `<div class="feedback good"><b>That’s a wave!</b> ${m.a}° and ${m.b}°, again and again. In Mission 6 you’ll make it your own.</div>`;
+    setCycle('m2', predicted ? (m.wave ? 4 : 3) : PREDICT.some((a) => m.pred[a]) ? 1 : 0);
+    if (predicted && m.wave) complete('m2');
   }
-  $('subnav').addEventListener('click', (e) => { const b = e.target.closest('[data-sub]'); if (b) showSub(+b.dataset.sub); });
-  $('subPrev').addEventListener('click', () => showSub(S.m4.sub - 1));
-  $('subNext').addEventListener('click', () => showSub(S.m4.sub + 1));
-  function checkM4() { if (SUBS.every((s, i) => S.m4.seen[i]) && S.m4.ran) complete('m4'); }
+  ['m2A', 'm2B'].forEach((id) => $(id).addEventListener('input', (e) => { S.m2[id === 'm2A' ? 'a' : 'b'] = +e.target.value; $(id + 'o').textContent = e.target.value + '°'; stopPlayer(); setTarget(+e.target.value); save(); }));
+  $('m2Wave').addEventListener('click', () => {
+    const { a, b } = S.m2;
+    if (Math.abs(a - b) < 30) { $('m2Fb').innerHTML = '<div class="feedback try">That’s a tiny wiggle! Make the two angles at least 30° apart so the visitor can see the wave.</div>'; return; }
+    SV.relaxed = false;
+    play([].concat(...[0, 1, 2].map(() => [{ t: 'turn', a }, { t: 'sleep', s: 0.45 }, { t: 'turn', a: b }, { t: 'sleep', s: 0.45 }])), { onDone: () => { S.m2.wave = true; save(); refreshM2(); } });
+  });
+  function checkM2() { // every frame: notice the learner finding the stop
+    if (STEPS[S.step].id !== 'm2' || S.m2.stop) return;
+    if (SV.stalled && SV.target >= 178) { S.m2.stop = true; save(); refreshM2(); toast('🔍 <b>You found the servo’s stop!</b>'); }
+  }
   function updateRelaxBtn() { const b = $('relaxBtn'); if (b) b.textContent = SV.relaxed ? '▶ Start the pulses again' : '⏸ Stop the pulses'; }
   $('relaxBtn').addEventListener('click', () => { stopPlayer(); if (SV.relaxed) { SV.relaxed = false; setTarget(SV.target); } else SV.relaxed = true; updateRelaxBtn(); drawFrame(); });
-  function drawPWM() {
-    const svg = $('pwmSvg'); if (!svg) return;
-    let d = 'M10 80'; for (let k = 0; k < 8; k++) { const x = 10 + k * 48; d += ` L${x} 80 L${x} 30 L${x + 24} 30 L${x + 24} 80`; }
-    svg.innerHTML = `<path d="${d} L394 80" fill="none" stroke="#FFB25C" stroke-width="3"/><text x="10" y="22" fill="#CFE3EA" font-size="12" font-family="monospace">ON 3.3 V</text><text x="10" y="100" fill="#CFE3EA" font-size="12" font-family="monospace">OFF 0 V</text>`;
-  }
   function drawFrame() {
     const svg = $('frameSvg'); if (!svg) return;
-    const w = (pulseUs(SV.target) / 20000) * 180; // 180 px = 20 ms
+    const w = (pulseUs(SV.target) / 20000) * 180;
     let d = 'M10 90';
     for (let k = 0; k < 2; k++) { const x = 10 + k * 180; d += SV.relaxed ? ` L${x + 180} 90` : ` L${x} 90 L${x} 40 L${x + w} 40 L${x + w} 90 L${x + 180} 90`; }
     svg.innerHTML = `<path d="${d}" fill="none" stroke="#FFB25C" stroke-width="3"/>
       <line x1="10" y1="112" x2="190" y2="112" stroke="#8FB3C4"/><text x="70" y="126" fill="#8FB3C4" font-size="11" font-family="monospace">20 ms frame</text>
       ${SV.relaxed ? '<text x="120" y="62" fill="#FF8A8A" font-size="13" font-family="monospace">no pulses: the servo relaxes</text>' : `<text x="${14 + w}" y="34" fill="#FFB25C" font-size="12" font-family="monospace">${(pulseUs(SV.target) / 1000).toFixed(2)} ms → ${SV.target}°</text>`}`;
   }
+
+  // --- Mission 3: learn the jobs, then one wire at a time
+  let wiringShown = null, lastCheck = null;
+  const WIRES = {
+    signal: { c: '#F08A24', name: 'Orange · signal' }, power: { c: '#C8262C', name: 'Red · power' },
+    ground: { c: '#6B4226', name: 'Brown · ground' }, share: { c: '#22262B', name: 'Black · shared ground' },
+  };
+  const RIGHT = { supply: { ground: ['SUP-', 'L14_GND', 'R14_GND'], share: ['L14_GND', 'R14_GND'], signal: ['R07_GPIO18'], power: ['SUP+'] },
+    vin: { ground: ['L14_GND', 'R14_GND'], signal: ['R07_GPIO18'], power: ['L15_VIN'] } };
+  const ORDER = { supply: ['ground', 'share', 'signal', 'power'], vin: ['ground', 'signal', 'power'] }; // power last, like the Circuit Labs
+  const WHY_OK = {
+    ground: (id) => `Brown → <b>${nameOf(id)}</b>. The motor’s current flows home this way, and it’s the 0-volt mark everyone measures from.`,
+    share: () => 'Black: supply − → <b>GND</b>. Now the ESP32 and the servo agree where 0 volts is, so the servo can read the ESP32’s pulses.',
+    signal: () => 'Orange → <b>D18</b>. D18 is a GPIO pin with no start-up job, and your code will say <code>Pin(18)</code>. It carries the instruction, not energy.',
+    power: (id) => id === 'SUP+' ? 'Red → <b>5 V supply +</b>, connected last. The motor gets its own energy, so the ESP32 won’t restart when it moves.' : 'Red → <b>VIN</b>, connected last: about 5 V from USB. OK for a quick test with one small servo.',
+  };
+  const JOB_OF = { ground: 'Brown is the <b>ground</b> wire: the 0-volt mark and the road back', share: 'The black wire <b>joins the two grounds</b>, starting at the supply’s −', signal: 'Orange carries the <b>instruction</b> from a GPIO pin', power: 'Red brings the motor its <b>energy</b>' };
+  const curWire = () => ORDER[S.wiring.mode].find((k) => !(S.wiring[k] && RIGHT[S.wiring.mode][k].includes(S.wiring[k])));
+  function judge(wire, id) { // that wire alone, with the others imagined correct
+    const w = Object.assign({}, S.wiring, { signal: 'R07_GPIO18', power: S.wiring.mode === 'supply' ? 'SUP+' : 'L15_VIN', ground: S.wiring.mode === 'supply' ? 'SUP-' : 'L14_GND', share: S.wiring.mode === 'supply' ? 'R14_GND' : null });
+    w[wire] = id;
+    const r = checkWiring(w).list.find((x) => x.wire === wire);
+    if (wire === 'ground' && r.level === 'ok' && !RIGHT[S.wiring.mode].ground.includes(id)) return { level: 'bad', msg: r.msg };
+    return r;
+  }
+  P('m3').querySelector('#m3Know').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-k]'); if (!b || S.m3.know) return;
+    if (b.dataset.k === 'signal') { S.m3.know = true; save(); refreshM3(); }
+    else { b.classList.add('wrong'); $('m3KnowFb').innerHTML = `<div class="feedback try">${b.dataset.k === 'power' ? 'Red brings <b>energy</b> for the motor.' : 'Brown is the <b>ground</b>: the 0-volt mark and the road back.'} Which colour carries the instruction?</div>`; }
+  });
+  HINTS.m3 = () => {
+    const k = curWire(); if (!k) return [];
+    const sup = S.wiring.mode === 'supply';
+    const where = { ground: sup ? 'the 5 V supply (or an ESP32 GND pin)' : 'the ESP32', share: 'the ESP32', signal: 'the ESP32', power: sup ? 'the 5 V supply' : 'the ESP32' }[k];
+    const pin = { ground: sup ? '5 V supply − (or GND)' : 'GND', share: 'GND', signal: 'D18', power: sup ? '5 V supply +' : 'VIN' }[k];
+    return [JOB_OF[k] + '.', `It goes to ${where}.`, `Choose <b>${pin}</b>.`];
+  };
+  function refreshM3() {
+    const w = S.wiring, m = S.m3, cur = curWire();
+    $('m3Know').querySelectorAll('button').forEach((b) => { b.disabled = m.know; if (m.know && b.dataset.k === 'signal') b.classList.add('right'); });
+    if (m.know) $('m3KnowFb').innerHTML = '<div class="feedback good"><b>Right!</b> Orange carries the instruction. Now give each wire its place.</div>';
+    $('m3b').hidden = !m.know;
+    $('modeBtns').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === w.mode)));
+    const order = ORDER[w.mode];
+    $('wireSteps').innerHTML = order.map((k, i) => {
+      const ok = w[k] && RIGHT[w.mode][k].includes(w[k]);
+      return `<li class="${ok ? 'ok' : k === cur ? 'now' : ''}"><i style="background:${WIRES[k].c}"></i><b>Wire ${i + 1} of ${order.length}: ${WIRES[k].name}</b>${ok ? `<span>${WHY_OK[k](w[k])}</span>` : k === cur ? `<span>${JOB_OF[k]}. Where does it go?</span>` : ''}</li>`;
+    }).join('');
+    $('pickRow').hidden = !cur;
+    const opts = ['<option value="">— choose a pin —</option>'];
+    if (w.mode === 'supply') opts.push('<optgroup label="5 V supply"><option value="SUP+">5 V supply +</option><option value="SUP-">5 V supply −</option></optgroup>');
+    ['L', 'R'].forEach((side) => opts.push(`<optgroup label="ESP32 ${side === 'L' ? 'EN … VIN side' : 'D23 … 3V3 side'}">${PADS.filter((p) => p.side === side).map((p) => `<option value="${p.node}">${p.printed}</option>`).join('')}</optgroup>`));
+    $('pinPick').innerHTML = opts.join(''); $('pinPick').value = '';
+    const done = !cur;
+    lastCheck = done ? checkWiring(w) : null;
+    $('m3Done').innerHTML = done ? `<div class="feedback good"><b>Your circuit is complete and safe!</b> Signal on D18, ${w.mode === 'supply' ? 'energy from the 5 V supply, grounds joined' : 'energy from VIN (quick test)'}. On a real desk, ask an adult to check it before you plug in.</div>` : '';
+    setCycle('m3', m.know ? (done ? 3 : 1) : 0);
+    if (wiringShown === 'learner') drawWiring(w);
+    if (done && lastCheck.ok) complete('m3');
+  }
+  $('modeBtns').addEventListener('click', (e) => { const b = e.target.closest('[data-mode]'); if (!b || b.dataset.mode === S.wiring.mode) return; S.wiring = { mode: b.dataset.mode, signal: null, power: null, ground: null, share: null }; $('wireFb').innerHTML = ''; resetHints('m3'); save(); refreshM3(); });
+  $('pinPick').addEventListener('change', (e) => { if (e.target.value) connect(e.target.value); });
+  $('clearWires').addEventListener('click', () => { S.wiring = { mode: S.wiring.mode, signal: null, power: null, ground: null, share: null }; $('wireFb').innerHTML = ''; resetHints('m3'); save(); refreshM3(); });
+  function connect(id) { // a pin tapped in 3D or chosen from a list
+    const step = STEPS[S.step].id;
+    if (step === 'm5') return fixPick(id);
+    if (step !== 'm3' || !S.m3.know) return;
+    const k = curWire(); if (!k) return;
+    if (/^SUP/.test(id) && S.wiring.mode !== 'supply') return;
+    const r = judge(k, id);
+    S.m3.tries[k] = (S.m3.tries[k] || 0) + 1;
+    if (r.level === 'ok') {
+      S.wiring[k] = id; $('wireFb').innerHTML = ''; resetHints('m3');
+      if (S.m3.tries[k] === 1 && !usedHints('m3')) toast(`⭐ ${WIRES[k].name.split(' ·')[0]} wire: right first time!`, false);
+    } else {
+      $('wireFb').innerHTML = `<div class="feedback ${r.level === 'danger' ? 'danger-fb' : 'try'}">${r.msg} <b>Try another place.</b></div>`;
+      if (wireView) flashPin(id);
+    }
+    save(); refreshM3();
+  }
+
+  // --- Mission 4: code → signal → movement
+  const SUBCODE = (lv) => {
+    const m = S.m4;
+    if (lv >= 5) return currentCode();
+    let c = lv === 0 ? 'from machine import Pin, PWM\nimport time\n' : HEADER;
+    if (lv >= 2) c += `\nturn(${lv >= 4 ? m.t1 : m.a1})`;
+    if (lv >= 3) c += `\ntime.sleep(${lv >= 4 ? m.t2 : m.w})`;
+    if (lv >= 4) c += `\nturn(${m.t3})`;
+    return c + '\n';
+  };
+  function renderCode(lv) {
+    const prev = lv > 0 && lv < 5 ? SUBCODE(lv - 1).split('\n') : [];
+    const helper = /^(MIN_US|MAX_US|def turn|    )/;
+    $('codeSoFar').hidden = lv >= 5;
+    $('codeSoFar').innerHTML = SUBCODE(lv).split('\n').map((l, i) => {
+      const isNew = lv === 0 ? true : prev[i] !== l && !(lv > 1 && helper.test(l));
+      const cls = isNew && l ? 'new' : helper.test(l) && l ? 'dim' : '';
+      return cls ? `<span class="${cls}">${esc(l)}</span>` : esc(l);
+    }).join('\n');
+  }
+  function showFlow(code, angle) {
+    $('flowCode').textContent = code || `turn(${angle})`;
+    $('flowSig').textContent = SV.relaxed ? 'no pulses' : `${(pulseUs(angle) / 1000).toFixed(2)} ms pulse`;
+    $('flowArm').textContent = SV.relaxed ? 'arm relaxed' : `arm at ${Math.round(angle)}°`;
+  }
+  function showSub(i) {
+    i = Math.max(0, Math.min(SUBS.length - 1, i));
+    if (i > 0 && !S.m4.pin) i = 0;          // the pin choice comes first
+    if (i === 5 && !S.m4.task) i = 4;       // "your turn" before the whole program
+    S.m4.sub = i; S.m4.seen[i] = true;
+    P('m4').querySelectorAll('.sub').forEach((d) => { d.hidden = +d.dataset.sub !== i; });
+    $('subnav').querySelectorAll('button').forEach((b) => { b.setAttribute('aria-current', String(+b.dataset.sub === i)); b.classList.toggle('seen', !!S.m4.seen[b.dataset.sub]); });
+    $('subPrev').disabled = i === 0;
+    $('subNext').disabled = i === SUBS.length - 1 || (i === 0 && !S.m4.pin) || (i === 4 && !S.m4.task);
+    $('a1').value = S.m4.a1; $('w1').value = String(S.m4.w);
+    $('t1').value = S.m4.t1; $('t2').value = String(S.m4.t2); $('t3').value = S.m4.t3;
+    if (i === 5 && !codePanel) mountCodePanel();
+    $('simRun').hidden = i < 2;
+    renderCode(i);
+    if (S.m4.pin) $('pinFb').innerHTML = '<div class="feedback good"><b>Yes: Pin(18).</b> The number in <code>Pin()</code> is the GPIO number printed after the D. The code and the wire now point at the same pin.</div>';
+    setCycle('m4', S.m4.ran ? 3 : S.m4.task ? 2 : i >= 2 ? 1 : 0);
+    save();
+  }
+  $('subnav').addEventListener('click', (e) => { const b = e.target.closest('[data-sub]'); if (b) showSub(+b.dataset.sub); });
+  $('subPrev').addEventListener('click', () => showSub(S.m4.sub - 1));
+  $('subNext').addEventListener('click', () => showSub(S.m4.sub + 1));
+  $('pinQ').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-q]'); if (!b || S.m4.pin) return;
+    if (b.dataset.q === '18') { S.m4.pin = true; showSub(0); $('subNext').disabled = false; }
+    else { b.classList.add('wrong'); $('pinFb').innerHTML = `<div class="feedback try">${b.dataset.q === '3' ? 'GPIO 3 is RX0, busy talking to your computer.' : 'GPIO 5 is a start-up pin, and our wire isn’t there anyway.'} Look at where the orange wire is plugged in: D<b>?</b></div>`; }
+  });
+  $('a1').addEventListener('input', (e) => { const v = Math.max(0, Math.min(180, +e.target.value || 0)); S.m4.a1 = v; renderCode(2); stopPlayer(); setTarget(v); showFlow(`turn(${v})`, v); save(); });
+  $('w1').addEventListener('change', (e) => { S.m4.w = +e.target.value; renderCode(3); save(); });
+  ['t1', 't2', 't3'].forEach((id) => $(id).addEventListener(id === 't2' ? 'change' : 'input', (e) => { S.m4[id] = +e.target.value; renderCode(4); save(); }));
+  HINTS.m4 = () => ['There are three numbers to change: the first angle, the wait and the second angle.', 'The first <code>turn()</code> is where the arm starts. The wait is in seconds.', 'Make it <code>turn(30)</code>, <code>time.sleep(2)</code>, <code>turn(150)</code>.'];
   let codePanel = null;
   function mountCodePanel() {
     if (window.RunPanel && window.BoardLink) codePanel = RunPanel.mount($('codePanel'), { id: 'm-servo-code', base: '../../', code: PROGRAM, fresh: true });
@@ -893,133 +1165,241 @@ MAX_US = 2500    <span class="cm"># pulse for 180 degrees</span>
     if (r.dead) { log.push(`<span class="warn">⚠ ${esc(r.dead)}</span>`); show(); return false; }
     SV.relaxed = false; updateRelaxBtn();
     play(r.events, {
-      onEvent: (e) => { if (e.line) log.push(`<span class="ln">${String(e.line).padStart(2)}</span> ${esc(lines[e.line - 1].trim())}`); if (e.t === 'print') log.push('   ' + esc(e.text)); show(); if (opts && opts.onEvent) opts.onEvent(e); },
-      onDone: () => { log.push('<span class="ln">✓</span> program finished'); show(); if (opts && opts.onDone) opts.onDone(); },
+      onEvent: (e) => {
+        if (e.line) log.push(`<span class="ln">${String(e.line).padStart(2)}</span> ${esc(lines[e.line - 1].trim())}`);
+        if (e.t === 'print') log.push('   ' + esc(e.text));
+        if (e.t === 'turn') showFlow(lines[e.line - 1] ? lines[e.line - 1].trim().replace(/\s+#.*$/, '') : `turn(${e.a})`, e.a);
+        if (e.t === 'deinit') { SV.relaxed = true; showFlow('servo.deinit()', SV.target); }
+        show(); if (opts && opts.onEvent) opts.onEvent(e);
+      },
+      onDone: () => { log.push('<span class="ln">✓</span> program finished'); show(); if (opts && opts.onDone) opts.onDone(r); },
     });
-    return true;
+    return r;
   }
-  $('simRun').addEventListener('click', () => { if (runSim(currentCode(), $('simOut'), { onDone: () => { S.m4.ran = true; save(); checkM4(); } })) { /* running */ } });
+  $('simRun').addEventListener('click', () => {
+    const lv = S.m4.sub;
+    runSim(SUBCODE(lv), $('simOut'), { onDone: (r) => {
+      if (lv === 4) checkTask(r);
+      if (lv === 5 && !S.m4.ran) { S.m4.ran = true; save(); showSub(5); if (S.m4.task) complete('m4'); }
+    } });
+  });
+  function checkTask(r) {
+    const ev = r.events.filter((e) => e.t !== 'print'), turns = ev.filter((e) => e.t === 'turn'), sl = ev.filter((e) => e.t === 'sleep');
+    const msgs = [];
+    if (Math.round(turns[0].a) !== 30) msgs.push(`The arm started at ${Math.round(turns[0].a)}°, not 30°.`);
+    if (sl[0].s !== 2) msgs.push(`It waited ${sl[0].s} s, not 2 seconds.`);
+    if (Math.round(turns[1].a) !== 150) msgs.push(`It ended at ${Math.round(turns[1].a)}°, not 150°.`);
+    if (msgs.length) { $('taskFb').innerHTML = `<div class="feedback try">Close! ${msgs.join(' ')} Change that number and run it again.</div>`; return; }
+    S.m4.task = true; save();
+    $('taskFb').innerHTML = '<div class="feedback good"><b>You programmed it!</b> 30°, a 2-second wait, then 150°: exactly what you watched. Next: the whole wave.</div>';
+    if (!usedHints('m4')) toast('⭐ <b>You wrote it yourself!</b>', true);
+    showSub(4);
+  }
   $('simStop').addEventListener('click', () => stopPlayer());
 
-  // Mission 5: fix it
-  let fault = 0;
+  // --- Mission 5: notice → diagnose → fix it yourself
+  let fault = 0, fixWire = null, fixPin = null;
+  const fstate = (i) => (S.m5[i] = S.m5[i] || { notice: false, cause: false, fixed: false });
+  HINTS.m5 = () => FAULTS[fault].hints;
   function showFault(i) {
-    fault = i; const f = FAULTS[i], st = S.m5[i] || {};
-    $('faultTabs').querySelectorAll('button').forEach((b) => { b.setAttribute('aria-pressed', String(+b.dataset.f === i)); b.textContent = `${S.m5[b.dataset.f] && S.m5[b.dataset.f].solved ? '✓ ' : ''}${'ABC'[b.dataset.f]}. ${FAULTS[b.dataset.f].who}`; });
-    $('faultBody').innerHTML = `<div class="info" style="margin-top:0"><h4>${f.who}</h4><p>${f.symptom}</p><p class="note">Wiring: ${wiringSentence(st.fixed ? Object.assign({}, f.wiring, f.fixed) : f.wiring)}</p></div>
-      <p style="margin-top:10px"><b>What’s the cause?</b></p>
-      <div class="opts">${f.opts.map((o, k) => `<button type="button" data-fo="${k}" class="${st.solved && k === f.right ? 'right' : ''}">${o}</button>`).join('')}</div>
-      <div id="faultFb">${st.solved ? `<div class="feedback good">${f.fix}</div>` : ''}</div>
-      <div class="nav" style="border:0;padding-top:0"><button type="button" class="btn" id="fixIt" ${st.solved && !st.fixed ? '' : 'hidden'}>🔧 Fix it</button>${i < FAULTS.length - 1 ? `<button type="button" class="btn ghost small" id="nextFault" ${st.fixed ? '' : 'hidden'}>Next problem →</button>` : ''}</div>`;
-    drawWiring(st.fixed ? Object.assign({}, f.wiring, f.fixed) : f.wiring, f.show && !st.fixed ? f.show : 'fine');
+    fault = i; fixWire = null; fixPin = null;
+    const f = FAULTS[i], st = fstate(i);
+    $('faultTabs').querySelectorAll('button').forEach((b) => { const k = +b.dataset.f; b.setAttribute('aria-pressed', String(k === i)); b.textContent = `${S.m5[k] && S.m5[k].fixed ? '✓ ' : ''}${'ABC'[k]}. ${FAULTS[k].who}`; });
+    const w = st.fixed ? Object.assign({}, f.wiring, st.fixedWiring || {}) : f.wiring;
+    const wiresHere = Object.keys(WIRES).filter((k) => k !== 'share' || f.wiring.mode === 'supply');
+    $('faultBody').innerHTML = `<div class="info" style="margin-top:0"><h4>${f.who}</h4><p>“My robot arm won’t wave properly!” Watch the arm in 3D for a few seconds.</p>${f.code ? `<p class="note">Their code says <code>${f.code}</code>.</p>` : ''}</div>
+      <div class="phase"><h3>👀 What do you notice?</h3><div class="opts" id="fNotice">${NOTICE.map((t, k) => `<button type="button" data-n="${k}" class="${st.notice && k === f.notice ? 'right' : ''}" ${st.notice ? 'disabled' : ''}>${t}</button>`).join('')}</div><div id="fNoticeFb"></div></div>
+      <div class="phase" ${st.notice ? '' : 'hidden'}><h3>🔍 What do you think is causing it?</h3><p class="note">Inspect the circuit: drag to look around, and read the label at the end of each wire.</p>
+        <div class="opts" id="fCause">${f.causes.map((t, k) => `<button type="button" data-c="${k}" class="${st.cause && k === f.right ? 'right' : ''}" ${st.cause ? 'disabled' : ''}>${t}</button>`).join('')}</div><div id="fCauseFb"></div>${st.cause ? '' : hintBox('m5')}</div>
+      <div class="phase" ${st.cause ? '' : 'hidden'}><h3>🔧 Fix it yourself</h3>
+        ${st.fixed ? `<div class="feedback good"><b>Fixed!</b> ${f.fix}</div>` : `<p>Which wire will you change?</p>
+        <div class="seg" id="fWire">${wiresHere.map((k) => `<button type="button" data-w="${k}"><i class="sw" style="background:${WIRES[k].c}"></i>${k === 'share' && !f.wiring.share ? 'Add the black shared-ground wire (from supply −)' : WIRES[k].name}</button>`).join('')}</div>
+        <div class="pick" style="margin-top:8px"><label for="fPin">Move it to (or tap a pin in 3D):</label><select id="fPin"><option value="">— choose a pin —</option>${(f.wiring.mode === 'supply' ? '<option value="SUP+">5 V supply +</option><option value="SUP-">5 V supply −</option>' : '') + PADS.map((p) => `<option value="${p.node}">${p.printed}</option>`).join('')}</select></div>
+        <button type="button" class="btn" id="fTry" style="margin-top:8px">🔧 Try my fix</button><div id="fFixFb"></div>`}
+        ${st.fixed && i < FAULTS.length - 1 ? '<button type="button" class="btn ghost small" id="nextFault" style="margin-top:8px">Next robot →</button>' : ''}</div>`;
+    drawWiring(w, st.fixed ? 'wave' : f.show);
     wiringShown = 'fault';
+    if (wireView && wireView.focus) wireView.focus(); // closer, so the arm (and the board's power light) can be watched
+    setCycle('m5', st.fixed ? 3 : st.cause ? 2 : st.notice ? 1 : 0);
   }
-  function wiringSentence(w) {
-    const parts = [`orange → ${nameOf(w.signal)}`, `red → ${nameOf(w.power)}`, `brown → ${nameOf(w.ground)}`];
-    if (w.mode === 'supply') parts.push(w.share ? `supply − → ${nameOf(w.share)}` : 'nothing from supply − to the ESP32');
-    return parts.join(', ') + '.';
-  }
-  $('faultTabs').addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if (b) showFault(+b.dataset.f); });
+  function fixPick(id) { if (!$('fPin')) return; fixPin = id; $('fPin').value = id; }
+  $('faultTabs').addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if (b) { resetHints('m5'); showFault(+b.dataset.f); } });
+  $('faultBody').addEventListener('change', (e) => { if (e.target.id === 'fPin') fixPin = e.target.value || null; });
   $('faultBody').addEventListener('click', (e) => {
-    const f = FAULTS[fault], st = S.m5[fault] = S.m5[fault] || {};
-    const o = e.target.closest('[data-fo]');
-    if (o && !st.solved) {
-      const k = +o.dataset.fo;
-      if (k === f.right) { st.solved = true; save(); showFault(fault); }
-      else { o.classList.add('wrong'); $('faultFb').innerHTML = `<div class="feedback try">Not quite. ${f.hints[k]}</div>`; }
+    const f = FAULTS[fault], st = fstate(fault);
+    const n = e.target.closest('[data-n]');
+    if (n && !st.notice) {
+      if (+n.dataset.n === f.notice) { st.notice = true; save(); showFault(fault); }
+      else { n.classList.add('wrong'); $('fNoticeFb').innerHTML = '<div class="feedback try">Look at the 3D arm (and the board’s red power light) again for a few seconds. What is it really doing?</div>'; }
     }
-    if (e.target.id === 'fixIt') { st.fixed = true; save(); showFault(fault); if (FAULTS.every((x, i) => S.m5[i] && S.m5[i].fixed)) complete('m5'); }
-    if (e.target.id === 'nextFault') showFault(fault + 1);
+    const c = e.target.closest('[data-c]');
+    if (c && !st.cause) {
+      if (+c.dataset.c === f.right) { st.cause = true; save(); showFault(fault); }
+      else { c.classList.add('wrong'); $('fCauseFb').innerHTML = '<div class="feedback try">Not quite. Inspect each wire end again, or ask for a hint.</div>'; }
+    }
+    const wb = e.target.closest('[data-w]');
+    if (wb) { fixWire = wb.dataset.w; $('fWire').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b === wb))); }
+    if (e.target.id === 'fTry') {
+      if (!fixWire || !fixPin) { $('fFixFb').innerHTML = '<div class="feedback try">Pick a wire and a pin first.</div>'; return; }
+      const w = Object.assign({}, f.wiring, { [fixWire]: fixPin }), r = checkWiring(w);
+      if (r.ok) {
+        st.fixed = true; st.fixedWiring = { [fixWire]: fixPin }; save(); showFault(fault);
+        if (!usedHints('m5')) toast('⭐ <b>Diagnosed and fixed on your own!</b>', true);
+        if (FAULTS.every((x, k) => S.m5[k] && S.m5[k].fixed)) complete('m5');
+      } else {
+        const bad = r.list.find((x) => x.level !== 'ok' && x.wire === fixWire) || r.list.find((x) => x.level !== 'ok');
+        $('fFixFb').innerHTML = `<div class="feedback try">The robot still isn’t right. ${bad.msg}</div>`;
+      }
+    }
+    if (e.target.id === 'nextFault') { resetHints('m5'); showFault(fault + 1); }
   });
-  function restoreLearnerWiring() { wiringShown = null; }
 
-  // Mission 6: make it yours
-  function genCode() {
-    const body = S.seq.map(([a, s]) => `    turn(${a})\n    time.sleep(${s})`).join('\n');
-    return HEADER + `\nturn(90)\ntime.sleep(0.5)\n\nfor i in range(${S.rep}):\n${body}\n\nturn(90)\ntime.sleep(0.5)\nservo.deinit()\n`;
-  }
+  // --- Mission 6: invent a wave, then follow a new instruction
+  const waveCode = (moves, intro) => HEADER + `\nturn(90)\ntime.sleep(0.5)\n${intro || ''}` + moves + `\nturn(90)\ntime.sleep(0.5)\nservo.deinit()\n`;
+  const mineCode = () => { const m = S.m6; return waveCode(`\nfor wave in range(${m.waves}):\n    turn(${m.a})\n    time.sleep(${m.speed})\n    turn(${m.b})\n    time.sleep(${m.speed})\n`); };
+  const seqCode = () => waveCode('\n' + S.m6.seq.map(([a, s]) => `turn(${a})\ntime.sleep(${s})`).join('\n') + '\n');
   function refreshM6() {
-    $('moves').innerHTML = S.seq.map(([a, s], i) => `<li data-i="${i}"><label>turn(<output>${a}</output>) <input type="range" min="10" max="170" step="5" value="${a}" aria-label="Move ${i + 1} angle"></label>
-      <select aria-label="Move ${i + 1} wait">${[0.2, 0.3, 0.4, 0.6, 0.8, 1.0, 1.5].map((v) => `<option value="${v}" ${v === s ? 'selected' : ''}>wait ${v} s</option>`).join('')}</select>
-      <button type="button" class="x" aria-label="Remove move ${i + 1}" ${S.seq.length <= 1 ? 'disabled' : ''}>✕</button></li>`).join('');
-    $('rep').value = String(S.rep);
-    $('handToggle').checked = !!S.hand; setHand(!!S.hand);
-    $('addMove').disabled = S.seq.length >= 8;
-    $('seqCode').textContent = genCode();
+    const m = S.m6;
+    $('w6a').value = m.a; $('w6b').value = m.b; $('w6ao').textContent = m.a + '°'; $('w6bo').textContent = m.b + '°';
+    $('w6s').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.s === m.speed)));
+    $('w6n').value = String(m.waves);
+    $('handToggle').checked = !!S.hand; setHand(!!S.hand || STEPS[S.step].id === 'start');
+    $('mineCode').textContent = mineCode();
+    $('m6b').hidden = !m.mine;
+    if (m.mine) $('w6fb').innerHTML = `<div class="feedback good"><b>That’s your wave!</b> ${m.waves} × ${m.a}° ↔ ${m.b}°, ${SPEEDS.find(([v]) => v === m.speed)[1].split(' ')[1].toLowerCase()} speed.</div>`;
+    if (!m.seq) m.seq = [];
+    $('moves').innerHTML = m.seq.map(([a, s], i) => `<li data-i="${i}"><label>turn(<output>${a}</output>) <input type="range" min="10" max="170" step="5" value="${a}" aria-label="Move ${i + 1} angle"></label>
+      <select aria-label="Move ${i + 1} wait">${[0.2, 0.3, 0.4, 0.6, 0.8, 1.0].map((v) => `<option value="${v}" ${v === s ? 'selected' : ''}>wait ${v} s</option>`).join('')}</select>
+      <button type="button" class="x" aria-label="Remove move ${i + 1}">✕</button></li>`).join('') || '<li class="empty">No moves yet: start from your wave or add a move.</li>';
+    $('addMove').disabled = m.seq.length >= 10;
+    $('seqCode').textContent = seqCode();
+    if (m.solved) $('seqFb').innerHTML = '<div class="feedback good"><b>Instruction followed!</b> One slow wave, then two quick ones. You used what you know in a new way: that’s real engineering.</div>';
+    setCycle('m6', m.solved ? 3 : m.mine ? 2 : 0);
+    if (m.mine && m.solved) complete('m6');
   }
-  $('moves').addEventListener('input', (e) => {
-    const li = e.target.closest('li'); if (!li) return; const i = +li.dataset.i;
-    if (e.target.type === 'range') { S.seq[i][0] = +e.target.value; li.querySelector('output').textContent = e.target.value; stopPlayer(); setTarget(+e.target.value); }
-    $('seqCode').textContent = genCode(); save();
-  });
-  $('moves').addEventListener('change', (e) => { const li = e.target.closest('li'); if (!li || e.target.tagName !== 'SELECT') return; S.seq[+li.dataset.i][1] = +e.target.value; $('seqCode').textContent = genCode(); save(); });
-  $('moves').addEventListener('click', (e) => { if (!e.target.classList.contains('x')) return; S.seq.splice(+e.target.closest('li').dataset.i, 1); save(); refreshM6(); });
-  $('addMove').addEventListener('click', () => { const last = S.seq[S.seq.length - 1] || [90, 0.4]; S.seq.push([Math.max(10, Math.min(170, 180 - last[0])), last[1]]); save(); refreshM6(); });
-  $('rep').addEventListener('change', (e) => { S.rep = +e.target.value; save(); $('seqCode').textContent = genCode(); });
-  $('presetBtns').addEventListener('click', (e) => { const b = e.target.closest('[data-preset]'); if (!b) return; const p = PRESETS[b.dataset.preset]; S.seq = p.moves.map((m) => m.slice()); S.rep = p.rep; save(); refreshM6(); });
+  ['w6a', 'w6b'].forEach((id) => $(id).addEventListener('input', (e) => { S.m6[id === 'w6a' ? 'a' : 'b'] = +e.target.value; $(id + 'o').textContent = e.target.value + '°'; stopPlayer(); setTarget(+e.target.value); $('mineCode').textContent = mineCode(); save(); }));
+  $('w6s').addEventListener('click', (e) => { const b = e.target.closest('[data-s]'); if (!b) return; S.m6.speed = +b.dataset.s; save(); refreshM6(); });
+  $('w6n').addEventListener('change', (e) => { S.m6.waves = +e.target.value; save(); $('mineCode').textContent = mineCode(); });
   $('handToggle').addEventListener('change', (e) => { S.hand = e.target.checked; setHand(S.hand); save(); });
-  $('playSeq').addEventListener('click', () => {
-    const lis = $('moves').querySelectorAll('li');
-    const total = S.seq.length * S.rep;
-    runSim(genCode(), document.createElement('div'), {
-      onEvent: (e) => { if (e.t !== 'turn') return; lis.forEach((li) => li.classList.remove('now')); const k = S.seq.findIndex(([a]) => a === Math.round(e.a)); if (k >= 0 && lis[k]) lis[k].classList.add('now'); },
-      onDone: () => { lis.forEach((li) => li.classList.remove('now')); if (total >= 3) complete('m6'); },
-    });
+  $('w6play').addEventListener('click', () => {
+    const m = S.m6;
+    if (Math.abs(m.a - m.b) < 30) { $('w6fb').innerHTML = '<div class="feedback try">The visitor can hardly see that! Make your two angles at least 30° apart.</div>'; return; }
+    runSim(mineCode(), document.createElement('div'), { onDone: () => { if (!m.mine) { m.mine = true; save(); toast('⭐ <b>Your own wave!</b> Now try the visitor’s instruction.', true); } refreshM6(); } });
   });
   let customProgram = null;
-  $('useSeq').addEventListener('click', () => { customProgram = genCode(); const b = document.querySelector('.kkb-open'); if (b) b.click(); });
+  $('useMine').addEventListener('click', () => { customProgram = S.m6.mine && S.m6.solved ? seqCode() : mineCode(); const b = document.querySelector('.kkb-open'); if (b) b.click(); });
+  $('fromMine').addEventListener('click', () => { S.m6.seq = [[S.m6.a, S.m6.speed], [S.m6.b, S.m6.speed]]; save(); refreshM6(); });
+  $('moves').addEventListener('input', (e) => {
+    const li = e.target.closest('li'); if (!li || e.target.type !== 'range') return;
+    S.m6.seq[+li.dataset.i][0] = +e.target.value; li.querySelector('output').textContent = e.target.value; stopPlayer(); setTarget(+e.target.value);
+    $('seqCode').textContent = seqCode(); save();
+  });
+  $('moves').addEventListener('change', (e) => { const li = e.target.closest('li'); if (!li || e.target.tagName !== 'SELECT') return; S.m6.seq[+li.dataset.i][1] = +e.target.value; $('seqCode').textContent = seqCode(); save(); });
+  $('moves').addEventListener('click', (e) => { if (!e.target.classList.contains('x')) return; S.m6.seq.splice(+e.target.closest('li').dataset.i, 1); save(); refreshM6(); });
+  $('addMove').addEventListener('click', () => { const s = S.m6.seq, last = s[s.length - 1] || [S.m6.b, 0.4], prev = s[s.length - 2] || [S.m6.a, 0.4]; s.push([prev[0], last[1]]); save(); refreshM6(); });
+  $('playSeq').addEventListener('click', () => {
+    if (!S.m6.seq.length) return;
+    const lis = $('moves').querySelectorAll('li'); let n = 0;
+    runSim(seqCode(), document.createElement('div'), {
+      onEvent: (e) => { if (e.t !== 'turn') return; lis.forEach((li) => li.classList.remove('now')); const k = n++ - 1; if (k >= 0 && lis[k]) lis[k].classList.add('now'); }, // the first turn(90) is the start position
+      onDone: () => lis.forEach((li) => li.classList.remove('now')),
+    });
+  });
+  // the transfer check: wave 1 slow (both waits ≥ 0.6 s), waves 2 and 3 quick (waits ≤ 0.3 s), each wave at least 20° wide
+  function transferProblems(seq) {
+    if (seq.length < 6) return [`I count ${seq.length} move${seq.length === 1 ? '' : 's'}. One slow wave and two quick waves need at least 6 moves (each wave is there and back).`];
+    const p = [], pair = (i) => [seq[2 * i], seq[2 * i + 1]];
+    for (let i = 0; i < 3; i++) { const [x, y] = pair(i); if (Math.abs(x[0] - y[0]) < 20) p.push(`Wave ${i + 1} only moves ${Math.abs(x[0] - y[0])}°: make its two angles further apart.`); }
+    const [s1, s2] = pair(0); if (s1[1] < 0.6 || s2[1] < 0.6) p.push('The first wave isn’t slow yet: give both of its moves a wait of 0.6 s or more.');
+    for (let i = 1; i < 3; i++) { const [x, y] = pair(i); if (x[1] > 0.3 || y[1] > 0.3) p.push(`Wave ${i + 1} isn’t quick yet: give its moves a wait of 0.3 s or less.`); }
+    return p;
+  }
+  HINTS.m6 = () => ['Press “Start from my wave”: that’s one wave, two moves. How many waves does the visitor want?', 'You need 3 waves, so 6 moves. Slow means a long wait after each move; quick means a short one.', 'Moves 1–2: wait 0.8 s. Moves 3–6: wait 0.2 s. Keep the angles going back and forth.'];
+  $('checkSeq').addEventListener('click', () => {
+    const p = transferProblems(S.m6.seq);
+    if (p.length) { $('seqFb').innerHTML = `<div class="feedback try">Your robot isn’t quite there. ${p[0]}${p.length > 1 ? ` <span class="note">(${p.length - 1} more thing${p.length > 2 ? 's' : ''} to fix after that.)</span>` : ''} Press ▶ Play it to watch.</div>`; return; }
+    S.m6.solved = true; save();
+    if (!usedHints('m6')) toast('⭐ <b>You solved the visitor’s challenge on your own!</b>', true);
+    refreshM6();
+  });
   const CHALLENGES = [
-    { t: 'Make a slow, sleepy wave: wait one second between moves.', hint: 'Pick <b>😴 Sleepy wave</b>, or set every “wait” to 1.0 s.' },
-    { t: 'Make it shake its head “no”: small, fast moves around 90°.', hint: 'Two moves, 75° and 105°, with a 0.2 s wait. Repeat 4 times.' },
-    { t: 'Get ready for the next modules: write <code>if light &lt; DARK: turn(150)</code> and <code>else: turn(30)</code> with the light sensor from Night Mode.', hint: 'Keep <code>def turn(angle):</code> from this module, add the LDR lines from Lesson 6 (<code>ADC(Pin(33))</code>), and put the <code>if … else</code> inside <code>while True:</code> with a short <code>time.sleep(0.2)</code>.' },
+    { t: 'Make the robot shake its head “no”: small, fast moves around 90°.', hint: 'Two moves, 75° and 105°, waiting 0.2 s, again and again.' },
+    { t: 'Make a “slow hello, goodbye” that ends pointing down to one side, as if it’s tired.', hint: 'End with a move to 20° and a long wait.' },
+    { t: 'Get ready for the next modules: with the light sensor from Night Mode, write <code>if light &lt; DARK: turn(150)</code> and <code>else: turn(30)</code>.', hint: 'Keep <code>def turn(angle):</code> from here, add the LDR lines from Lesson 6 (<code>ADC(Pin(33))</code>), and put the <code>if … else</code> inside <code>while True:</code> with <code>time.sleep(0.2)</code>.' },
   ];
   const CH_KEY = 'iotkids.challenges.' + LESSON_SLUG;
   let ticked = {}; try { ticked = JSON.parse(localStorage.getItem(CH_KEY) || '{}') || {}; } catch (e) { /* not remembered */ }
   $('challenges').innerHTML = CHALLENGES.map((c, i) => `<li><label><input type="checkbox" data-c="${i}" ${ticked[i] ? 'checked' : ''}><span>${c.t}</span></label><details><summary>Need a hint?</summary>${c.hint}</details></li>`).join('');
   $('challenges').addEventListener('change', (e) => { if (!e.target.matches('input')) return; ticked[e.target.dataset.c] = e.target.checked; try { localStorage.setItem(CH_KEY, JSON.stringify(ticked)); } catch (err) { /* not remembered */ } });
 
-  // Quiz and the badge
-  const quizRight = {};
+  // --- final check and the badge
   $('quiz').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-o]'); if (!b) return;
-    const box = b.closest('.q'), qi = +box.dataset.q, q = QUIZ[qi]; if (box.dataset.done) return;
+    const box = b.closest('.q'), qi = +box.dataset.q, q = QUIZ[qi], st = S.quiz[qi] = S.quiz[qi] || { tries: 0, done: false };
+    if (st.done) return;
+    st.tries++;
     const ok = +b.dataset.o === q.right;
     b.classList.add(ok ? 'right' : 'wrong');
-    box.querySelector('.fb').innerHTML = ok ? `<div class="feedback good">Yes! ${q.why}</div>` : `<div class="feedback try">Not quite. ${q.hint}</div>`;
-    if (ok) { box.dataset.done = '1'; quizRight[qi] = true; if (QUIZ.every((x, i) => quizRight[i])) { S.quiz = true; save(); maybeFinish(); } }
+    box.querySelector('.fb').innerHTML = ok ? `<div class="feedback good">${st.tries === 1 ? '⭐ ' : ''}Yes! ${q.why}</div>` : `<div class="feedback try">Not quite. ${q.hint}</div>`;
+    if (ok) { st.done = true; st.first = st.tries === 1; }
+    save(); maybeFinish();
   });
+  function refreshQuiz() {
+    P('quiz').querySelectorAll('.q').forEach((box) => {
+      const qi = +box.dataset.q, st = S.quiz[qi];
+      box.querySelectorAll('button').forEach((b) => b.classList.remove('right', 'wrong'));
+      box.querySelector('.fb').innerHTML = '';
+      if (st && st.done) { box.querySelector(`[data-o="${QUIZ[qi].right}"]`).classList.add('right'); box.querySelector('.fb').innerHTML = `<div class="feedback good">${QUIZ[qi].why}</div>`; }
+    });
+  }
+  const quizDone = () => QUIZ.every((q, i) => S.quiz[i] && S.quiz[i].done);
   function maybeFinish() {
     const missing = MISSIONS.filter((m) => !S.done[m]);
-    const end = $('quizEnd');
-    if (S.quiz) end.innerHTML = missing.length ? `<div class="feedback try"><b>Quiz done!</b> Finish ${missing.map((m) => 'Mission ' + m.slice(1)).join(', ')} to earn your badge.</div>` : '<div class="feedback good"><b>Quiz done!</b> Tap <b>Next →</b> to collect your badge.</div>';
+    if (quizDone()) {
+      const first = QUIZ.filter((q, i) => S.quiz[i].first).length;
+      $('quizEnd').innerHTML = `<div class="feedback ${missing.length ? 'try' : 'good'}"><b>All five answered</b> (${first} of 5 right first time). ${missing.length ? `Finish ${missing.map((m) => `<a href="#" data-jump="${m}">Mission ${m.slice(1)}</a>`).join(', ')} to earn your badge.` : 'Tap <b>Next →</b> to see what you achieved.'}</div>`;
+      S.done.quiz = true;
+    }
     refreshDone();
-    if (S.quiz && !missing.length && !$('quizDone')) {
-      S.done.quiz = true; S.done.done = true;
+    if (quizDone() && !missing.length && !$('quizDone')) {
+      S.done.done = true;
       const d = document.createElement('div'); d.className = 'feedback good'; d.id = 'quizDone';
-      d.innerHTML = '<b>You finished Servo Says Hello!</b><p style="margin:4px 0 0">Your ESP32 can move things now. Great work, engineer!</p>';
-      $('badgeHost').appendChild(d); // rewards.js adds the badge and the certificate button
+      d.innerHTML = '<b>You finished Servo Says Hello!</b><p style="margin:4px 0 0">You know what you built, why it works, how to change it and how to fix it.</p>';
+      $('badgeHost').innerHTML = ''; $('badgeHost').appendChild(d); // rewards.js adds the badge and the certificate button
       save({ done: true });
-      pills.querySelectorAll('button').forEach((b, k) => b.classList.toggle('done', !!S.done[STEPS[k].id]));
+      refreshPills();
     }
   }
+  const evLabel = (m) => S.ev[m] === 'ind' ? '<span class="ev ind">⭐ on my own</span>' : S.ev[m] === 'sup' ? '<span class="ev sup">🤝 with hints</span>' : '<span class="ev no">not yet</span>';
   function refreshDone() {
-    $('achieve').innerHTML = MISSIONS.map((m) => `<li class="${S.done[m] ? 'ok' : ''}">Mission ${m.slice(1)}: ${MISSION_NAMES[m]}</li>`).join('') + `<li class="${S.quiz ? 'ok' : ''}">Answered the quiz</li>`;
+    $('learned').innerHTML = OUTCOMES.slice(0, 5).map((o) => `<li class="${S.done[o.m] ? 'ok' : ''}">${o.icon} ${o.learned} ${evLabel(o.m)}</li>`).join('');
+    const m6 = S.m6;
+    $('built').innerHTML = `<li class="${S.done.m6 ? 'ok' : ''}">🤖 A programmable waving robot arm ${evLabel('m6')}</li>` +
+      (m6.mine ? `<li class="ok">👋 My wave: ${m6.waves} × ${m6.a}° ↔ ${m6.b}°, waiting ${m6.speed} s</li>` : '') +
+      (m6.solved ? '<li class="ok">🎯 Followed a new instruction: one slow wave, then two quick ones</li>' : '');
+    const first = QUIZ.filter((q, i) => S.quiz[i] && S.quiz[i].first).length;
+    $('evidence').innerHTML = OUTCOMES.map((o) => `<li>${o.can}: ${S.done[o.m] ? (S.ev[o.m] === 'ind' ? 'shown without hints' : `shown with ${S.hints[o.m] || 0} hint${S.hints[o.m] === 1 ? '' : 's'}`) : 'not yet shown'}</li>`).join('') +
+      `<li>Final check: ${quizDone() ? `${first} of 5 right first time` : 'not finished'}</li>`;
     if (!$('quizDone')) {
       const missing = MISSIONS.filter((m) => !S.done[m]);
-      $('badgeHost').innerHTML = saved.done ? '<div class="feedback good">🏅 You already earned this badge. Replay the missions any time!</div>' : !missing.length && S.quiz ? '' : `<div class="feedback try">${missing.length ? `To earn the badge, finish ${missing.map((m) => `<a href="#" data-jump="${m}">Mission ${m.slice(1)}</a>`).join(', ')}` : ''}${missing.length && !S.quiz ? ' and ' : ''}${!S.quiz ? '<a href="#" data-jump="quiz">the quiz</a>' : ''}.</div>`;
+      $('badgeHost').innerHTML = saved.done && !missing.length ? '' : saved.done ? '<div class="feedback good">🏅 You already earned this badge. Replay the missions any time!</div>'
+        : `<div class="feedback try">🏅 To earn the badge: ${[...missing.map((m) => `<a href="#" data-jump="${m}">Mission ${m.slice(1)}</a>`), ...(quizDone() ? [] : ['<a href="#" data-jump="quiz">the final check</a>'])].join(', ')}.</div>`;
     }
   }
   document.addEventListener('click', (e) => { const a = e.target.closest('[data-jump]'); if (!a) return; e.preventDefault(); go(STEPS.findIndex((s) => s.id === a.dataset.jump)); });
 
   enterHooks = {
-    m1: () => { $('showLabels').checked = true; },
-    m3: () => { wiringShown = 'learner'; drawWiring(S.wiring); refreshM3(); },
-    m4: () => { customProgram = null; showSub(S.m4.sub || 0); },
+    start: () => { setHand(true); if (!introPlayed && !reduceMotion && servoView) { introPlayed = true; SV.relaxed = false; play(WAVE); } },
+    m1: () => { $('showLabels').checked = true; setHand(!!S.hand); refreshM1(); },
+    m2: () => { setHand(!!S.hand); refreshM2(); drawFrame(); },
+    m3: () => { wiringShown = 'learner'; if (wireView) { wireView.still(); wireView.home(); } drawWiring(S.wiring); refreshM3(); },
+    m4: () => { customProgram = null; showSub(S.m4.sub || 0); showFlow(null, SV.target); },
     m5: () => showFault(Math.max(0, FAULTS.findIndex((f, i) => !(S.m5[i] && S.m5[i].fixed)))),
     m6: () => refreshM6(),
+    quiz: () => refreshQuiz(),
     done: () => refreshDone(),
   };
-  function refreshAll() { refreshM1(); refreshM2(); refreshM3(); refreshM6(); refreshDone(); }
+  function refreshAll() { refreshM1(); refreshM2(); refreshM3(); refreshM6(); refreshQuiz(); refreshDone(); }
 
   /* ================= 11. 3D: shared helpers (from the module template) ================= */
   const LIB = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/';
@@ -1117,7 +1497,7 @@ MAX_US = 2500    <span class="cm"># pulse for 180 degrees</span>
         if (n) { o.userData.part = NODE_PART[n.name]; partMeshes.push(o); }
       });
       horn = root.getObjectByName('Horn'); handNode = root.getObjectByName('Hand');
-      setHand(!!S.hand);
+      setHand(!!S.hand || STEPS[S.step].id === 'start');
       // the paper protractor on the bracket, centred on the shaft
       const shaft = new THREE.Vector3(); horn.getWorldPosition(shaft);
       const R = 40, cv = document.createElement('canvas'); cv.width = 1024; cv.height = 512; const g2 = cv.getContext('2d');
@@ -1147,13 +1527,14 @@ MAX_US = 2500    <span class="cm"># pulse for 180 degrees</span>
       partAnchors.signal = () => sock('Sock_Signal').add(new THREE.Vector3(-14, 4, -10));
       partAnchors.power = () => sock('Sock_Power').add(new THREE.Vector3(-22, 3, -2));
       partAnchors.ground = () => sock('Sock_Ground').add(new THREE.Vector3(-34, 2, 6));
+      partAnchors.cable = partAnchors.power;
       Object.keys(PARTS).forEach((k) => {
         const el = document.createElement('button'); el.type = 'button'; el.className = 'lbl'; el.textContent = PARTS[k].name; el.tabIndex = -1;
         el.addEventListener('click', () => selectPart(k)); $('servoLabels').appendChild(el); labelEls.set(k, el);
       });
       refreshM1();
       $('servoMsg').remove();
-      if (/#wave/.test(location.hash)) play(WAVE);
+      if (STEPS[S.step].id === 'start' && enterHooks.start) enterHooks.start();
     });
     onTap(v, (ray) => {
       const hit = ray.intersectObjects(partMeshes, false)[0];
@@ -1193,6 +1574,7 @@ MAX_US = 2500    <span class="cm"># pulse for 180 degrees</span>
     controls.minDistance = 50; controls.maxDistance = 520; controls.maxPolarAngle = Math.PI * 0.48;
     v.home = () => { const k = Math.max(1, 1.2 / camera.aspect); camera.position.set(-22, 190 * k, 235 * k); controls.target.set(-22, 8, 0); };
     v.home();
+    v.focus = () => { v.still(); const k = Math.max(1, 1.2 / camera.aspect); camera.position.set(-28, 150 * k, 190 * k); controls.target.set(-28, 14, 0); controls.update(); };
     wireGroup = new THREE.Group(); scene.add(wireGroup);
     let pending = 2;
     const ready = () => { if (--pending) return; wireReady = true; $('wireMsg').remove(); if (pendingWiring) drawWiring(pendingWiring.w, pendingWiring.show); };
@@ -1246,7 +1628,7 @@ MAX_US = 2500    <span class="cm"># pulse for 180 degrees</span>
       const r = v.renderer.domElement.getBoundingClientRect(), ray = new THREE.Raycaster();
       ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
       const hit = ray.intersectObjects(pinHits.filter((h) => h.parent.visible !== false), false)[0];
-      tip.hidden = !hit || STEPS[S.step].id !== 'm3';
+      tip.hidden = !hit || !['m3', 'm5'].includes(STEPS[S.step].id);
       if (hit && !tip.hidden) { tip.textContent = nameOf(hit.object.userData.pin); tip.style.left = (e.clientX - r.left) + 'px'; tip.style.top = (e.clientY - r.top - 10) + 'px'; }
       v.renderer.domElement.style.cursor = hit && !tip.hidden ? 'pointer' : '';
     });
@@ -1261,13 +1643,24 @@ MAX_US = 2500    <span class="cm"># pulse for 180 degrees</span>
         let a = 90;
         if (symptom === 'twitch') a = 90 + Math.sin(tt * 23) * 9 + Math.sin(tt * 7.3) * 14;
         if (symptom === 'reset') a = 90 + ((tt % 2.2) < 0.25 ? -25 * Math.sin((tt % 2.2) / 0.25 * Math.PI) : 0);
+        if (symptom === 'wave') a = 90 + 30 * Math.sin(tt * 4); // fixed: a steady, happy wave
         wireHorn.rotation.z = THREE.MathUtils.degToRad(a);
       }
       if (boardLed && boardLed.material) boardLed.visible = !(symptom === 'reset' && (tt % 2.2) < 0.35);
       if (!drawing) return;
       pinLabels.forEach(([el, pos]) => projectLabel(v, el, pos));
+      flashes.forEach((f) => { f.t -= dt; f.mesh.material.opacity = Math.max(0, f.t / 1.2); f.mesh.scale.setScalar(1 + (1.2 - f.t) * 1.5); if (f.t <= 0) { scene.remove(f.mesh); f.dead = true; } });
+      for (let k = flashes.length - 1; k >= 0; k--) if (flashes[k].dead) flashes.splice(k, 1);
+    };
+    // a red ring on a pin that was the wrong place
+    flashPin = (id) => {
+      const pos = /^SUP/.test(id) ? supTerm[id] : pads[id]; if (!pos) return;
+      const ring = new THREE.Mesh(new THREE.RingGeometry(2.4, 3.4, 24), new THREE.MeshBasicMaterial({ color: 0xE03A3A, transparent: true, side: THREE.DoubleSide, depthTest: false }));
+      ring.rotation.x = -Math.PI / 2; ring.position.copy(pos).add(new THREE.Vector3(0, 1, 0)); ring.renderOrder = 5; scene.add(ring); flashes.push({ mesh: ring, t: 1.2 });
     };
   }
+  const flashes = [];
+  let flashPin = () => {};
   const pinHits = [];
   let tip = null;
   function drawWiring(w, show) {
@@ -1325,11 +1718,11 @@ MAX_US = 2500    <span class="cm"># pulse for 180 degrees</span>
   window.__lessonProgram = () => customProgram || currentCode();
   window.__module = { program: PROGRAM, wiringOneLine: WIRING_ONE_LINE };
   // test hooks (tools/check.sh calls __lesson.goTo)
-  window.__lesson = { goTo: go, state: S, servo: SV, simulate, checkWiring, connect: (wire, id) => { selWire = wire; connect(id); }, showSub, steps: STEPS, views: () => ({ servo: servoView, wire: wireView, horn, pads, supTerm }) };
+  window.__lesson = { goTo: go, state: S, servo: SV, simulate, checkWiring, connect, curWire, transferProblems, showSub, steps: STEPS, views: () => ({ servo: servoView, wire: wireView, horn, pads, supTerm }) };
   if (hasGL) { buildServoView(); loadServo(() => { $('servoMsg').textContent = 'The 3D servo could not load. Check your internet connection and reload the page.'; }); }
   else { $('servoMsg').textContent = 'The 3D scene needs an internet connection. Everything else on this page still works.'; $('wireMsg').textContent = $('servoMsg').textContent; }
   refreshAll();
-  if (saved.done) maybeFinish();
+  maybeFinish();
   // after the run panel's scripts below have loaded, so Mission 4 can mount the real code panel
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => go(S.step)); else go(S.step);
 })();
