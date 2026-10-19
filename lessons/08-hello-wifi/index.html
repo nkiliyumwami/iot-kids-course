@@ -2111,6 +2111,12 @@ function renderExtra(s) {
     if (s.extra !== 'E1') extra.appendChild(codeCard);
   }
   if (s.why) extra.appendChild(whyCard(s.why()));
+  if (s.title === 'Wait, then print the address') extra.appendChild(el(`<div class="card"><h4>🔧 It says it could not connect? Check these, in order</h4><ul class="list">
+      <li><span style="font-size:20px">1️⃣</span><span>Is the name in <b>secrets.py</b> spelled exactly like your network? Capital letters and spaces count.</span></li>
+      <li><span style="font-size:20px">2️⃣</span><span>Is the password exactly right? One wrong letter and the router says no.</span></li>
+      <li><span style="font-size:20px">3️⃣</span><span>Is it a <b>2.4 GHz</b> network? The ESP32 cannot join a 5 GHz-only network. Ask a grown-up to check the router.</span></li>
+      <li><span style="font-size:20px">4️⃣</span><span>Is the board close to the router? Walls make the signal weak, so the 10 tries run out.</span></li>
+    </ul><p class="note" style="margin-top:8px">Debugging means checking one thing at a time, from the easiest to the hardest.</p></div>`));
   if (s.console && s.extra !== 'A' && s.extra !== 'E1') extra.appendChild(consoleCard());
   if (s.extra === 'E1') {
     const wrap = el(`<div style="display:grid;gap:14px"></div>`);
