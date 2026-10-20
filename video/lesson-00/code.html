@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lesson 0 · code animations</title>
+<!-- Code-animation clips for the Lesson 0 video. The card is the lesson's "Your first program" box (.lab with a dark <pre>),
+     scaled up for a 4K frame. render.mjs steps it frame by frame through window.cinema, like render.html. -->
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root { --ink: #15202A; --muted: #526170; --code-bg: #13202A; --code-ink: #E3ECF1; --hl: #F2B705; --good: #2E9E57;
+  --font-display: 'Baloo 2', 'Trebuchet MS', system-ui, sans-serif; --font-body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --font-code: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace; }
+html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; cursor: none; }
+#stage { position: fixed; left: 0; top: 0; width: 1920px; height: 1080px; background: #F6F8FA; overflow: hidden; font-family: var(--font-body); color: var(--ink); }
+.scene { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 72px; }
+/* the lesson's .lab box, at 3.4x */
+.lab { border: 6px solid #3aa0ff; border-radius: 40px; padding: 34px 40px 40px; background: #EEF6FF; width: 1180px;
+  box-shadow: 0 30px 80px rgba(21,32,42,.16), 0 8px 22px rgba(21,32,42,.10); }
+.lab b.title { display: block; font-size: 42px; font-weight: 800; margin-bottom: 18px; }
+.lab pre { margin: 0; background: var(--code-bg); color: var(--code-ink); border-radius: 30px; padding: 34px 40px; font-family: var(--font-code);
+  font-size: 50px; line-height: 1.55; white-space: pre; min-height: 3.1em; }
+.lab pre .cm { color: #8FA3B3; }
+.cursor { display: inline-block; width: .56em; height: 1.12em; vertical-align: -.2em; background: #F2B705; border-radius: 3px; margin-left: 2px; }
+.mark { border-radius: 10px; box-shadow: 0 0 0 0 transparent; }
+.note { display: flex; align-items: center; gap: 18px; margin-top: 26px; font-size: 40px; font-weight: 800; color: var(--ink); }
+.note i { font-style: normal; display: inline-block; background: #FFF6D6; border: 4px dashed var(--hl); border-radius: 22px; padding: 8px 26px; }
+.note .arrow { font-family: var(--font-code); color: #C99600; font-size: 46px; }
+/* the blue LED and its reading, beside the card */
+.ledbox { display: flex; flex-direction: column; align-items: center; gap: 26px; width: 360px; }
+.ledbox svg { width: 230px; height: 330px; overflow: visible; }
+.reading { font-family: var(--font-display); font-weight: 800; font-size: 64px; line-height: 1; padding: 18px 34px 12px; border-radius: 999px;
+  background: #fff; border: 5px solid #D2DCE3; white-space: nowrap; }
+/* C03 */
+.big { display: flex; flex-direction: column; align-items: center; gap: 56px; }
+.bigrow { display: flex; align-items: center; gap: 46px; }
+.pincode { font-family: var(--font-code); font-weight: 600; font-size: 168px; background: var(--code-bg); color: var(--code-ink); border-radius: 48px;
+  padding: 30px 70px; box-shadow: 0 30px 80px rgba(21,32,42,.18); }
+.q { font-family: var(--font-display); font-weight: 800; font-size: 230px; color: #D9821A; line-height: 1; width: 140px; text-align: center; }
+.answer { display: flex; align-items: center; gap: 34px; font-size: 76px; font-weight: 800; }
+.answer .gp { font-family: var(--font-code); font-weight: 600; }
+.answer .arrow { color: var(--muted); font-family: var(--font-code); }
+/* the board's own pin label style (board.js .pl), at 5x */
+.answer .pl { font-family: var(--font-code); font-weight: 600; font-size: 64px; color: #fff; background: #2E9E57; padding: 18px 30px; border-radius: 28px;
+  border: 8px solid #F2B705; box-shadow: 0 0 0 14px rgba(242,183,5,.45); }
+.answer .printed { font-size: 52px; color: var(--muted); font-weight: 700; }
+</style>
+</head>
+<body>
+<div id="stage"><div class="scene" id="scene"></div></div>
+<script>
+(function () {
+  'use strict';
+  const HANDLE = 1, $ = (s) => document.querySelector(s);
+  const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const sine = (x) => 0.5 - 0.5 * Math.cos(Math.PI * clamp(x));
+  const outCubic = (x) => 1 - Math.pow(1 - clamp(x), 3);
+  const outBack = (x) => { x = clamp(x); const c1 = 1.7, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+  const seg = (u, a, b, ease = sine) => ease((u - a) / (b - a));
+  const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  // typing: about 12 characters a second, with a little (seeded, so repeatable) unevenness
+  function typingTimes(text, start, seed) {
+    let s = seed, t = start; const out = [];
+    for (const ch of text) {
+      s = (s * 16807) % 2147483647;
+      const jitter = 0.65 + 0.7 * (s / 2147483647);
+      t += (ch === ' ' ? 1.25 : 1) * jitter / 12;
+      out.push(t);
+    }
+    return out;
+  }
+  const typed = (text, times, u) => text.slice(0, times.filter((x) => x <= u).length);
+  // the cursor is solid while typing and blinks (about once a second) when idle
+  const cursorOn = (u, lastKey) => (u - lastKey < 0.5) || (Math.floor((u - lastKey - 0.5) / 0.53) % 2 === 1);
+
+  const L1 = 'from machine import Pin', L2 = 'led = Pin(2, Pin.OUT)';
+  const C01 = { t1: typingTimes(L1, 0.3, 7), t2: null };
+  C01.t2 = typingTimes(L2, C01.t1[C01.t1.length - 1] + 0.45, 11);
+
+  function card(lines, cur, extra) {
+    return `<div class="lab"><b class="title">Your first program (MicroPython)</b><pre>${lines.join('\n')}${cur}</pre>${extra || ''}</div>`;
+  }
+  const cursor = (on) => `<span class="cursor" style="opacity:${on ? 1 : 0}"></span>`;
+
+  function ledSvg(level) {
+    const g = level;
+    // a 5 mm LED: glowing dome, rim, two legs; the glow grows with the level
+    return `<svg viewBox="0 0 230 330">
+      <defs><radialGradient id="glow"><stop offset="0" stop-color="rgb(90,175,255)" stop-opacity="${0.85 * g}"/><stop offset=".45" stop-color="rgb(58,160,255)" stop-opacity="${0.35 * g}"/><stop offset="1" stop-color="rgb(58,160,255)" stop-opacity="0"/></radialGradient>
+      <linearGradient id="dome" x1="0" x2="1"><stop offset="0" stop-color="${mix('#9DB7CC', '#7CC4FF', g)}"/><stop offset=".55" stop-color="${mix('#6F8BA3', '#3AA0FF', g)}"/><stop offset="1" stop-color="${mix('#566F84', '#1E7FE0', g)}"/></linearGradient></defs>
+      <circle cx="115" cy="105" r="${150 + 30 * g}" fill="url(#glow)"/>
+      <rect x="82" y="196" width="10" height="120" rx="4" fill="#B9C3CB"/><rect x="138" y="196" width="10" height="96" rx="4" fill="#B9C3CB"/>
+      <path d="M60 196 V110 a55 55 0 0 1 110 0 V196 z" fill="url(#dome)"/>
+      <rect x="50" y="184" width="130" height="18" rx="6" fill="${mix('#6F8BA3', '#3AA0FF', g)}"/>
+      <ellipse cx="96" cy="100" rx="13" ry="34" fill="#fff" opacity="${0.35 + 0.4 * g}"/>
+      <circle cx="115" cy="115" r="${26}" fill="#fff" opacity="${0.85 * g}" style="filter:blur(8px)"/>
+    </svg>`;
+  }
+  function mix(a, b, k) {
+    const pa = a.match(/\w\w/g).map((h) => parseInt(h, 16)), pb = b.match(/\w\w/g).map((h) => parseInt(h, 16));
+    return 'rgb(' + pa.map((x, i) => Math.round(lerp(x, pb[i], clamp(k)))).join(',') + ')';
+  }
+
+  const S = {
+    C01_two_lines: { length: 8, line: '"from machine import Pin / led = Pin(2, Pin.OUT)"', frame(u) {
+      const a = typed(L1, C01.t1, u), b = typed(L2, C01.t2, u);
+      const last = Math.max(...C01.t1.concat(C01.t2).filter((x) => x <= u), 0);
+      const k = seg(u, 5, 5.45), n = seg(u, 5.25, 5.85, outCubic);
+      let line2 = esc(b);
+      if (b === L2) {
+        const hlStyle = `background:rgba(242,183,5,${0.28 * k});box-shadow:0 0 0 ${6 * k}px rgba(242,183,5,${0.28 * k});`;
+        line2 = esc('led = ') + `<span class="mark" style="${hlStyle}">${esc('Pin(2, Pin.OUT)')}</span>`;
+      }
+      const lines = [esc(a)]; if (u >= C01.t2[0] - 0.45) lines.push(line2);
+      const note = `<div class="note" style="opacity:${n};transform:translateY(${lerp(28, 0, n)}px)"><span class="arrow">↑</span><i>pin 2 sends electricity out</i></div>`;
+      return card(lines, cursor(cursorOn(u, last)), u > 5.2 ? note : `<div class="note" style="opacity:0"><i>&nbsp;</i></div>`);
+    } },
+    C02_led_on_off: { length: 8, frameInit() {}, line: '"led.value(1) … led.value(0)"', frame(u) {
+      const t3 = typingTimes('led.value(1)', 0.35, 5), tDel = [5.0, 5.12], tRe = typingTimes('0)', 5.18, 9);
+      let l3 = typed('led.value(1)', t3, u);
+      if (u >= tDel[0]) l3 = 'led.value(1)'.slice(0, 12 - tDel.filter((x) => x <= u).length);
+      if (u >= tRe[0] - 0.01) l3 = 'led.value(' + typed('0)', tRe, u);
+      const keys = t3.concat(tDel, tRe).filter((x) => x <= u), last = keys.length ? Math.max(...keys) : -9;
+      const runOn = t3[t3.length - 1] + 0.3, runOff = tRe[tRe.length - 1] + 0.3;
+      const level = seg(u, runOn, runOn + 0.08, clamp) * (1 - seg(u, runOff, runOff + 0.25, (x) => clamp(x)));
+      const onTxt = u < runOff, show = seg(u, runOn, runOn + 0.3, outCubic) * (u < runOff - 0.12 ? 1 : 0) + (u >= runOff ? seg(u, runOff, runOff + 0.3, outCubic) : 0);
+      const reading = `<div class="reading" style="opacity:${show};transform:scale(${lerp(0.8, 1, outBack(clamp(show)))});color:${onTxt ? '#1E7FE0' : '#526170'};border-color:${onTxt ? '#3aa0ff' : '#D2DCE3'}">${onTxt ? '3.3 V · ON' : '0 V · OFF'}</div>`;
+      const lines = [esc(L1), esc('led = Pin(2, Pin.OUT)'), `<span style="color:#fff">${esc(l3)}</span>`];
+      return card(lines, cursor(cursorOn(u, last)), '') + `<div class="ledbox">${ledSvg(level)}${reading}</div>`;
+    } },
+    C03_pin25: { length: 6, line: '"Pin(25) means GPIO 25, printed D25"', frame(u) {
+      const a = seg(u, 0, 0.5, outCubic), q = seg(u, 0.8, 1.15, outBack), qOut = seg(u, 2.6, 3.0), ans = seg(u, 2.7, 3.3, outCubic), tag = seg(u, 3.3, 3.75, outBack);
+      return `<div class="big"><div class="bigrow" style="transform:translateX(${lerp(0, 93, 1 - qOut) * 0}px)">
+          <div class="pincode" style="opacity:${a};transform:scale(${lerp(0.92, 1, a)})">Pin(25)</div>
+          <div class="q" style="opacity:${q * (1 - qOut)};transform:scale(${lerp(0.3, 1, q)}) rotate(${lerp(-25, 0, q)}deg)">?</div></div>
+        <div class="answer" style="opacity:${ans};transform:translateY(${lerp(40, 0, ans)}px)"><span class="gp">GPIO 25</span><span class="arrow">→</span>
+          <span class="printed">printed</span><span class="pl" style="display:inline-block;transform:scale(${lerp(0.5, 1, tag)});opacity:${clamp(tag * 2)}">D25</span></div></div>`;
+    } },
+  };
+
+  let last = '';
+  function seek(id, t) {
+    const shot = S[id]; if (!shot) throw new Error('no shot ' + id);
+    const html = shot.frame(t - HANDLE);
+    if (html !== last) { $('#scene').innerHTML = html; last = html; }
+    return true;
+  }
+  const shots = {}; Object.keys(S).forEach((id) => { shots[id] = { length: S[id].length, still: false, alpha: false, line: S[id].line, handle: HANDLE }; });
+  window.cinema = { ready: document.fonts.ready.then(() => document.fonts.load('600 50px "JetBrains Mono"')), shots, seek,
+    play(id, onFrame) { const n = Math.round((S[id].length + 2 * HANDLE) * 60); for (let i = 0; i < n; i++) { seek(id, i / 60); if (onFrame) onFrame(i); } } };
+})();
+</script>
+</body>
+</html>
