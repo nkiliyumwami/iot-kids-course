@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Parking Gate · IoT for Young Makers</title>
+<script src="../../assets/brand.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<!--
+  SENSOR MODULE: The Parking Gate (m-parking-gate). Built from lessons/_module-template/ (see AGENT.md, "Sensor modules").
+  3D: assets/models/modules/parking-gate.glb (Draco) for the gate, the course's ESP32 model with a code-built HC-SR04P and SG90 for the wiring.
+-->
+<style>
+:root {
+  --bg: #E3EBF0; --surface: #FFFFFF; --surface-2: #F1F5F8; --ink: #15202A; --muted: #526170; --line: #D2DCE3;
+  --accent: #0A7480; --accent-strong: #075A63; --accent-soft: #DAEEF0; --red: #C93131; --green: #16834A; --hl: #F2B705;
+  --font-display: 'Baloo 2', 'Trebuchet MS', system-ui, sans-serif;
+  --font-body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --font-code: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16.5px; line-height: 1.55; }
+h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.15; margin: 0; }
+a { color: var(--accent-strong); }
+code { font-family: var(--font-code); font-size: .92em; background: var(--surface-2); border-radius: 5px; padding: 0 4px; }
+header.top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 12px 18px; background: var(--surface); border-bottom: 1px solid var(--line); }
+header.top .title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+header.top h1 { font-size: 24px; }
+header.top p { margin: 0; color: var(--muted); font-size: 14px; }
+.home-link { font-weight: 800; font-size: 14px; text-decoration: none; }
+.progress { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-left: auto; }
+.progress .bar { width: 160px; height: 10px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.progress .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .4s; }
+.progress span { font-weight: 700; font-size: 13px; color: var(--muted); }
+main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; padding: 18px; max-width: 1400px; margin: 0 auto; align-items: start; }
+.stage { position: sticky; top: 12px; display: grid; gap: 10px; }
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.tabs button { font: inherit; font-weight: 800; border: 2px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 16px; cursor: pointer; color: var(--ink); }
+.tabs button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.view { position: relative; height: min(64vh, 620px); min-height: 320px; border-radius: 18px; overflow: hidden; background: #cdd8e2; border: 1px solid var(--line); }
+.view canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.view .msg { position: absolute; inset: 0; display: grid; place-items: center; color: #334; font-weight: 700; padding: 20px; text-align: center; }
+.view .hint { position: absolute; left: 10px; bottom: 10px; font-size: 13px; background: rgba(255,255,255,.82); padding: 3px 9px; border-radius: 8px; pointer-events: none; }
+.view .tag { position: absolute; left: 10px; top: 10px; font-size: 13px; font-weight: 800; background: rgba(21,32,42,.78); color: #fff; padding: 3px 10px; border-radius: 8px; pointer-events: none; }
+.view .readout { position: absolute; right: 10px; top: 10px; font: 600 13px var(--font-code); background: #13202A; color: #E3ECF1; padding: 6px 10px; border-radius: 8px; pointer-events: none; white-space: pre; }
+.note { font-size: 13.5px; color: var(--muted); margin: 0; }
+.cards { display: grid; gap: 14px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; min-width: 0; }
+.card > h2 { font-size: 22px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.card > h2 .n { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-strong); font-size: 16px; flex: none; }
+.card p { margin: 0 0 8px; }
+.story { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 12px; align-items: start; }
+.guide img, .guide svg { width: 88px; height: auto; display: block; }
+.say { background: var(--accent-soft); border-radius: 14px; padding: 10px 12px; }
+.parts { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.parts li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; align-items: start; background: var(--surface-2); border-radius: 12px; padding: 8px 10px; }
+.parts .ic { font-size: 22px; line-height: 1.2; text-align: center; }
+.parts .nm { display: block; font-weight: 800; }
+.parts .new { display: inline-block; font-size: 11.5px; font-weight: 800; background: #FFF1C2; color: #7A5400; border-radius: 99px; padding: 0 8px; margin-left: 4px; vertical-align: 1px; }
+.wires { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 6px; }
+.wires li { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 10px; align-items: center; font-size: 15px; }
+.wires i { width: 14px; height: 14px; border-radius: 4px; display: block; }
+.why { display: grid; gap: 6px; margin-top: 8px; }
+.why-item button { width: 100%; text-align: left; font: inherit; font-weight: 800; color: var(--accent-strong); background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 7px 12px; cursor: pointer; }
+.why-item button::before { content: '❓ '; }
+.why-item.now button { background: var(--accent-soft); border-color: var(--accent); }
+.why-item .ans { padding: 8px 12px 4px; font-size: 15px; }
+.pin-link { font-weight: 800; white-space: nowrap; }
+.swap { border: 2px dashed #B79BE0; background: #F7F2FD; border-radius: 14px; padding: 10px 12px; margin-top: 10px; }
+.swap h3 { font-size: 17px; color: #5A2E9C; margin-bottom: 4px; }
+.swap ul { margin: 4px 0 0; padding-left: 20px; }
+.challenges { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.challenges li { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+.challenges label { display: flex; gap: 10px; align-items: flex-start; font-weight: 700; cursor: pointer; }
+.challenges input { width: 20px; height: 20px; margin-top: 3px; flex: none; accent-color: var(--green); }
+.challenges details { margin: 6px 0 0 30px; font-size: 15px; }
+.challenges summary { cursor: pointer; color: var(--accent-strong); font-weight: 800; }
+.q { margin-bottom: 12px; }
+.q p { font-weight: 800; margin-bottom: 6px; }
+.q .opts { display: grid; gap: 6px; }
+.q button { text-align: left; font: inherit; border: 2px solid var(--line); background: var(--surface); border-radius: 12px; padding: 7px 12px; cursor: pointer; }
+.q button.right { border-color: var(--green); background: #E3F5EA; }
+.q button.wrong { border-color: var(--red); background: #FBE9E9; }
+.feedback { border-radius: 12px; padding: 8px 12px; margin-top: 6px; font-size: 15px; }
+.feedback.good { background: #E3F5EA; border-left: 5px solid var(--green); }
+.feedback.try { background: #FFF6D6; border-left: 5px solid var(--hl); }
+.btn { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 9px 18px; font: inherit; font-weight: 800; background: var(--accent); color: #fff; border: 0; text-decoration: none; }
+.template-badge { display: flex; gap: 12px; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(21,32,42,.2); }
+.kkb-open { margin-left: 4px; }
+@media (max-width: 900px) {
+  main { grid-template-columns: minmax(0, 1fr); padding: 12px; }
+  .stage { position: static; }
+  .view { height: 58vh; min-height: 300px; }
+  .progress { margin-left: 0; flex: 1 1 100%; }
+  .progress .bar { flex: 1; width: auto; }
+}
+@media (max-width: 440px) {
+  header.top { padding: 10px 12px; }
+  header.top h1 { font-size: 21px; }
+  .story { grid-template-columns: 64px minmax(0, 1fr); }
+  .guide img, .guide svg { width: 64px; }
+  .card { padding: 13px; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="title">
+    <div>
+      <a class="home-link" href="../../lessons.html#modules">← All lessons</a>
+      <h1 id="modTitle">The Parking Gate</h1>
+      <p id="modSub">Sensor module · HC-SR04 distance sensor → SG90 servo</p>
+    </div>
+  </div>
+  <div class="progress" aria-live="polite">
+    <div class="bar" role="progressbar" aria-label="Module progress"><i id="progressFill"></i></div>
+    <span id="progressText">Part 1 of 6</span>
+  </div>
+</header>
+
+<main>
+  <section class="stage" aria-label="3D scene">
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" id="tabPlace" aria-selected="true" aria-controls="viewPlace">🚗 The gate</button>
+      <button type="button" role="tab" id="tabWire" aria-selected="false" aria-controls="viewWire">🔧 The wiring</button>
+    </div>
+    <div class="view" id="viewPlace" role="tabpanel" aria-labelledby="tabPlace">
+      <div class="msg" id="placeMsg">Loading the 3D gate…</div>
+      <span class="tag">Animation: the gate opens when the car is close</span>
+      <div class="readout" id="placeReadout" aria-hidden="true"></div>
+      <span class="hint">Drag to turn · pinch or scroll to zoom</span>
+    </div>
+    <div class="view" id="viewWire" role="tabpanel" aria-labelledby="tabWire" hidden>
+      <div class="msg" id="wireMsg">Loading the wiring…</div>
+      <span class="tag">Your desk: quick-test wiring with the servo on VIN</span>
+      <span class="hint">Drag to turn · pinch or scroll to zoom</span>
+    </div>
+    <p class="note">The 3D scene is an educational animation, not a safety test. Ask an adult to check your real circuit before you plug it in.</p>
+  </section>
+
+  <div class="cards">
+    <article class="card" data-part="0" id="storyCard">
+      <h2><span class="n">1</span> The story</h2>
+      <div class="story">
+        <div class="guide">
+          <svg viewBox="0 0 58 70" aria-hidden="true"><rect x="12" y="44" width="34" height="26" rx="10" fill="#2C4E9E"/><circle cx="29" cy="30" r="16" fill="#F2C9A0"/><circle cx="23" cy="31" r="2.2" fill="#15202A"/><circle cx="35" cy="31" r="2.2" fill="#15202A"/><path d="M23 37 q6 5 12 0" stroke="#15202A" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        </div>
+        <div class="say" id="story"></div>
+      </div>
+    </article>
+
+    <article class="card" data-part="1">
+      <h2><span class="n">2</span> What you need</h2>
+      <ul class="parts" id="parts"></ul>
+    </article>
+
+    <article class="card" data-part="2">
+      <h2><span class="n">3</span> Wire it up</h2>
+      <p>Unplug the USB cable first. Then add these wires (tap <b>🔧 The wiring</b> to see them in 3D):</p>
+      <ul class="wires" id="wires"></ul>
+      <div class="why" id="wireWhy"></div>
+    </article>
+
+    <article class="card" data-part="3">
+      <h2><span class="n">4</span> The program</h2>
+      <p id="codeIntro"></p>
+      <section id="codePanel" aria-label="Your MicroPython program"></section>
+      <div class="why" id="codeWhy"></div>
+      <div class="swap" id="swap"></div>
+    </article>
+
+    <article class="card" data-part="4">
+      <h2><span class="n">5</span> Three challenges</h2>
+      <ol class="challenges" id="challenges"></ol>
+    </article>
+
+    <article class="card" data-part="5">
+      <h2><span class="n">6</span> Quick quiz</h2>
+      <div id="quiz"></div>
+    </article>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
+<script src="../../course.js"></script>
+<script src="../../assets/ohm/ohm.js"></script>
+<script src="../../assets/rewards.js"></script>
+<script>
+(function () {
+  'use strict';
+  /* ================= 1. The module: everything a new module changes ================= */
+  const LESSON_SLUG = 'm-parking-gate';
+  const PIN = (n, text) => `<a class="pin-link" href="../../pins.html?pin=D${n}" target="_blank" rel="noopener">🔍 ${text || 'D' + n + ' in the Pin Explorer'}</a>`;
+  const MODULE = {
+    story: `<p><b>Officer Ohm:</b> “Last time you made a servo turn to an angle, and in Night Mode you let a sensor decide with <code>if</code> and <code>else</code>. Today they work together. Cars queue at the convention centre gate every morning. A guard lifts the barrier by hand, again and again. Let’s build a gate that <b>sees</b> the car and opens by itself!”</p>
+      <p>The one new idea is the sensor: it shouts a tiny sound you can’t hear and listens for the echo. Close car, quick echo. When the car is closer than <code>NEAR</code>, the servo lifts the gate. When it’s gone, the gate goes back down.</p>`,
+    parts: [
+      { ic: '🧠', name: 'ESP32 DevKit + USB cable', why: 'Your board from every lesson. Start with nothing else plugged in.' },
+      { ic: '🦇', name: 'HC-SR04P distance sensor', isNew: true, why: 'Measures distance with sound, like a bat. Get the <b>P</b> version: it works on 3.3 volts, so it is safe for the ESP32’s pins.' },
+      { ic: '⚙️', name: 'SG90 servo', why: 'The motor from <i>Servo Says Hello</i>. It turns to the angle you ask for.' },
+      { ic: '🔋', name: 'A regulated 5 V supply (recommended)', why: 'Gives the servo its own energy, as in <i>Servo Says Hello</i>. For a quick test, VIN on a USB-powered board can do it.' },
+      { ic: '🧵', name: 'Jumper wires', why: 'Female–female wires let the sensor and servo pins plug straight onto the ESP32 header pins, no breadboard needed.' },
+    ],
+    wires: [
+      { c: '#E03A3A', text: 'Sensor <b>VCC</b> → <b>3V3</b>' },
+      { c: '#2B2B2B', text: 'Sensor <b>GND</b> → <b>GND</b>' },
+      { c: '#2F7DE1', text: 'Sensor <b>TRIG</b> → <b>D19</b>' },
+      { c: '#18A558', text: 'Sensor <b>ECHO</b> → <b>D21</b>' },
+      { c: '#F08A24', text: 'Servo <b>orange</b> (signal) → <b>D18</b>' },
+      { c: '#C1272D', text: 'Servo <b>red</b> (power) → <b>+ of the 5 V supply</b> (quick test only: <b>VIN</b>, as drawn in the 3D wiring)' },
+      { c: '#6B4226', text: 'Servo <b>brown</b> (ground) → <b>GND</b> (with a supply: its <b>−</b>, and join that − to an ESP32 <b>GND</b> too)' },
+    ],
+    wireWhy: [
+      { q: 'Why D19 and D21 for the sensor?', a: `They are ordinary GPIO pins with no job while the board starts, sitting side by side. TRIG is an output (we send a ping), ECHO is an input (we time the echo). ${PIN(19)} ${PIN(21)}` },
+      { q: 'Why does the sensor get 3V3?', a: 'The HC-SR04P is the 3.3-volt version, so 3V3 is exactly what it wants, and its ECHO wire sends back only 3.3 volts, which an ESP32 pin can take.' },
+      { q: 'Why not power the servo from 3V3?', a: 'A servo is a motor, and motors are hungry. Give it a regulated 5 V supply with its − joined to the ESP32’s GND. VIN (about 5 volts from USB on many boards) is only for a quick test with one SG90. Never use 3V3 or a GPIO pin. If the board restarts when the servo moves, use the separate supply.' },
+      { q: 'Why D18 for the servo’s signal?', a: `The signal wire only carries the message “turn to this angle”, not power. D18 is free and has no start-up job. ${PIN(18)}` },
+      { q: 'Why must the grounds join?', a: 'Every voltage is measured from ground. If the sensor, the servo and the ESP32 don’t share GND, they don’t agree what “0 volts” is, and the signals get muddled.' },
+      { q: 'What if I only have a plain HC-SR04?', a: 'The plain one needs 5 volts, and its ECHO wire then sends back 5 volts: too much for an ESP32 pin. You’d need two resistors as a voltage divider (1 kΩ and 2 kΩ) to bring it down. The HC-SR04P avoids that.' },
+    ],
+    codeIntro: 'Read the sensor, then <code>if</code> it is close → lift the gate, <code>else</code> → lower it. The same shape as Night Mode! Change a number and run it on your board.',
+    program: `from machine import Pin, PWM, time_pulse_us
+import time
+
+trig = Pin(19, Pin.OUT)          # we send the ping
+echo = Pin(21, Pin.IN)           # we time the echo
+servo = PWM(Pin(18), freq=50)    # servos want 50 pulses a second
+
+NEAR = 10                        # centimetres
+
+def gate(angle):
+    # 0 degrees = 0.5 ms pulse, 180 degrees = 2.5 ms pulse
+    servo.duty_u16(int(1638 + angle / 180 * 6554))
+
+def distance_cm():
+    trig.value(1)
+    time.sleep_us(10)
+    trig.value(0)
+    t = time_pulse_us(echo, 1, 30000)
+    if t < 0:
+        return 999               # no echo: nothing there
+    return t / 58
+
+while True:
+    d = distance_cm()
+    print(d)
+    if d < NEAR:
+        gate(90)                 # do: lift the gate
+    else:
+        gate(0)                  # undo: lower it
+    time.sleep(0.2)
+`,
+    codeWhy: [
+      { q: 'Why divide the time by 58?', a: 'Sound travels about 1 centimetre every 29 microseconds. The echo goes there <i>and back</i>, so 2 × 29 = 58 microseconds for each centimetre of distance.' },
+      { q: 'What does time_pulse_us do?', a: 'It waits for ECHO to go high, then counts the microseconds until it goes low again. That’s how long the sound took. If no echo comes back within 30 000 µs it gives a negative number, so we say “999: nothing there”.' },
+      { q: 'Why freq=50 for the servo?', a: 'A servo listens for one pulse every 20 milliseconds (50 a second). The pulse’s length is the angle: short pulse 0°, long pulse 180°.' },
+      { q: 'Why is NEAR a variable?', a: 'So you can change it in one place. Same idea as DARK in Night Mode.' },
+    ],
+    swap: `<h3>🔁 Swap the part</h3><p>Got a different sensor? The program’s shape stays the same.</p>
+      <ul><li><b>IR obstacle sensor</b> on D14 (<code>Pin.IN, Pin.PULL_UP</code>): it gives 0 when something is in front. Use <code>if sensor.value() == 0:</code></li>
+      <li><b>Radar motion sensor</b> (RCWL-0516) on D14: it gives 1 when something moves. Use <code>if sensor.value() == 1:</code></li></ul>`,
+    challenges: [
+      { t: 'Make the gate open from further away.', hint: 'Change <code>NEAR = 10</code> to <code>NEAR = 25</code>. Test with your hand.' },
+      { t: 'Wait 2 seconds before the gate closes, so the car can get through.', hint: 'Inside <code>if</code>, add <code>time.sleep(2)</code> after <code>gate(90)</code>.' },
+      { t: 'Add a warning beep while the gate is open (buzzer on D13).', hint: 'Use the buzzer from Lesson 5: <code>PWM(Pin(13), freq=1000)</code>. Turn it on in <code>if</code> and off in <code>else</code>.' },
+    ],
+    quiz: [
+      { q: 'The echo takes 580 microseconds. How far away is the car?', opts: ['10 cm', '58 cm', '580 cm'], right: 0, why: '580 ÷ 58 = 10 centimetres.' },
+      { q: 'Where does the servo’s red power wire go?', opts: ['3V3', 'A regulated 5 V supply (VIN for a quick test)', 'D18'], right: 1, why: 'Motors need 5 volts, best from their own supply with the grounds joined. D18 only carries the signal.' },
+      { q: 'The car drives away. Which line lowers the gate?', opts: ['gate(90)', 'print(d)', 'gate(0) in else'], right: 2, why: 'When d is not smaller than NEAR, the else part runs and undoes the action.' },
+    ],
+    wiringOneLine: 'HC-SR04P: VCC → 3V3, GND → GND, TRIG → D19, ECHO → D21. Servo: orange → D18, red → + of a regulated 5 V supply whose − is joined to GND (quick test only: red → VIN), brown → GND.',
+  };
+
+  /* ================= 2. Progress, saving and the parts of the page ================= */
+  const real = !LESSON_SLUG.startsWith('_');
+  function saveProgress(patch) { if (real && window.COURSE) window.COURSE.saveProgress(LESSON_SLUG, patch); }
+  const parts = Array.from(document.querySelectorAll('[data-part]'));
+  let reached = 0;
+  function setPart(i) {
+    reached = Math.max(reached, i);
+    document.getElementById('progressFill').style.width = Math.round(((reached + 1) / parts.length) * 100) + '%';
+    document.getElementById('progressText').textContent = `Part ${reached + 1} of ${parts.length}`;
+    saveProgress({ step: reached, steps: parts.length });
+  }
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) setPart(+e.target.dataset.part); }), { threshold: 0.35 });
+    parts.forEach((p) => io.observe(p));
+  }
+  setPart(0);
+  if (window.COURSE && real) {
+    const m = window.COURSE.moduleBySlug(LESSON_SLUG);
+    if (m) { document.getElementById('modTitle').textContent = m.title; document.getElementById('modSub').textContent = `Sensor module · ${m.sensor} → ${m.output}`; document.title = m.title + ' · IoT for Young Makers'; }
+  }
+
+  const $ = (id) => document.getElementById(id);
+  $('story').innerHTML = MODULE.story;
+  $('parts').innerHTML = MODULE.parts.map((p) => `<li><span class="ic" aria-hidden="true">${p.ic}</span><span><span class="nm">${p.name}${p.isNew ? '<span class="new">NEW</span>' : ''}</span>${p.why}</span></li>`).join('');
+  $('wires').innerHTML = MODULE.wires.map((w) => `<li><i style="background:${w.c}"></i><span>${w.text}</span></li>`).join('');
+  $('codeIntro').innerHTML = MODULE.codeIntro;
+  $('swap').innerHTML = MODULE.swap;
+  function whyList(host, list) {
+    host.innerHTML = list.map((w, i) => `<div class="why-item"><button type="button" aria-expanded="false" data-i="${i}">${w.q}</button><div class="ans" hidden>${w.a}</div></div>`).join('');
+    host.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+      const item = b.parentElement, ans = item.querySelector('.ans'), open = ans.hidden;
+      document.querySelectorAll('.why-item.now').forEach((x) => x.classList.remove('now'));
+      ans.hidden = !open; b.setAttribute('aria-expanded', String(open)); item.classList.toggle('now', open);
+    }));
+  }
+  whyList($('wireWhy'), MODULE.wireWhy);
+  whyList($('codeWhy'), MODULE.codeWhy);
+
+  const CH_KEY = 'iotkids.challenges.' + LESSON_SLUG;
+  let ticked = {}; try { ticked = JSON.parse(localStorage.getItem(CH_KEY) || '{}') || {}; } catch (e) { /* not remembered */ }
+  $('challenges').innerHTML = MODULE.challenges.map((c, i) => `<li><label><input type="checkbox" data-c="${i}" ${ticked[i] ? 'checked' : ''}><span>${c.t}</span></label>
+    <details><summary>Need a hint?</summary>${c.hint}</details></li>`).join('');
+  $('challenges').addEventListener('change', (e) => {
+    if (!e.target.matches('input')) return;
+    ticked[e.target.dataset.c] = e.target.checked;
+    try { localStorage.setItem(CH_KEY, JSON.stringify(ticked)); } catch (err) { /* not remembered */ }
+  });
+
+  // quiz: a wrong answer gives a hint and another try; all right → #quizDone (rewards.js adds the badge)
+  const quiz = $('quiz'); let right = 0;
+  MODULE.quiz.forEach((q, qi) => {
+    const box = document.createElement('div'); box.className = 'q';
+    box.innerHTML = `<p>${qi + 1}. ${q.q}</p><div class="opts">${q.opts.map((o, i) => `<button type="button" data-o="${i}">${o}</button>`).join('')}</div><div class="fb"></div>`;
+    box.addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b || box.dataset.done) return;
+      const ok = +b.dataset.o === q.right;
+      b.classList.add(ok ? 'right' : 'wrong');
+      box.querySelector('.fb').innerHTML = ok ? `<div class="feedback good">Yes! ${q.why}</div>` : '<div class="feedback try">Not quite. Look back at the “Why?” taps and try again.</div>';
+      if (ok) { box.dataset.done = '1'; if (++right === MODULE.quiz.length) finish(); }
+    });
+    quiz.appendChild(box);
+  });
+  function finish() {
+    saveProgress({ done: true });
+    const done = document.createElement('div');
+    done.className = 'feedback good'; done.id = 'quizDone';
+    done.innerHTML = '<b>You finished the module!</b><p style="margin:4px 0 0">Measure, compare, act: your gate decides for itself. Great work, engineer!</p>';
+    quiz.appendChild(done);
+  }
+
+  /* ================= 3. The code panel: the real MicroPython runner (assets/run-panel.js) ================= */
+  window.__lessonProgram = () => (window.__codePanel ? window.__codePanel.code : MODULE.program);
+  window.__module = MODULE;
+
+  /* ================= 4. 3D: the place (the gate) and the wiring ================= */
+  const LIB = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/';
+  const hasGL = !!(window.THREE && THREE.OrbitControls && THREE.GLTFLoader && THREE.DRACOLoader);
+  function gltfLoader() {
+    const g = new THREE.GLTFLoader(), d = new THREE.DRACOLoader();
+    d.setDecoderPath(LIB + 'libs/draco/gltf/'); g.setDRACOLoader(d); return g;
+  }
+  const lin = (hex) => new THREE.Color(hex).convertSRGBToLinear(); // r128: colours are linear, so convert sRGB picks
+  function makeView(host, opts) {
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.physicallyCorrectLights = true;
+    host.prepend(renderer.domElement);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(opts.fov || 40, 1, opts.near || 0.1, opts.far || 9000);
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    let visible = !host.hidden, onScreen = true, tick = null;
+    function size() {
+      const w = host.clientWidth, h = host.clientHeight; if (!w || !h) return;
+      renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+    }
+    if ('ResizeObserver' in window) new ResizeObserver(size).observe(host); else addEventListener('resize', size);
+    if ('IntersectionObserver' in window) new IntersectionObserver((es) => { onScreen = es[0].isIntersecting; }).observe(host);
+    size();
+    const clock = new THREE.Clock();
+    renderer.setAnimationLoop(() => {
+      const dt = Math.min(0.05, clock.getDelta());
+      if (!visible || !onScreen) return; // only draw what the learner can see
+      if (tick) tick(dt);
+      controls.update(); renderer.render(scene, camera);
+    });
+    return { renderer, scene, camera, controls, set tick(f) { tick = f; }, show(v) { visible = v; if (v) size(); } };
+  }
+
+  const B = (x, y, z) => new THREE.Vector3(x, z, -y); // Blender (Z up) → three (Y up)
+  let placeView = null, wireView = null;
+
+  function buildPlace() {
+    const host = $('viewPlace');
+    const v = placeView = makeView(host, { fov: 40, near: 0.1, far: 9000 });
+    const { renderer, scene, camera, controls } = v;
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    const env = new THREE.PMREMGenerator(renderer).fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+    scene.environment = env;
+    scene.fog = new THREE.Fog(lin(0xcdd8e2), 700, 3600);
+    camera.position.copy(B(-78, -68, 4.2));
+    controls.target.copy(B(-50, -44, 6));
+    controls.maxPolarAngle = Math.PI * 0.49; controls.maxDistance = 1500; controls.minDistance = 3;
+
+    // sky: a code-built gradient dome (replaces three/addons Sky, which r128 does not ship)
+    const sunDir = new THREE.Vector3().setFromSphericalCoords(1, THREE.MathUtils.degToRad(52), THREE.MathUtils.degToRad(215));
+    const skyMat = new THREE.ShaderMaterial({
+      side: THREE.BackSide, depthWrite: false, fog: false,
+      uniforms: { top: { value: lin(0x5f95d6) }, bottom: { value: lin(0xdfe9f2) }, sun: { value: sunDir } },
+      vertexShader: 'varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+      fragmentShader: 'uniform vec3 top; uniform vec3 bottom; uniform vec3 sun; varying vec3 vDir; void main(){ float h = clamp(vDir.y * 2.2, 0.0, 1.0); vec3 c = mix(bottom, top, pow(h, 0.7)); c += vec3(1.0, 0.9, 0.7) * pow(max(dot(vDir, sun), 0.0), 220.0) * 2.0; gl_FragColor = vec4(c, 1.0); }',
+    });
+    scene.add(new THREE.Mesh(new THREE.SphereGeometry(8000, 32, 16), skyMat));
+    scene.add(new THREE.HemisphereLight(lin(0xdfeaff), lin(0x56703a), 0.7));
+    const sun = new THREE.DirectionalLight(lin(0xfff1de), 3.0);
+    sun.position.copy(sunDir).multiplyScalar(500);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048); // 4096 in the preview: too much for phones
+    Object.assign(sun.shadow.camera, { left: -260, right: 260, top: 230, bottom: -230, near: 50, far: 1200 });
+    sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.6;
+    scene.add(sun);
+    scene.add(buildCity().group);
+
+    gltfLoader().load('../../assets/models/modules/parking-gate.glb', (gltf) => {
+      const root = gltf.scene;
+      root.traverse((o) => {
+        if (!o.isMesh) return;
+        o.castShadow = !/Site_Surface/.test(o.name); o.receiveShadow = true;
+        if (o.material.envMapIntensity !== undefined) o.material.envMapIntensity = 0.85;
+        if (/Palm_Frond/.test(o.material.name)) { o.material.alphaTest = 0.5; o.material.transparent = false; o.material.side = THREE.DoubleSide; o.material.needsUpdate = true; }
+      });
+      scene.add(root);
+      startGate(root, scene);
+      v.tick = updateGate;
+      if (/^#t\d+/.test(location.hash)) { const T = parseFloat(location.hash.slice(2)); for (let k = 0; k < T / 0.02; k++) updateGate(0.02); }
+      $('placeMsg').remove();
+    }, undefined, () => { $('placeMsg').textContent = 'The 3D gate could not load. Check your internet connection and reload the page.'; });
+  }
+
+  // hills, houses and trees around the campus (procedural, from the preview)
+  function buildCity() {
+    const group = new THREE.Group(); group.name = 'Context_City';
+    let seed = 9;
+    const rnd = () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    const hash = (x, y) => { const h = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return h - Math.floor(h); };
+    const vnoise = (x, y) => {
+      const ix = Math.floor(x), iy = Math.floor(y), fx = x - ix, fy = y - iy;
+      const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+      const a = hash(ix, iy), b = hash(ix + 1, iy), c = hash(ix, iy + 1), d = hash(ix + 1, iy + 1);
+      return (a + (b - a) * sx) + ((c + (d - c) * sx) - (a + (b - a) * sx)) * sy;
+    };
+    const fbm = (x, y) => 0.55 * vnoise(x, y) + 0.3 * vnoise(x * 2.1, y * 2.1) + 0.15 * vnoise(x * 4.3, y * 4.3);
+    const siteDist = (x, y) => {
+      const qx = Math.abs(x) - 215, qy = Math.abs(y + 30) - 165;
+      return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0);
+    };
+    const ss = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
+    const height = (x, y) => {
+      const t = ss(30, 480, siteDist(x, y)), r = Math.hypot(x, y);
+      const h = 22 * Math.sin(x / 230 + 1.0) * Math.cos(y / 290 - 0.4) + 12 * Math.sin((x + 0.6 * y) / 150)
+        + 7 * Math.cos((x - y) / 95) + 40 * ss(900, 1600, r) + 110 * ss(1500, 2600, r) * fbm(x / 700, y / 700);
+      return (h + 10) * t - 0.3;
+    };
+    const SZ = 5600, N = 180;
+    const tg = new THREE.PlaneGeometry(SZ, SZ, N, N); tg.rotateX(-Math.PI / 2);
+    const pos = tg.attributes.position, cols = new Float32Array(pos.count * 3);
+    const siteGrass = lin(0x4f8a34), grass = lin(0x3d6a2a), grove = lin(0x2a4f1d), earth = lin(0x8a4a2b), c = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i), y = -pos.getZ(i);
+      pos.setY(i, height(x, y));
+      const n1 = fbm(x / 160, y / 160), n2 = fbm(x / 60 + 7, y / 60 - 3);
+      c.copy(grass).lerp(grove, ss(0.45, 0.7, n1)).lerp(earth, 0.35 * ss(0.62, 0.8, n2) * ss(60, 300, siteDist(x, y)));
+      c.lerp(siteGrass, 1 - ss(0, 140, siteDist(x, y)));
+      cols.set([c.r, c.g, c.b], i * 3);
+    }
+    tg.setAttribute('color', new THREE.BufferAttribute(cols, 3)); tg.computeVertexNormals();
+    const terrain = new THREE.Mesh(tg, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.97 }));
+    terrain.receiveShadow = true; group.add(terrain);
+    const spots = (count, rMin, rMax, clearance, density) => {
+      const out = []; let guard = 0;
+      while (out.length < count && guard++ < count * 40) {
+        const r = rMin + (rMax - rMin) * Math.sqrt(rnd()), a = rnd() * Math.PI * 2;
+        const x = r * Math.cos(a), y = r * Math.sin(a) - 30;
+        if (siteDist(x, y) < clearance) continue;
+        if (fbm(x / 140 + 11, y / 140) < density) continue;
+        out.push([x, y, height(x, y)]);
+      }
+      return out;
+    };
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), p = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+    const place = (mesh, i, x, y, z, rot, sx, sy, sz) => { q.setFromAxisAngle(up, rot); sc.set(sx, sy, sz); p.set(x, z, -y); m4.compose(p, q, sc); mesh.setMatrixAt(i, m4); };
+    // fewer houses and trees than the preview (4600 / 4200) so phones keep up
+    const houses = spots(2600, 250, 2100, 22, 0.34);
+    const wallGeo = new THREE.BoxGeometry(1, 1, 1); wallGeo.translate(0, 0.5, 0);
+    const roofGeo = new THREE.ConeGeometry(0.75, 1, 4, 1); roofGeo.rotateY(Math.PI / 4); roofGeo.translate(0, 0.5, 0);
+    const walls = new THREE.InstancedMesh(wallGeo, new THREE.MeshStandardMaterial({ roughness: 0.85 }), houses.length);
+    const roofs = new THREE.InstancedMesh(roofGeo, new THREE.MeshStandardMaterial({ roughness: 0.6, metalness: 0.2 }), houses.length);
+    const wallCols = [0xefe6d6, 0xe8d8bf, 0xf3efe8, 0xd9b48a, 0xe3c9a8, 0xcfd4d6].map(lin);
+    const roofCols = [0x7a3b22, 0x8e4a2c, 0x5c6b78, 0x7d8a93, 0x9b5a3a, 0x4a5763, 0xa8b0b5].map(lin);
+    houses.forEach(([x, y, z], i) => {
+      const w = 8 + rnd() * 9, d = 7 + rnd() * 6, h = 3.2 + rnd() * 3.2, rot = rnd() * Math.PI;
+      place(walls, i, x, y, z - 0.6, rot, w, h + 0.6, d);
+      place(roofs, i, x, y, z + h, rot, w * 1.06, 1.6 + rnd() * 1.4, d * 1.06);
+      walls.setColorAt(i, wallCols[(rnd() * wallCols.length) | 0]);
+      roofs.setColorAt(i, roofCols[(rnd() * roofCols.length) | 0]);
+    });
+    group.add(walls, roofs);
+    const towersAt = spots(400, 380, 1600, 40, 0.45).filter(([x, y]) => y > 260 && Math.abs(x) < 1300).slice(0, 80);
+    const facade = (() => {
+      const cv = document.createElement('canvas'); cv.width = cv.height = 256;
+      const g = cv.getContext('2d'); g.fillStyle = '#d9dde0'; g.fillRect(0, 0, 256, 256);
+      for (let r = 0; r < 8; r++) for (let k = 0; k < 6; k++) { g.fillStyle = ['#3d4e5f', '#4a5b6b', '#36475a'][(r + k) % 3]; g.fillRect(k * 42 + 6, r * 32 + 8, 32, 18); }
+      const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(2, 3);
+      return t;
+    })();
+    const towers = new THREE.InstancedMesh(wallGeo, new THREE.MeshStandardMaterial({ map: facade, roughness: 0.4, metalness: 0.2 }), towersAt.length);
+    towersAt.forEach(([x, y, z], i) => place(towers, i, x, y, z - 1, rnd() * Math.PI, 18 + rnd() * 20, 18 + rnd() * 45, 14 + rnd() * 14));
+    group.add(towers);
+    const treesAt = spots(2400, 235, 2200, 14, 0.3);
+    const crownGeo = new THREE.IcosahedronGeometry(1, 0); crownGeo.translate(0, 1.2, 0);
+    const crowns = new THREE.InstancedMesh(crownGeo, new THREE.MeshStandardMaterial({ roughness: 0.9, flatShading: true }), treesAt.length);
+    const leafCols = [0x2f5a22, 0x3b6b29, 0x24481a, 0x4a7a30, 0x557f2c].map(lin);
+    treesAt.forEach(([x, y, z], i) => {
+      const s = 3 + rnd() * 4.5;
+      place(crowns, i, x, y, z - 0.5, rnd() * 6.3, s, s * (0.9 + rnd() * 0.5), s);
+      crowns.setColorAt(i, leafCols[(rnd() * leafCols.length) | 0]);
+    });
+    group.add(crowns);
+    for (const m of [walls, roofs, towers, crowns]) { m.frustumCulled = false; m.castShadow = false; m.receiveShadow = false; }
+    return { group };
+  }
+
+  // the gate: car drives in, sensor measures, boom opens, car drives through (same rule as the program)
+  let gate = null;
+  const rings = [];
+  let ping = 0;
+  function startGate(root, scene) {
+    const gateRoot = root.getObjectByName('KCC_Gate');
+    const car = root.getObjectByName('Gate_Car');
+    scene.attach(car);
+    const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
+    gateRoot.quaternion.copy(q);
+    gateRoot.position.copy(B(-55, -49.5, 0)).sub(B(-122.2, -64, 0).applyQuaternion(q));
+    const parked = root.getObjectByName('KCC_Car_10'); if (parked) parked.visible = false;
+    const path = new THREE.CatmullRomCurve3([B(-200, -49.5, 0), B(-120, -49.5, 0), B(0, -49.5, 0), B(60, -49.5, 0)]);
+    const len = path.getLength();
+    const sAtX = (x) => x + 200;
+    const mats = [];
+    car.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); mats.push(o.material); } });
+    gate = {
+      path, len, car, mats, s: 0, v: 6, alpha: 0, wait: 0, angle: 0, seen: -99, t: 0, d: Infinity,
+      sSensor: sAtX(-60.6), sBar: sAtX(-55.0), half: 2.44,
+      pivot: root.getObjectByName('Gate_Boom_Pivot'),
+      wheels: ['FL', 'FR', 'RL', 'RR'].map((k) => car.getObjectByName('Gate_Wheel_' + k)),
+      eye: root.getObjectByName('Gate_Eye_L'), eyeFwd: root.getObjectByName('Gate_Eye_L_Fwd'),
+    };
+    gate.s = Math.max(0, gate.sSensor - 22); gate.alpha = 1; gate.v = 4.2;
+    for (let i = 0; i < 20; i++) {
+      const r = new THREE.Mesh(new THREE.RingGeometry(0.86, 1, 48),
+        new THREE.MeshBasicMaterial({ color: lin(0x7fe3ff), transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, fog: false }));
+      r.visible = false; scene.add(r); rings.push({ mesh: r, on: false });
+    }
+  }
+  const readout = $('placeReadout');
+  function updateGate(dt) {
+    const g = gate; if (!g) return; g.t += dt;
+    const open = g.angle > 1.4, stop = g.sBar - 1.3 - g.half, prev = g.s;
+    if (g.wait > 0) { g.wait -= dt; if (g.wait <= 0) { g.s = Math.max(0, g.sSensor - 45); g.v = 6; g.alpha = 0; } }
+    else {
+      let vt = (g.s > g.sSensor - 25 && g.s < g.sBar + 20) ? 4.5 : 8.3;
+      if (!open && g.s < stop) vt = Math.min(vt, Math.sqrt(Math.max(0, 6 * (stop - g.s))));
+      if (!open && g.s >= stop - 0.02) vt = 0;
+      g.v = vt > g.v ? Math.min(vt, g.v + 2 * dt) : Math.max(vt, g.v - 4.5 * dt);
+      g.s += g.v * dt;
+      if (!open && prev <= stop) g.s = Math.min(g.s, stop);
+      g.alpha = Math.min(1, g.alpha + dt / 0.8);
+      if (g.s > g.len - 6) g.alpha = Math.max(0, (g.len - g.s) / 6);
+      if (g.s >= g.len) { g.wait = 1.2; g.alpha = 0; }
+    }
+    const u = Math.min(1, g.s / g.len), p = g.path.getPointAt(u), tan = g.path.getTangentAt(u);
+    g.car.position.set(p.x, 0, p.z);
+    g.car.rotation.set(0, Math.atan2(-tan.z, tan.x), 0);
+    if (Math.abs(g.s - prev) < 5) for (const w of g.wheels) if (w) w.rotation.z -= (g.s - prev) / 0.33;
+    for (const m of g.mats) { m.transparent = g.alpha < 1; m.opacity = g.alpha; }
+    g.car.visible = g.alpha > 0.01;
+    // sensor distance → if close → lift (do), else → lower (undo)
+    const front = g.s + g.half, rear = g.s - g.half;
+    let d = Infinity;
+    if (g.alpha > 0.5) { if (front <= g.sSensor) d = g.sSensor - front; else if (rear < g.sSensor + 0.6) d = 0.9; }
+    if (d < 6) g.seen = g.t;
+    const under = rear < g.sBar + 0.5 && front > g.sBar - 0.5;
+    const target = (g.t - g.seen < 1.5 || under) ? Math.PI / 2 : 0;
+    const step = (Math.PI / 2) / 1.6 * dt;
+    g.angle += Math.max(-step, Math.min(step, target - g.angle));
+    g.pivot.rotation.z = g.angle;
+    if (readout) readout.textContent = `d = ${isFinite(d) ? d.toFixed(1) + ' m' : 'no echo'}\n${target ? 'if → gate(90)' : 'else → gate(0)'}`;
+    ping -= dt;
+    if (ping <= 0) {
+      ping = 0.3;
+      const r = rings.find((x) => !x.on);
+      if (r && g.eye && g.eyeFwd) {
+        const o = g.eye.getWorldPosition(new THREE.Vector3());
+        const dir = g.eyeFwd.getWorldPosition(new THREE.Vector3()).sub(o).normalize();
+        Object.assign(r, { on: true, o, dir, k: 0, max: isFinite(d) && d < 25 ? Math.max(0.6, d) : 11 });
+        r.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir); r.mesh.visible = true;
+      }
+    }
+    for (const r of rings) {
+      if (!r.on) continue;
+      r.k += dt * 14;
+      r.mesh.position.copy(r.o).addScaledVector(r.dir, r.k);
+      r.mesh.scale.setScalar(0.065 + r.k * 0.23);
+      r.mesh.material.opacity = 0.6 * Math.sin(Math.min(1, r.k / r.max) * Math.PI);
+      if (r.k >= r.max) { r.on = false; r.mesh.visible = false; }
+    }
+  }
+
+  // the wiring: the course's ESP32 model, a code-built HC-SR04P and SG90, and one tube per wire (millimetres)
+  function buildWiring() {
+    const host = $('viewWire');
+    const v = wireView = makeView(host, { fov: 36, near: 1, far: 3000 });
+    const { renderer, scene, camera, controls } = v;
+    renderer.physicallyCorrectLights = false; // a bright desk, like the other lessons
+    renderer.toneMapping = THREE.NoToneMapping;
+    scene.background = new THREE.Color(0xf3f7fa);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0xb8c4cc, 0.9));
+    const key = new THREE.DirectionalLight(0xffffff, 0.8); key.position.set(40, 120, 70); scene.add(key);
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(260, 4, 170), new THREE.MeshStandardMaterial({ color: 0xd8c3a0, roughness: 0.9 }));
+    desk.position.y = -6; scene.add(desk);
+    controls.minDistance = 40; controls.maxDistance = 420; controls.maxPolarAngle = Math.PI * 0.48;
+    const label = (text, color) => {
+      const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
+      const g = cv.getContext('2d'); g.fillStyle = color || '#15202A'; g.beginPath();
+      if (g.roundRect) g.roundRect(4, 8, 248, 48, 14); else g.rect(4, 8, 248, 48); g.fill();
+      g.fillStyle = '#fff'; g.font = 'bold 30px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 128, 33);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false }));
+      sp.scale.set(20, 5, 1); sp.renderOrder = 10; return sp;
+    };
+    const mat = (c, r) => new THREE.MeshStandardMaterial({ color: lin(c), roughness: r == null ? 0.6 : r });
+    new THREE.GLTFLoader().load('../../assets/models/esp32-devkit-v1.glb', (gltf) => {
+      const board = gltf.scene; board.scale.setScalar(1000); scene.add(board); board.updateMatrixWorld(true);
+      const pad = (name) => { const o = board.getObjectByName('pad_' + name); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
+      const box = new THREE.Box3().setFromObject(board), mid = box.getCenter(new THREE.Vector3());
+      const L1 = pad('L01_EN'), L15 = pad('L15_VIN'), R1 = pad('R01_GPIO23'), R15 = pad('R15_3V3');
+      if (!L1 || !L15 || !R1 || !R15) { $('wireMsg').textContent = 'The board model has no pin pads.'; return; }
+      const Lm = L1.clone().lerp(L15, 0.5), Rm = R1.clone().lerp(R15, 0.5);
+      const out = Rm.clone().sub(Lm).setY(0).normalize();   // across the board, from the L header to the R header
+      const along = L15.clone().sub(L1).setY(0).normalize(); // down the headers, from pin 1 to pin 15
+      const top = box.max.y;
+      // HC-SR04P beside the R header (D19, D21, 3V3, GND), servo beside the L header (VIN, GND) with its signal to D18
+      const sensor = new THREE.Group();
+      const pcb = new THREE.Mesh(new THREE.BoxGeometry(45, 1.6, 20), mat(0x1f5fbf)); sensor.add(pcb);
+      for (const sx of [-13, 13]) {
+        const can = new THREE.Mesh(new THREE.CylinderGeometry(8, 8, 12, 28), mat(0xc9ced3, 0.3)); can.position.set(sx, 6.8, 0); sensor.add(can);
+        const mesh = new THREE.Mesh(new THREE.CylinderGeometry(6.8, 6.8, 0.6, 28), mat(0x3a3f45, 0.9)); mesh.position.set(sx, 12.9, 0); sensor.add(mesh);
+      }
+      const sPins = ['VCC', 'TRIG', 'ECHO', 'GND'].map((n, i) => { const p = new THREE.Mesh(new THREE.BoxGeometry(0.8, 8, 0.8), mat(0xd4af37, 0.3)); p.position.set(-3.8 + i * 2.54, 0, -11); sensor.add(p); return p; });
+      sensor.position.copy(pad('R06_GPIO19')).addScaledVector(out, 55).setY(top + 4);
+      sensor.lookAt(sensor.position.clone().add(out)); sensor.rotateY(-Math.PI / 2); // eyes face away from the board
+      scene.add(sensor);
+      const servo = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.BoxGeometry(23, 22, 12.5), mat(0x2a63c9)); servo.add(body);
+      const tabs = new THREE.Mesh(new THREE.BoxGeometry(32, 2.5, 12.5), mat(0x2a63c9)); tabs.position.y = 6; servo.add(tabs);
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 4, 20), mat(0xf4f4f4)); hub.position.set(5.5, 13, 0); servo.add(hub);
+      const horn = new THREE.Mesh(new THREE.BoxGeometry(22, 1.6, 4), mat(0xf4f4f4)); horn.position.set(5.5, 15, 0); servo.add(horn);
+      servo.position.copy(L15).addScaledVector(out, -55).setY(top + 6);
+      servo.lookAt(servo.position.clone().add(along)); servo.rotateY(Math.PI / 2);
+      scene.add(servo);
+      const wirePts = (a, b, h) => new THREE.CatmullRomCurve3([a, a.clone().setY(a.y + h), a.clone().lerp(b, 0.5).setY(Math.max(a.y, b.y) + h + 6), b.clone().setY(b.y + h), b]);
+      const tube = (pts, color) => { const m = new THREE.Mesh(new THREE.TubeGeometry(pts, 48, 0.9, 8, false), mat(color, 0.45)); scene.add(m); return m; };
+      const pinTop = (m) => m.getWorldPosition(new THREE.Vector3()).setY(m.getWorldPosition(new THREE.Vector3()).y - 4);
+      sensor.updateMatrixWorld(true); servo.updateMatrixWorld(true);
+      const wires = [
+        [pinTop(sPins[0]), pad('R15_3V3'), '#E03A3A', '3V3'],
+        [pinTop(sPins[3]), pad('R14_GND'), '#2B2B2B', 'GND'],
+        [pinTop(sPins[1]), pad('R06_GPIO19'), '#2F7DE1', 'D19 · TRIG'],
+        [pinTop(sPins[2]), pad('R05_GPIO21'), '#18A558', 'D21 · ECHO'],
+      ];
+      const servoEnd = (k) => servo.position.clone().addScaledVector(along, -3 + k * 3).addScaledVector(out, 14).setY(top + 2);
+      wires.push([servoEnd(0), pad('R07_GPIO18'), '#F08A24', 'D18 · signal']);
+      wires.push([servoEnd(1), pad('L15_VIN'), '#C1272D', 'VIN · quick test']);
+      wires.push([servoEnd(2), pad('L14_GND'), '#6B4226', 'GND']);
+      wires.forEach(([a, b, c, t], i) => {
+        if (!a || !b) return;
+        const curve = wirePts(a, b, 10 + i * 2.5); tube(curve, c);
+        const lb = label(t, c); lb.position.copy(curve.getPoint([0.2, 0.4, 0.6, 0.8, 0.3, 0.55, 0.8][i])); lb.position.y += 5; scene.add(lb); // staggered so labels don't stack
+      });
+      const sl = label('HC-SR04P', '#1f5fbf'); sl.position.copy(sensor.position).addScaledVector(out, 14).setY(top + 22); scene.add(sl);
+      const vl = label('SG90 servo', '#2a63c9'); vl.position.copy(servo.position).addScaledVector(out, -14).setY(top + 26); scene.add(vl);
+      const aim = mid.clone().addScaledVector(along, 8);
+      const k = Math.max(1, 1.3 / camera.aspect); // step back on tall, narrow phone screens so the whole desk fits
+      camera.position.copy(aim).addScaledVector(along, 190 * k).add(new THREE.Vector3(0, 150 * k, 0)); controls.target.copy(aim);
+      $('wireMsg').remove();
+    }, undefined, () => { $('wireMsg').textContent = 'The board model could not load. Please reload the page.'; });
+  }
+
+  // tabs: build each view the first time it is shown
+  function showTab(which) {
+    const place = which === 'place';
+    $('tabPlace').setAttribute('aria-selected', String(place)); $('tabWire').setAttribute('aria-selected', String(!place));
+    $('viewPlace').hidden = !place; $('viewWire').hidden = place;
+    if (!hasGL) return;
+    if (!place && !wireView) buildWiring();
+    if (placeView) placeView.show(place);
+    if (wireView) wireView.show(!place);
+  }
+  $('tabPlace').addEventListener('click', () => showTab('place'));
+  $('tabWire').addEventListener('click', () => showTab('wire'));
+  window.__module.showTab = showTab;
+  if (hasGL) buildPlace();
+  else { $('placeMsg').textContent = 'The 3D scene needs an internet connection. Everything else on this page still works.'; $('wireMsg').textContent = $('placeMsg').textContent; }
+})();
+</script>
+<script src="../../assets/board-link.js"></script>
+<script src="../../assets/prepare-board.js"></script>
+<script src="../../assets/run-panel.js"></script>
+<script src="../../assets/board-drawer.js"></script>
+<script>
+  // the editable code panel is the real runner (Web Serial + MicroPython), the same as run.html
+  if (window.RunPanel && window.BoardLink) window.__codePanel = RunPanel.mount(document.getElementById('codePanel'), { id: 'm-parking-gate-code', base: '../../', code: window.__module.program, fresh: true });
+  KKBoard.attach({ id: 'm-parking-gate', base: '../../', buttonHost: 'header.top .progress', program: () => window.__lessonProgram(), wiring: window.__module.wiringOneLine });
+</script>
+</body>
+</html>
