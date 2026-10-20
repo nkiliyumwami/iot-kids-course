@@ -76,9 +76,9 @@
   // lesson order or the "Next" links, but each earns a badge (assets/badges/m-<slug>.svg) and counts for the course
   // certificate once it is 'ready'. `uses` lists modules to finish first. Pages live in lessons/m-<slug>/.
   const modules = [
-    { slug: 'm-servo', badge: 'm-servo', title: 'Servo Says Hello', sensor: 'None (an output module)', output: 'SG90 servo', needs: '07-night-mode', uses: [], status: 'planned', minutes: 40,
+    { slug: 'm-servo', badge: 'm-servo', title: 'Servo Says Hello', sensor: 'None (an output module)', output: 'SG90 servo', needs: '07-night-mode', uses: [], status: 'ready', minutes: 45,
       idea: 'Meet a motor that turns to the angle you choose: wave hello with a servo arm.',
-      skills: ['Powered a servo safely from VIN', 'Set a servo angle with a 50 Hz PWM signal', 'Turned a number of degrees into a pulse'] },
+      skills: ['Powered a servo safely from its own 5 V supply', 'Set a servo angle with a 50 Hz PWM signal', 'Turned a number of degrees into a pulse'] },
     { slug: 'm-parking-gate', badge: 'm-parking-gate', title: 'The Parking Gate', sensor: 'HC-SR04 distance sensor', output: 'SG90 servo', needs: '07-night-mode', uses: ['m-servo'], status: 'planned', minutes: 45,
       idea: 'A car drives up, the gate lifts. Measure distance with sound and open a servo gate.',
       skills: ['Measured distance with an ultrasonic echo', 'Turned echo time into centimetres', 'Opened a gate when something came close'] },

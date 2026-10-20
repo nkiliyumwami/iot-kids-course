@@ -1,6 +1,6 @@
-# Blender models for the home page story
+# Blender models
 
-These scripts build the story's opening models in headless Blender (the `bpy` Python module).
+These scripts build the story's opening models (and the module models in `assets/models/modules/`) in headless Blender (the `bpy` Python module).
 Everything is modelled in code: no downloads. The results are in `assets/story/models/`.
 
 | Script | Model | What it is |
@@ -8,6 +8,7 @@ Everything is modelled in code: no downloads. The results are in `assets/story/m
 | `drone.py` | `drone.glb` | Delivery quadcopter: smooth shell, folding-arm hinges, finned motors, twisted props (`Prop_FL/FR/RL/RR`), gimbal camera, skids, a parcel on a winch line (`Hang`) |
 | `child.py` | `child_a.glb`, `child_b.glb` | Two primary-school pupils, jointed (`Body`, `Torso`, `Head`, `Shoulder_L/R`, `Elbow_L/R`, `Hip_L/R`, `Knee_L/R`) so the scene code walks and waves them |
 | `house.py` | `smart_house.glb` | The smart home: hip roof of corrugated iron, solar panels, recessed windows with burglar bars (`Window_L/R` light up), panelled door, porch lamp (`Porch_Lamp`), camera, smart meter, rainwater tank |
+| `servo.py` | `sg90-servo.glb` → `assets/models/modules/` | SG90 micro servo in a plywood bracket for Servo Says Hello: real sizes, `Horn` (pivot on the shaft, turn its local Z; `Hand` child), `Servo_Case`, `Servo_Shaft`, `Wire_Signal/Power/Ground`, `Connector`, `Sock_*` empties, `Stand`. Draco from Blender itself. Build: `blender -b --factory-startup -P servo.py -- out/sg90-servo.glb` |
 | `banana.py` | `banana.glb` | Two banana plants (`Banana_A` with a bunch and a flower bud, `Banana_B`) with torn, alpha-cut leaves |
 
 Shared: `lib.py` (materials, shapes, baked contact shadows in the vertex colours, glTF export, preview render)
