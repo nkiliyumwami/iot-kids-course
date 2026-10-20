@@ -5,3 +5,4 @@ out/*.mp4
 out/*.png
 out/*.zip
 !out/CONTACT_SHEET.png
+render.log

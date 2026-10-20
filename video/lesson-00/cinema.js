@@ -81,6 +81,9 @@
       // a wider, softer halo on top of the lesson's glow: reads as "bloom" in close-ups
       const halo = new T.Sprite(new T.SpriteMaterial({ map: softTexture(rgb), blending: T.AdditiveBlending, depthWrite: false, transparent: true }));
       halo.position.set(c.x, c.y + 0.8, c.z); halo.visible = false; inner.add(halo); ext.halo[k] = halo;
+      // glows are drawn over the board instead of cutting into it (the sprites otherwise clip with a hard edge
+      // against the board and the module lid, very visible in close-ups); every powered shot looks down on the LEDs
+      [ext.glowSprite[k], halo].forEach((sp) => { sp.material.depthTest = false; sp.renderOrder = 10; });
     });
 
     // own copies of the antenna and module materials, so they can glow without touching anything else
@@ -401,6 +404,18 @@
   S.ST08_d25_highlight = still('D25 highlighted', () => ({ cam: { target: [-6.5, 1.8, -2.5], dist: 58, az: 0, pol: 27, fov: 34 }, labels: true,
     colours: groupsOn('gnd', 'power', 'gpio'), sel: ['L08_GPIO25'], glow: { L08_GPIO25: 1 } }));
 
+  // read one row and one column through the middle of the frame: the board must cover some of them
+  function boardDrawn(gl, alpha) {
+    const w = gl.drawingBufferWidth, h = gl.drawingBufferHeight, row = new Uint8Array(w * 4), col = new Uint8Array(h * 4);
+    gl.readPixels(0, h >> 1, w, 1, gl.RGBA, gl.UNSIGNED_BYTE, row);
+    gl.readPixels(w >> 1, 0, 1, h, gl.RGBA, gl.UNSIGNED_BYTE, col);
+    let hit = 0, n = 0;
+    for (const a of [row, col]) for (let i = 0; i < a.length; i += 16) {
+      n++;
+      if (alpha ? a[i + 3] > 200 : Math.abs(a[i] - 0xF6) + Math.abs(a[i + 1] - 0xF8) + Math.abs(a[i + 2] - 0xFA) > 30) hit++;
+    }
+    return hit / n > 0.03;
+  }
   const inited = new Set();
   function seek(id, t, opts) {
     const shot = S[id]; if (!shot) throw new Error('no shot ' + id);
@@ -416,6 +431,10 @@
     const d = Object.assign(DEFAULT(), shot.frame(u));
     apply(d);
     window.__viewerFrame(100000 + Math.round(t * 1000));   // the viewer's own frame: LEDs, our hook, render, label positions
+    // a lost GPU context draws nothing: fail loudly instead of capturing an empty frame
+    const gl = window.__renderer.getContext();
+    if (gl.isContextLost()) throw new Error('WebGL context lost');
+    if (!boardDrawn(gl, alpha)) throw new Error('board not drawn (GPU trouble?)');
     styleLabels(d);
     drawFx(d);
     return true;

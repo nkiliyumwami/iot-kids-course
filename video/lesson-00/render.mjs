@@ -1,7 +1,7 @@
 // Renders every clip and still for the Lesson 0 explainer video into out/.
 //   node video/lesson-00/render.mjs                 all shots (skips ones already rendered and verified)
 //   node video/lesson-00/render.mjs S05_usb_power_on C02_led_on_off --force
-//   options: --force (render again), --workers N (parallel browser pages, default 4), --keep-frames
+//   options: --force (render again), --workers N (parallel pages for the 3D board, default 2), --keep-frames
 // The 3D shots come from render.html (the lesson's own board viewer), the code clips from code.html.
 // Every frame is drawn at an exact time (frame N at N/60 s) and captured from a 1920x1080 page at device scale 2 = 3840x2160.
 import { chromium } from 'playwright';
@@ -21,7 +21,8 @@ const FFMPEG = process.env.FFMPEG || ffmpegPath, FFPROBE = process.env.FFPROBE |
 const args = process.argv.slice(2);
 const flag = (f) => args.includes(f);
 const opt = (f, d) => { const i = args.indexOf(f); return i >= 0 ? args[i + 1] : d; };
-const FORCE = flag('--force'), KEEP = flag('--keep-frames'), WORKERS = +opt('--workers', 4);
+// two pages for the 3D board: each holds a 7680x4320 supersampled buffer, and more than two can run the GPU out of memory
+const FORCE = flag('--force'), KEEP = flag('--keep-frames'), WORKERS = { 'render.html': +opt('--workers', 2), 'code.html': +opt('--workers', 4) };
 const wanted = args.filter((a, i) => !a.startsWith('--') && !(i > 0 && args[i - 1] === '--workers'));
 const PAGES = ['render.html', 'code.html'];
 const BROWSER_ARGS = ['--use-angle=vulkan', '--enable-gpu', '--ignore-gpu-blocklist', '--hide-scrollbars'];
@@ -58,8 +59,16 @@ async function openPages(browser, url, page, n) {
   }
   return pages;
 }
-async function capture(p, id, t, file, alpha) {
-  await p.evaluate(([id, t, alpha]) => window.cinema.seek(id, t, { alpha }), [id, t, alpha]);
+async function capture(p, id, t, file, alpha, tries = 3) {
+  try {
+    await p.evaluate(([id, t, alpha]) => window.cinema.seek(id, t, { alpha }), [id, t, alpha]);
+  } catch (e) {
+    // a lost GPU context (or a crashed page): reload the page and draw the frame again
+    if (tries <= 1) throw e;
+    log(`  ${id} t=${t.toFixed(3)}: ${e.message.split('\n')[0]}, reloading the page and retrying`);
+    await p.reload(); await p.evaluate(() => window.cinema.ready);
+    return capture(p, id, t, file, alpha, tries - 1);
+  }
   await p.screenshot({ path: file, clip: { x: 0, y: 0, width: 1920, height: 1080 }, omitBackground: alpha, animations: 'disabled', caret: 'hide' });
 }
 
@@ -88,7 +97,17 @@ async function verifyClip(file, w, h, seconds) {
   if (p.codec !== 'h264' || p.pix_fmt !== 'yuv420p') problems.push(`${p.codec}/${p.pix_fmt}`);
   const first = await pictureStats(file, { frame: 0 }), lastF = await pictureStats(file, { frame: p.frames - 1 });
   if (!notBlank(first)) problems.push('first frame blank'); if (!notBlank(lastF)) problems.push('last frame blank');
+  // every frame, not just the ends: a frame with no picture (flat background) means something failed to draw
+  const flat = await flatFrames(file);
+  if (flat.length) problems.push(`${flat.length} blank frame(s), first at ${flat[0]}`);
   return { ok: !problems.length, problems, ...p, firstYavg: first.yavg, lastYavg: lastF.yavg };
+}
+async function flatFrames(input, { alpha } = {}) {
+  const pre = alpha ? ['-framerate', String(FPS), '-i', path.join(input, '%05d.png'), '-vf', 'alphaextract,signalstats,metadata=print:file=-']
+    : ['-i', input, '-vf', 'signalstats,metadata=print:file=-'];
+  const { out } = await run(FFMPEG, ['-v', 'error', ...pre, '-f', 'null', '-']);
+  const lo = [...out.matchAll(/YMIN=([\d.]+)/g)].map((m) => +m[1]), hi = [...out.matchAll(/YMAX=([\d.]+)/g)].map((m) => +m[1]);
+  return lo.map((v, i) => (alpha ? hi[i] < 128 : hi[i] - v < 40) ? i : -1).filter((i) => i >= 0);
 }
 async function verifyPng(file, alpha) {
   const { out } = await run(FFPROBE, ['-v', 'error', '-show_entries', 'stream=width,height,pix_fmt', '-of', 'json', file]);
@@ -144,6 +163,8 @@ async function renderClip(pages, id, shot) {
   if (shot.alpha) {
     const adir = path.join(FRAMES, `${id}_alpha`), zip = path.join(OUT, `${id}_alpha_png.zip`);
     await renderFrames(pages, id, count, adir, true);
+    const flatA = await flatFrames(adir, { alpha: true });
+    if (flatA.length) { res.ok = false; res.problems.push(`alpha: ${flatA.length} empty frame(s), first at ${flatA[0]}`); }
     for (const n of [0, count - 1]) { const v = await verifyPng(path.join(adir, `${String(n).padStart(5, '0')}.png`), true); if (!v.ok) { res.ok = false; res.problems.push(`alpha frame ${n}: ${v.problems}`); } }
     fs.rmSync(zip, { force: true });
     execFileSync('zip', ['-q', '-0', '-r', zip, '.'], { cwd: adir });   // PNGs are already compressed: store only
@@ -176,7 +197,7 @@ try {
     const shots = await first.evaluate(() => window.cinema.shots);
     const ids = Object.keys(shots).filter((id) => !wanted.length || wanted.includes(id));
     if (!ids.length) { await first.close(); continue; }
-    const pages = [first, ...(await openPages(browser, url, page, Math.max(0, WORKERS - 1)))];
+    const pages = [first, ...(await openPages(browser, url, page, Math.max(0, WORKERS[page] - 1)))];
     for (const id of ids) {
       const shot = shots[id];
       const prev = verified[id];

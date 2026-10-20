@@ -130,7 +130,7 @@ html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; cursor: non
       return card(lines, cursor(cursorOn(u, last)), '') + `<div class="ledbox">${ledSvg(level)}${reading}</div>`;
     } },
     C03_pin25: { length: 6, line: '"Pin(25) means GPIO 25, printed D25"', frame(u) {
-      const a = seg(u, 0, 0.5, outCubic), q = seg(u, 0.8, 1.15, outBack), qOut = seg(u, 2.6, 3.0), ans = seg(u, 2.7, 3.3, outCubic), tag = seg(u, 3.3, 3.75, outBack);
+      const a = 1, q = seg(u, 0.8, 1.15, outBack), qOut = seg(u, 2.6, 3.0), ans = seg(u, 2.7, 3.3, outCubic), tag = seg(u, 3.3, 3.75, outBack);
       return `<div class="big"><div class="bigrow" style="transform:translateX(${lerp(0, 93, 1 - qOut) * 0}px)">
           <div class="pincode" style="opacity:${a};transform:scale(${lerp(0.92, 1, a)})">Pin(25)</div>
           <div class="q" style="opacity:${q * (1 - qOut)};transform:scale(${lerp(0.3, 1, q)}) rotate(${lerp(-25, 0, q)}deg)">?</div></div>
