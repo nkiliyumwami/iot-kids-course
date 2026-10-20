@@ -71,6 +71,39 @@
       can: ['Build a full three-LED circuit', 'Make wiring mistakes safely and see why a circuit fails', 'Spot wrong GPIO pins, reversed LEDs and missing parts, and fix them',
         'Experiment with the traffic-light timing', 'Solve troubleshooting challenges on your own'] },
   ];
+  // Sensor modules: standalone projects that unlock after Lesson 7 and can be done in any order. Each starts from a bare
+  // board with one new sensor and one output the learner already knows. They are not lessons: they never change the
+  // lesson order or the "Next" links, but each earns a badge (assets/badges/m-<slug>.svg) and counts for the course
+  // certificate once it is 'ready'. `uses` lists modules to finish first. Pages live in lessons/m-<slug>/.
+  const modules = [
+    { slug: 'm-servo', badge: 'm-servo', title: 'Servo Says Hello', sensor: 'None (an output module)', output: 'SG90 servo', needs: '07-night-mode', uses: [], status: 'ready', minutes: 45,
+      idea: 'Meet a motor that turns to the angle you choose: wave hello with a servo arm.',
+      skills: ['Powered a servo safely from its own 5 V supply', 'Set a servo angle with a 50 Hz PWM signal', 'Turned a number of degrees into a pulse'] },
+    { slug: 'm-parking-gate', badge: 'm-parking-gate', title: 'The Parking Gate', sensor: 'HC-SR04 distance sensor', output: 'SG90 servo', needs: '07-night-mode', uses: ['m-servo'], status: 'planned', minutes: 45,
+      idea: 'A car drives up, the gate lifts. Measure distance with sound and open a servo gate.',
+      skills: ['Measured distance with an ultrasonic echo', 'Turned echo time into centimetres', 'Opened a gate when something came close'] },
+    { slug: 'm-thirsty-plant', badge: 'm-thirsty-plant', title: 'The Thirsty Plant', sensor: 'Soil moisture probe', output: 'LED', needs: '07-night-mode', uses: [], status: 'planned', minutes: 40,
+      idea: 'Your plant can’t talk, so give it a light that says “water me!” when the soil gets dry.',
+      skills: ['Read a soil moisture probe on an analog pin', 'Chose a “too dry” threshold from real readings', 'Lit a warning LED when the soil dried out'] },
+    { slug: 'm-rain-roof', badge: 'm-rain-roof', title: 'Rain, Rain, Go Away', sensor: 'Raindrop sensor', output: 'SG90 servo', needs: '07-night-mode', uses: ['m-servo'], status: 'planned', minutes: 45,
+      idea: 'The washing is drying outside and the sky turns grey. A rain sensor feels the first drops and a servo swings the roof over the clothes.',
+      skills: ['Read a raindrop sensor on an analog pin', 'Learned why wet means a smaller number', 'Moved a servo roof when rain started'] },
+    { slug: 'm-door', badge: 'm-door', title: 'Who’s at the Door?', sensor: 'IR obstacle sensor', output: 'Buzzer', needs: '07-night-mode', uses: [], status: 'planned', minutes: 40,
+      idea: 'An invisible beam of infrared light watches the door. When someone comes close, the buzzer tells you.',
+      skills: ['Wired an IR obstacle sensor to a digital input', 'Turned the sensor’s little knob to set its range', 'Sounded a buzzer when someone came close'] },
+    { slug: 'm-joystick', badge: 'm-joystick', title: 'Follow My Hand', sensor: 'Joystick', output: 'SG90 servo', needs: '07-night-mode', uses: ['m-servo'], status: 'planned', minutes: 40,
+      idea: 'Push the stick left and right and the servo arm follows your hand, like the controls of a crane.',
+      skills: ['Read a joystick on an analog pin', 'Turned a reading into an angle', 'Made a servo follow a hand movement'] },
+    { slug: 'm-too-hot', badge: 'm-too-hot', title: 'Too Hot in Here', sensor: 'DHT11 temperature sensor', output: 'LED', needs: '07-night-mode', uses: [], status: 'planned', minutes: 40,
+      idea: 'Is the kitchen getting too hot? A temperature sensor checks the air and a warning light comes on.',
+      skills: ['Read temperature and humidity from a DHT11', 'Used a library with import dht', 'Lit a warning light above a temperature'] },
+    { slug: 'm-touch-fence', badge: 'm-touch-fence', title: 'Don’t Touch the Fence', sensor: 'ESP32 touch pin (no extra sensor!)', output: 'Buzzer', needs: '07-night-mode', uses: [], status: 'planned', minutes: 35,
+      idea: 'Protect the garden with a pretend fence made of foil. Your ESP32 can feel a touch by itself, and the buzzer sounds the alarm.',
+      skills: ['Used the ESP32’s built-in touch sensing', 'Chose a touch threshold from real readings', 'Sounded an alarm when the fence was touched'] },
+    { slug: 'm-radar', badge: 'm-radar', title: 'Radar Scanner', sensor: 'HC-SR04 distance sensor on a servo', output: 'SG90 servo + Shell map', needs: '07-night-mode', uses: ['m-parking-gate'], status: 'planned', minutes: 50,
+      idea: 'Put the distance sensor on top of the servo and sweep it from side to side, like a ship’s radar, to find the closest thing in the room.',
+      skills: ['Swept a servo with a for loop', 'Measured distance at every angle', 'Found the closest object and pointed at it'] },
+  ];
   const KEY = 'iotkids.progress';
   function readProgress() {
     try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { return {}; }
@@ -87,16 +120,24 @@
     const i = lessons.findIndex((l) => l.slug === slug);
     return i >= 0 ? lessons.slice(i + 1).find((l) => l.status === 'ready') || null : null;
   }
-  // "Lesson 3" or "Circuit Lab 1", and the short form for the little number circle
-  const name = (l) => l.label || 'Lesson ' + l.n;
-  const short = (l) => l.short || String(l.n);
+  // "Lesson 3", "Circuit Lab 1" or a module's title, and the short form for the little number circle
+  const name = (l) => l.label || (l.n == null ? l.title : 'Lesson ' + l.n);
+  const short = (l) => l.short || (l.n == null ? 'M' : String(l.n));
   function lessonBySlug(slug) { return lessons.find((l) => l.slug === slug) || null; }
+  function moduleBySlug(slug) { return modules.find((m) => m.slug === slug) || null; }
+  // anything that earns a badge and a certificate: a lesson or a sensor module
+  const itemBySlug = (slug) => lessonBySlug(slug) || moduleBySlug(slug);
+  // modules open once Lesson 7 (Night Mode) is finished
+  function moduleUnlocked() { return !!(readProgress()['07-night-mode'] || {}).done; }
+  // what the course certificate asks for: every lesson, plus every module that is ready
+  const certItems = () => lessons.concat(modules.filter((m) => m.status === 'ready'));
   function badgeSrc(lesson, prefix) { return (prefix || '') + 'assets/badges/' + (lesson.badge || String(lesson.n).padStart(2, '0')) + '.svg'; }
   const extrasAfter = (slug) => extras.filter((x) => x.after === slug);
   // an extra's "start over": removes only that extra's own entry, never a lesson's
   function forgetExtra(id) {
-    if (!extras.some((x) => x.id === id) || lessonBySlug(id)) return;
+    if (!extras.some((x) => x.id === id) || itemBySlug(id)) return;
     try { const all = readProgress(); delete all[id]; localStorage.setItem(KEY, JSON.stringify(all)); } catch (e) { /* nothing saved */ }
   }
-  window.COURSE = { title: 'IoT for Young Makers', lessons, units, extras, extrasAfter, forgetExtra, readProgress, saveProgress, nextLesson, lessonBySlug, badgeSrc, name, short };
+  window.COURSE = { title: 'IoT for Young Makers', lessons, units, extras, extrasAfter, forgetExtra, modules, moduleBySlug, moduleUnlocked, itemBySlug, certItems,
+    readProgress, saveProgress, nextLesson, lessonBySlug, badgeSrc, name, short };
 })();

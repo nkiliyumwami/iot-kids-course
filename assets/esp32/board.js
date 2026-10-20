@@ -58,6 +58,8 @@
     bounce: { term: 'Bounce', say: 'bounce', kid: 'When a button is pressed its metal springs and touches again a few times in a few thousandths of a second, so the pin reads 0, 1, 0, 0. Fixing it is called debouncing.', pro: 'Wait 20 to 50 ms after the first press before looking again.' },
     frequency: { term: 'Frequency (hertz, Hz)', say: 'FREE-kwen-see, hurts', kid: 'How many times something repeats every second. A pin that switches ON and OFF 1000 times a second has a frequency of 1000 hertz (1000 Hz). More times a second makes a higher note.', pro: 'Set the buzzer frequency to 1000 Hz.' },
     duty: { term: 'Duty cycle', say: 'DYOO-tee SY-kul', kid: 'How much of each ON–OFF cycle the pin spends ON. 50% means ON half the time and OFF half the time. A buzzer is shaken hardest at about half.', pro: 'The duty cycle is 50%.' },
+    servo: { term: 'Servo (servo motor)', say: 'SUR-voh', kid: 'A small motor with gears and a tiny circuit inside. Tell it an angle and it turns its arm there and holds it.', pro: 'The servo turns to 90 degrees when it gets a 1.5 ms pulse.' },
+    pulse: { term: 'Pulse width', say: 'pulse width', kid: 'How long each ON pulse lasts. A servo reads it as an angle: a short pulse means one side, a long pulse the other.', pro: 'A 1.5 ms pulse width puts the servo in the middle.' },
     i2c: { term: 'I²C', say: 'I-squared-C', kid: 'A way to connect sensors and small screens with just two wires, called SDA and SCL.', pro: 'The screen is on I²C: SDA 21, SCL 22.' },
     spi: { term: 'SPI', say: 'S-P-I', kid: 'A fast way to talk to screens and memory cards using four wires.', pro: 'The SD card reader uses SPI.' },
     jumper: { term: 'Jumper wire', say: 'JUMP-er wire', kid: 'A wire with a plug on each end. It carries electricity from one place to another, like a pipe carries water. Red for power, black for ground.', pro: 'Slide the female end of the jumper wire onto the pin.' },
@@ -137,6 +139,29 @@
     P('R14_GND', 'R', 14, 'GND', null, 'gnd', 'Another ground pin, 0 volts. All GND pins are joined inside the board.'),
     P('R15_3V3', 'R', 15, '3V3', null, 'power', 'Gives out 3.3 volts to power small sensors.', 'Never connect 3V3 straight to GND: that’s a short circuit.'),
   ];
+  /* ---------- the sensor modules (after Lesson 7): which pin each part uses, why, and its code ---------- */
+  const DIST = `from machine import Pin, time_pulse_us\nimport time\n\ntrig = Pin(19, Pin.OUT)   # we send the ping\necho = Pin(21, Pin.IN)    # we time the echo\n\ntrig.value(1)\ntime.sleep_us(10)\ntrig.value(0)\nt = time_pulse_us(echo, 1, 30000)\nprint(t / 58, 'cm')   # sound: 58 microseconds per cm there and back`;
+  const MODULE_PINS = {
+    D14: { part: 'the IR obstacle sensor in “Who’s at the Door?”', why: 'An input with a pull-up resistor inside. Its little start-up pulses don’t bother a sensor that only listens.',
+      code: `from machine import Pin\n\neye = Pin(14, Pin.IN, Pin.PULL_UP)\nif eye.value() == 0:   # the IR sensor pulls the pin LOW when something is close\n    print('Someone is at the door!')` },
+    D32: { part: 'the touch fence in “Don’t Touch the Fence”', why: 'A touch pin: the ESP32 can feel a finger on a wire or a piece of foil by itself, with no extra sensor.',
+      code: `from machine import TouchPad, Pin\n\nfence = TouchPad(Pin(32))\nTOUCHED = 200                  # smaller number = touched\nif fence.read() < TOUCHED:\n    print('Someone touched the fence!')` },
+    D33: { part: 'the soil probe in “The Thirsty Plant”', why: 'An ADC1 pin, so it can measure “how wet” even while Wi-Fi is on, like the light sensor in Lesson 6.',
+      code: `from machine import ADC, Pin\n\nsoil = ADC(Pin(33))\nsoil.atten(ADC.ATTN_11DB)   # read the full 0-3.3 V\nDRY = 3000                  # higher number = drier soil\nif soil.read() > DRY:\n    print('Water me!')` },
+    D34: { part: 'the raindrop sensor in “Rain, Rain, Go Away”', why: 'A listening-only ADC1 pin: perfect for a sensor, and it can never be an output by mistake.',
+      code: `from machine import ADC, Pin\n\nrain = ADC(Pin(34))\nrain.atten(ADC.ATTN_11DB)\nWET = 2500                  # water on the board makes the number smaller\nif rain.read() < WET:\n    print('It is raining!')` },
+    D35: { part: 'the joystick in “Follow My Hand”', why: 'A listening-only ADC1 pin that reads how far you push the stick: 0 one way, about 4095 the other.',
+      code: `from machine import ADC, Pin\n\nstick = ADC(Pin(35))\nstick.atten(ADC.ATTN_11DB)\nx = stick.read()             # 0 to 4095\nangle = x * 180 // 4095      # turn it into 0 to 180 degrees\nprint(angle)` },
+    D18: { part: 'the servo’s signal wire (orange), in every servo module', why: 'A free output with no start-up job. It only carries the message “turn to this angle”: the servo’s power comes from a 5 V supply (or VIN for a quick test).',
+      code: `from machine import Pin, PWM\n\nservo = PWM(Pin(18), freq=50)   # servos want 50 pulses a second\n\ndef turn(angle):\n    # 0 degrees = 0.5 ms pulse, 180 degrees = 2.5 ms pulse, out of every 20 ms\n    pulse_us = 500 + 2000 * angle / 180\n    servo.duty_u16(int(pulse_us * 65535 / 20000))\n\nturn(90)` },
+    D4: { part: 'the DHT11 temperature sensor in “Too Hot in Here”', why: 'A free pin with no start-up job. The DHT11 sends its numbers down one data wire, so one pin is enough.',
+      code: `from machine import Pin\nimport dht\n\nsensor = dht.DHT11(Pin(4))\nsensor.measure()\nprint(sensor.temperature(), '°C')\nprint(sensor.humidity(), '%')` },
+    D19: { part: 'the distance sensor’s TRIG wire (Parking Gate, Radar Scanner)', why: 'A free output beside D21. TRIG sends the 10-microsecond “shout”.', code: DIST },
+    D21: { part: 'the distance sensor’s ECHO wire (Parking Gate, Radar Scanner)', why: 'A free input beside D19. ECHO stays high while the sound travels. Use a 3.3 V HC-SR04P: a 5 V one sends back too many volts for this pin.', code: DIST },
+    VIN: { part: 'the servo’s red power wire, for a quick test', why: 'Motors are hungry. On many DevKit V1 boards VIN carries about 5 volts from USB, enough for one small servo; a separate 5 V supply with the grounds joined is better. Never power a servo from 3V3 or a GPIO pin.' },
+  };
+  PINS.forEach((p) => { if (MODULE_PINS[p.printed]) p.module = MODULE_PINS[p.printed]; });
+
   const findPin = (q) => {
     if (q == null) return null;
     const s = String(q).trim().toLowerCase();
@@ -165,6 +190,7 @@
   }
   function examples(p) {
     const g = p.gpio, a = abilities(p), out = [];
+    if (p.module && p.module.code) out.push([`Sensor modules: ${p.module.part}`, p.module.code]);
     if (a.includes('out')) out.push(['Blink an LED', `from machine import Pin\nimport time\n\nled = Pin(${g}, Pin.OUT)   # GPIO ${g} is an output\nwhile True:\n    led.value(1)   # on\n    time.sleep(0.5)\n    led.value(0)   # off\n    time.sleep(0.5)`]);
     if (a.includes('in')) out.push(['Read a button', g >= 34
       ? `from machine import Pin\n\n# no built-in pull-up here: add a 10 kΩ resistor to 3V3\nbutton = Pin(${g}, Pin.IN)\nprint(button.value())   # 1 or 0`
