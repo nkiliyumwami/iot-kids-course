@@ -82,7 +82,7 @@
     { slug: 'm-parking-gate', badge: 'm-parking-gate', title: 'The Parking Gate', sensor: 'HC-SR04 distance sensor', output: 'SG90 servo', needs: '07-night-mode', uses: ['m-servo'], status: 'ready', minutes: 45,
       idea: 'A car drives up, the gate lifts. Measure distance with sound and open a servo gate.',
       skills: ['Measured distance with an ultrasonic echo', 'Turned echo time into centimetres', 'Opened a gate when something came close'] },
-    { slug: 'm-thirsty-plant', badge: 'm-thirsty-plant', title: 'The Thirsty Plant', sensor: 'Soil moisture probe', output: 'LED', needs: '07-night-mode', uses: [], status: 'planned', minutes: 40,
+    { slug: 'm-thirsty-plant', badge: 'm-thirsty-plant', title: 'The Thirsty Plant', sensor: 'Soil moisture probe', output: 'LED', needs: '07-night-mode', uses: [], status: 'ready', minutes: 40,
       idea: 'Your plant can’t talk, so give it a light that says “water me!” when the soil gets dry.',
       skills: ['Read a soil moisture probe on an analog pin', 'Chose a “too dry” threshold from real readings', 'Lit a warning LED when the soil dried out'] },
     { slug: 'm-rain-roof', badge: 'm-rain-roof', title: 'Rain, Rain, Go Away', sensor: 'Raindrop sensor', output: 'SG90 servo', needs: '07-night-mode', uses: ['m-servo'], status: 'planned', minutes: 45,
