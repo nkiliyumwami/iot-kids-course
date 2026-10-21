@@ -1,6 +1,6 @@
 {
   "project": "KundaKode Lesson 0 — Pin Detective: Meet Your ESP32",
-  "generated": "2026-10-20T07:53:26.037Z",
+  "generated": "2026-10-21T04:45:30.500Z",
   "notes": "Clip times include 1 s of handle before and after the narration length. Clips: H.264 High, yuv420p, BT.709, CRF 14 (4K) / CRF 18 (1080 proxy). Background #F6F8FA unless alpha.",
   "files": [
     {
@@ -62,9 +62,9 @@
     {
       "file": "S02_spin_flip.mp4",
       "id": "S02_spin_flip",
-      "narration_seconds": 8,
+      "narration_seconds": 14,
       "handles_seconds": 1,
-      "duration_seconds": 10,
+      "duration_seconds": 16,
       "fps": 60,
       "intended_line": "\"Spin it. Look underneath too.\"",
       "verification": "verified",
@@ -74,9 +74,9 @@
     {
       "file": "S02_spin_flip_1080.mp4",
       "id": "S02_spin_flip",
-      "narration_seconds": 8,
+      "narration_seconds": 14,
       "handles_seconds": 1,
-      "duration_seconds": 10,
+      "duration_seconds": 16,
       "fps": 60,
       "intended_line": "\"Spin it. Look underneath too.\"",
       "verification": "verified",

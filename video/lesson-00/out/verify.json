@@ -89,19 +89,19 @@
     "width": 3840,
     "height": 2160,
     "fps": 60,
-    "frames": 600,
-    "duration": 10,
+    "frames": 960,
+    "duration": 16,
     "codec": "h264",
     "pix_fmt": "yuv420p",
     "firstYavg": 212.053,
     "lastYavg": 212.053,
     "id": "S02_spin_flip",
     "page": "render.html",
-    "length": 8,
+    "length": 14,
     "handle": 1,
     "alpha": false,
     "line": "\"Spin it. Look underneath too.\"",
-    "rendered": "2026-10-20T07:04:13.321Z"
+    "rendered": "2026-10-21T04:43:17.460Z"
   },
   "S03_brain_pushin": {
     "kind": "clip",

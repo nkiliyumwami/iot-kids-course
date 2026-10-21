@@ -248,12 +248,16 @@
   // S01: hero ¾ view, slow 30° orbit with a gentle push-in. Board on, labels off (as at the start of the lesson).
   S.S01_hero_orbit = { length: 10, alpha: true, line: 'Intro + outro',
     frame: (u) => { const k = seg(u, 0, 10); return { cam: { target: [0, 1, 1], dist: lerp(104, 90, k), az: lerp(-15, 15, k), pol: lerp(33, 30, k) } }; } };
-  // S02: straight-on top view, a full spin, a tilt to show the underside, back to the top. Unplugged, like step 1.
-  S.S02_spin_flip = { length: 8, line: '"Spin it. Look underneath too."',
+  // S02: straight-on top view, a slow full spin (the camera leans in to 26° so the edges and headers show as it turns),
+  // a slow roll onto its back to show the underside, a hold, and a roll back to the start. Unplugged, like step 1.
+  // Paced for ages 10–15 (review 2026-10-21): no move is faster than ~95°/s, and each view is held before the next move.
+  //   0–1.2 front · 1.2–7.2 spin · 7.6–10.1 roll over · 10.1–11.4 underside · 11.4–13.9 roll back · 13.9–14 front
+  S.S02_spin_flip = { length: 14, line: '"Spin it. Look underneath too."',
     frame: (u) => {
-      const spin = 360 * seg(u, 0.35, 4.55, quint);
-      const tilt = 150 * (seg(u, 4.45, 6.05, cubic) - seg(u, 6.4, 7.85, cubic));
-      return { cam: { target: [0, 1, 0.5], dist: 112, az: 0, pol: 0, fov: 36 }, spin, tilt, power: 0, shadow: 1 - Math.min(1, tilt / 40) };
+      const spin = 360 * seg(u, 1.2, 7.2);
+      const pol = 26 * (seg(u, 1.4, 3.4) - seg(u, 5.2, 7.2));
+      const tilt = 150 * (seg(u, 7.6, 10.1) - seg(u, 11.4, 13.9));
+      return { cam: { target: [0, 1, 0.5], dist: 112, az: 0, pol, fov: 36 }, spin, tilt, power: 0, shadow: 1 - Math.min(1, tilt / 40) };
     } };
   // S03: push in from the full board to the metal module; a soft glow on the module from t = 2 s
   S.S03_brain_pushin = { length: 6, line: '"the brain hides under a shiny metal lid"',

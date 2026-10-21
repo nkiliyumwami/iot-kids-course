@@ -37,9 +37,14 @@
   "plug in the USB" in S05. The hero shots S01/S12, all labelled shots and the stills (except ST03) show the board powered,
   because a lit board reads better as a hero shot and it matches the lesson after mission 3.
 - **S02 speed.** The brief's guideline (≤ ~90° orbit per 4 s) conflicts with "a full 360° spin, then a tilt to the underside
-  and back, in 8 s". The shot list wins: the spin is eased over 4.2 s (quintic), and the board tilts 150° over 1.6 s and back.
-  I rotate the board, not the camera, so the lights stay fixed and the underside is lit. All other shots keep to the guideline.
-  The fastest is S01 at 30°/10 s.
+  and back, in 8 s". The first render kept the 8 s: the spin was eased over 4.2 s (quintic, peaking near 430°/s) and the board
+  tilted 150° over 1.6 s and back. I rotate the board, not the camera, so the lights stay fixed and the underside is lit.
+  **Revised after the 2026-10-21 review ("too fast for 10–15"):** S02 is now 14 s of usable animation (16 s with handles).
+  It holds on the front for 1.2 s, then spins 360° over 6 s (sine ease, peak ~94°/s). While it spins, the camera leans in from
+  straight down to 26° and back, so the board's edges and pin headers show as it turns. After a 0.4 s pause it rolls 150°
+  onto its back over 2.5 s, holds the underside for 1.3 s, and rolls back over 2.5 s, ending exactly on the first frame's
+  pose. Same lights, framing distance, field of view, background and encode. All other shots keep to the guideline.
+  The slowest-turning is S01 at 30°/10 s.
 - **S07 warning.** I drew the "⚠" as an SVG warning triangle. No colour-emoji font is installed, and an emoji could render
   differently on another machine. It flashes twice on a red badge, with a red capsule around the 3V3–GND pair drawn *under* the labels.
 - **S09 label toggle.** Printed → GPIO numbers at t = 5 s, back at t = 7 s. Each flip is a 0.32 s card-flip (scaleY through 0).
