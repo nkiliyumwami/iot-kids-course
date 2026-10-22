@@ -85,7 +85,7 @@
     { slug: 'm-thirsty-plant', badge: 'm-thirsty-plant', title: 'The Thirsty Plant', sensor: 'Soil moisture probe', output: 'LED', needs: '07-night-mode', uses: [], status: 'ready', minutes: 40,
       idea: 'Your plant can’t talk, so give it a light that says “water me!” when the soil gets dry.',
       skills: ['Read a soil moisture probe on an analog pin', 'Chose a “too dry” threshold from real readings', 'Lit a warning LED when the soil dried out'] },
-    { slug: 'm-rain-roof', badge: 'm-rain-roof', title: 'Rain, Rain, Go Away', sensor: 'Raindrop sensor', output: 'SG90 servo', needs: '07-night-mode', uses: ['m-servo'], status: 'planned', minutes: 45,
+    { slug: 'm-rain-roof', badge: 'm-rain-roof', title: 'Rain, Rain, Go Away', sensor: 'Raindrop sensor', output: 'SG90 servo', needs: '07-night-mode', uses: ['m-servo'], status: 'ready', minutes: 45,
       idea: 'The washing is drying outside and the sky turns grey. A rain sensor feels the first drops and a servo swings the roof over the clothes.',
       skills: ['Read a raindrop sensor on an analog pin', 'Learned why wet means a smaller number', 'Moved a servo roof when rain started'] },
     { slug: 'm-door', badge: 'm-door', title: 'Who’s at the Door?', sensor: 'IR obstacle sensor', output: 'Buzzer', needs: '07-night-mode', uses: [], status: 'planned', minutes: 40,
