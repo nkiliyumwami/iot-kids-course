@@ -88,7 +88,7 @@
     { slug: 'm-rain-roof', badge: 'm-rain-roof', title: 'Rain, Rain, Go Away', sensor: 'Raindrop sensor', output: 'SG90 servo', needs: '07-night-mode', uses: ['m-servo'], status: 'ready', minutes: 45,
       idea: 'The washing is drying outside and the sky turns grey. A rain sensor feels the first drops and a servo swings the roof over the clothes.',
       skills: ['Read a raindrop sensor on an analog pin', 'Learned why wet means a smaller number', 'Moved a servo roof when rain started'] },
-    { slug: 'm-door', badge: 'm-door', title: 'Who’s at the Door?', sensor: 'IR obstacle sensor', output: 'Buzzer', needs: '07-night-mode', uses: [], status: 'planned', minutes: 40,
+    { slug: 'm-door', badge: 'm-door', title: 'Who’s at the Door?', sensor: 'IR obstacle sensor', output: 'Buzzer', needs: '07-night-mode', uses: [], status: 'ready', minutes: 40,
       idea: 'An invisible beam of infrared light watches the door. When someone comes close, the buzzer tells you.',
       skills: ['Wired an IR obstacle sensor to a digital input', 'Turned the sensor’s little knob to set its range', 'Sounded a buzzer when someone came close'] },
     { slug: 'm-joystick', badge: 'm-joystick', title: 'Follow My Hand', sensor: 'Joystick', output: 'SG90 servo', needs: '07-night-mode', uses: ['m-servo'], status: 'planned', minutes: 40,
