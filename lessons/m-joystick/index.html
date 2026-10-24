@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Follow My Hand · IoT for Young Makers</title>
+<script src="../../assets/brand.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<!--
+  SENSOR MODULE: Follow My Hand (m-joystick). Built from lessons/_module-template/ (see AGENT.md, "Sensor modules").
+  3D: a code-built desk crane, plus the course ESP32 model with a code-built joystick and SG90 for the wiring.
+-->
+<style>
+:root {
+  --bg: #E3EBF0; --surface: #FFFFFF; --surface-2: #F1F5F8; --ink: #15202A; --muted: #526170; --line: #D2DCE3;
+  --accent: #0A7480; --accent-strong: #075A63; --accent-soft: #DAEEF0; --red: #C93131; --green: #16834A; --hl: #F2B705;
+  --font-display: 'Baloo 2', 'Trebuchet MS', system-ui, sans-serif;
+  --font-body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --font-code: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16.5px; line-height: 1.55; }
+h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.15; margin: 0; }
+a { color: var(--accent-strong); }
+code { font-family: var(--font-code); font-size: .92em; background: var(--surface-2); border-radius: 5px; padding: 0 4px; }
+header.top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 12px 18px; background: var(--surface); border-bottom: 1px solid var(--line); }
+header.top .title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+header.top h1 { font-size: 24px; }
+header.top p { margin: 0; color: var(--muted); font-size: 14px; }
+.home-link { font-weight: 800; font-size: 14px; text-decoration: none; }
+.progress { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-left: auto; }
+.progress .bar { width: 160px; height: 10px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.progress .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .4s; }
+.progress span { font-weight: 700; font-size: 13px; color: var(--muted); }
+main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; padding: 18px; max-width: 1400px; margin: 0 auto; align-items: start; }
+.stage { position: sticky; top: 12px; display: grid; gap: 10px; }
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.tabs button { font: inherit; font-weight: 800; border: 2px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 16px; cursor: pointer; color: var(--ink); }
+.tabs button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.view { position: relative; height: min(64vh, 620px); min-height: 320px; border-radius: 18px; overflow: hidden; background: #cdd8e2; border: 1px solid var(--line); }
+.view canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.view .msg { position: absolute; inset: 0; display: grid; place-items: center; color: #334; font-weight: 700; padding: 20px; text-align: center; }
+.view .hint { position: absolute; left: 10px; bottom: 10px; font-size: 13px; background: rgba(255,255,255,.82); padding: 3px 9px; border-radius: 8px; pointer-events: none; }
+.view .tag { position: absolute; left: 10px; top: 10px; font-size: 13px; font-weight: 800; background: rgba(21,32,42,.78); color: #fff; padding: 3px 10px; border-radius: 8px; pointer-events: none; }
+.view .readout { position: absolute; right: 10px; top: 10px; font: 600 13px var(--font-code); background: #13202A; color: #E3ECF1; padding: 6px 10px; border-radius: 8px; pointer-events: none; white-space: pre; }
+.note { font-size: 13.5px; color: var(--muted); margin: 0; }
+.cards { display: grid; gap: 14px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; min-width: 0; }
+.card > h2 { font-size: 22px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.card > h2 .n { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-strong); font-size: 16px; flex: none; }
+.card p { margin: 0 0 8px; }
+.story { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 12px; align-items: start; }
+.guide img, .guide svg { width: 88px; height: auto; display: block; }
+.say { background: var(--accent-soft); border-radius: 14px; padding: 10px 12px; }
+.parts { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.parts li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; align-items: start; background: var(--surface-2); border-radius: 12px; padding: 8px 10px; }
+.parts .ic { font-size: 22px; line-height: 1.2; text-align: center; }
+.parts .nm { display: block; font-weight: 800; }
+.parts .new { display: inline-block; font-size: 11.5px; font-weight: 800; background: #FFF1C2; color: #7A5400; border-radius: 99px; padding: 0 8px; margin-left: 4px; vertical-align: 1px; }
+.wires { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 6px; }
+.wires li { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 10px; align-items: center; font-size: 15px; }
+.wires i { width: 14px; height: 14px; border-radius: 4px; display: block; }
+.why { display: grid; gap: 6px; margin-top: 8px; }
+.why-item button { width: 100%; text-align: left; font: inherit; font-weight: 800; color: var(--accent-strong); background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 7px 12px; cursor: pointer; }
+.why-item button::before { content: '❓ '; }
+.why-item.now button { background: var(--accent-soft); border-color: var(--accent); }
+.why-item .ans { padding: 8px 12px 4px; font-size: 15px; }
+.pin-link { font-weight: 800; white-space: nowrap; }
+.swap { border: 2px dashed #B79BE0; background: #F7F2FD; border-radius: 14px; padding: 10px 12px; margin-top: 10px; }
+.swap h3 { font-size: 17px; color: #5A2E9C; margin-bottom: 4px; }
+.swap ul { margin: 4px 0 0; padding-left: 20px; }
+.challenges { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.challenges li { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+.challenges label { display: flex; gap: 10px; align-items: flex-start; font-weight: 700; cursor: pointer; }
+.challenges input { width: 20px; height: 20px; margin-top: 3px; flex: none; accent-color: var(--green); }
+.challenges details { margin: 6px 0 0 30px; font-size: 15px; }
+.challenges summary { cursor: pointer; color: var(--accent-strong); font-weight: 800; }
+.q { margin-bottom: 12px; }
+.q p { font-weight: 800; margin-bottom: 6px; }
+.q .opts { display: grid; gap: 6px; }
+.q button { text-align: left; font: inherit; border: 2px solid var(--line); background: var(--surface); border-radius: 12px; padding: 7px 12px; cursor: pointer; }
+.q button.right { border-color: var(--green); background: #E3F5EA; }
+.q button.wrong { border-color: var(--red); background: #FBE9E9; }
+.feedback { border-radius: 12px; padding: 8px 12px; margin-top: 6px; font-size: 15px; }
+.feedback.good { background: #E3F5EA; border-left: 5px solid var(--green); }
+.feedback.try { background: #FFF6D6; border-left: 5px solid var(--hl); }
+.btn { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 9px 18px; font: inherit; font-weight: 800; background: var(--accent); color: #fff; border: 0; text-decoration: none; }
+.template-badge { display: flex; gap: 12px; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(21,32,42,.2); }
+.kkb-open { margin-left: 4px; }
+@media (max-width: 900px) {
+  main { grid-template-columns: minmax(0, 1fr); padding: 12px; }
+  .stage { position: static; }
+  .view { height: 58vh; min-height: 300px; }
+  .progress { margin-left: 0; flex: 1 1 100%; }
+  .progress .bar { flex: 1; width: auto; }
+}
+@media (max-width: 440px) {
+  header.top { padding: 10px 12px; }
+  header.top h1 { font-size: 21px; }
+  .story { grid-template-columns: 64px minmax(0, 1fr); }
+  .guide img, .guide svg { width: 64px; }
+  .card { padding: 13px; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="title">
+    <div>
+      <a class="home-link" href="../../lessons.html#modules">← All lessons</a>
+      <h1 id="modTitle">Follow My Hand</h1>
+      <p id="modSub">Sensor module · Joystick → SG90 servo</p>
+    </div>
+  </div>
+  <div class="progress" aria-live="polite">
+    <div class="bar" role="progressbar" aria-label="Module progress"><i id="progressFill"></i></div>
+    <span id="progressText">Part 1 of 6</span>
+  </div>
+</header>
+
+<main>
+  <section class="stage" aria-label="3D scene">
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" id="tabPlace" aria-selected="true" aria-controls="viewPlace">🏗️ The crane</button>
+      <button type="button" role="tab" id="tabWire" aria-selected="false" aria-controls="viewWire">🔧 The wiring</button>
+    </div>
+    <div class="view" id="viewPlace" role="tabpanel" aria-labelledby="tabPlace">
+      <div class="msg" id="placeMsg">Loading the 3D crane…</div>
+      <span class="tag">Animation: the crane arm follows the stick</span>
+      <div class="readout" id="placeReadout" aria-hidden="true"></div>
+      <span class="hint">Drag to turn · pinch or scroll to zoom</span>
+    </div>
+    <div class="view" id="viewWire" role="tabpanel" aria-labelledby="tabWire" hidden>
+      <div class="msg" id="wireMsg">Loading the wiring…</div>
+      <span class="tag">Your desk: quick-test wiring with the servo on VIN</span>
+      <span class="hint">Drag to turn · pinch or scroll to zoom</span>
+    </div>
+    <p class="note">The 3D scene is an educational animation, not a safety test. Ask an adult to check your real circuit before you plug it in.</p>
+  </section>
+
+  <div class="cards">
+    <article class="card" data-part="0" id="storyCard">
+      <h2><span class="n">1</span> The story</h2>
+      <div class="story">
+        <div class="guide">
+          <svg viewBox="0 0 58 70" aria-hidden="true"><rect x="12" y="44" width="34" height="26" rx="10" fill="#2C4E9E"/><circle cx="29" cy="30" r="16" fill="#F2C9A0"/><circle cx="23" cy="31" r="2.2" fill="#15202A"/><circle cx="35" cy="31" r="2.2" fill="#15202A"/><path d="M23 37 q6 5 12 0" stroke="#15202A" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        </div>
+        <div class="say" id="story"></div>
+      </div>
+    </article>
+
+    <article class="card" data-part="1">
+      <h2><span class="n">2</span> What you need</h2>
+      <ul class="parts" id="parts"></ul>
+    </article>
+
+    <article class="card" data-part="2">
+      <h2><span class="n">3</span> Wire it up</h2>
+      <p>Unplug the USB cable first. Then add these wires (tap <b>🔧 The wiring</b> to see them in 3D):</p>
+      <ul class="wires" id="wires"></ul>
+      <div class="why" id="wireWhy"></div>
+    </article>
+
+    <article class="card" data-part="3">
+      <h2><span class="n">4</span> The program</h2>
+      <p id="codeIntro"></p>
+      <section id="codePanel" aria-label="Your MicroPython program"></section>
+      <div class="why" id="codeWhy"></div>
+      <div class="swap" id="swap"></div>
+    </article>
+
+    <article class="card" data-part="4">
+      <h2><span class="n">5</span> Three challenges</h2>
+      <ol class="challenges" id="challenges"></ol>
+    </article>
+
+    <article class="card" data-part="5">
+      <h2><span class="n">6</span> Quick quiz</h2>
+      <div id="quiz"></div>
+    </article>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="../../course.js"></script>
+<script src="../../assets/ohm/ohm.js"></script>
+<script src="../../assets/rewards.js"></script>
+<script>
+(function () {
+  'use strict';
+  /* ================= 1. The module: everything a new module changes ================= */
+  const LESSON_SLUG = 'm-joystick';
+  const PIN = (n, text) => `<a class="pin-link" href="../../pins.html?pin=D${n}" target="_blank" rel="noopener">🔍 ${text || 'D' + n + ' in the Pin Explorer'}</a>`;
+  const MODULE = {
+    story: `<p><b>Officer Ohm:</b> “Last time the weather decided for the servo. In <i>Rain, Rain</i> you read a number from an analog pin and used <code>if</code> and <code>else</code> to choose. Today the boss is <i>you</i>. Think of a crane driver on a building site: they push a stick left and the crane arm swings left. Can your hand steer a servo arm?”</p>
+      <p>The one new idea is the <b>joystick</b>: a stick that can lean left and right. Inside it is a tiny dial (engineers call it a <b>potentiometer</b>) that turns the lean into a number from 0 to 4095. Stick in the middle is about 2048. Then comes a new trick: <b>turning a reading into an angle</b> with <code>x * 180 // 4095</code>. First we use <code>if</code> / <code>else</code> (left half → arm left, right half → arm right). Then we make the arm follow your hand smoothly.</p>`,
+    parts: [
+      { ic: '🧠', name: 'ESP32 DevKit + USB cable', why: 'Your board from every lesson. Start with nothing else plugged in.' },
+      { ic: '🕹️', name: 'Joystick module (KY-023 or similar)', isNew: true, why: 'A small board with a thumb stick and five pins: GND, +5V, VRx, VRy and SW. We use only three: GND, the power pin and VRx (the left-right number).' },
+      { ic: '⚙️', name: 'SG90 servo', why: 'The motor from <i>Servo Says Hello</i> and <i>Rain, Rain</i>. Its arm will be your crane arm.' },
+      { ic: '🔋', name: 'A regulated 5 V supply (recommended)', why: 'Gives the servo its own energy, as in <i>Servo Says Hello</i>. For a quick test, VIN on a USB-powered board can do it.' },
+      { ic: '🧵', name: 'Jumper wires', why: 'Female–female wires plug straight onto the ESP32 header pins and the joystick pins, no breadboard needed.' },
+      { ic: '📏', name: 'A paper crane arm taped to the servo horn', why: 'A long strip of card on the horn makes the angle easy to see. Keep it light, because a small SG90 is not strong.' },
+    ],
+    wires: [
+      { c: '#2B2B2B', text: 'Joystick <b>GND</b> → <b>GND</b>' },
+      { c: '#E03A3A', text: 'Joystick <b>+5V</b> (the power pin) → <b>3V3</b> (not 5 volts, see the Why below)' },
+      { c: '#8A4FD3', text: 'Joystick <b>VRx</b> (left-right) → <b>D35</b>' },
+      { c: '#F08A24', text: 'Servo <b>orange</b> (signal) → <b>D18</b>' },
+      { c: '#C1272D', text: 'Servo <b>red</b> (power) → <b>+ of the 5 V supply</b> (quick test only: <b>VIN</b>, as drawn in the 3D wiring)' },
+      { c: '#6B4226', text: 'Servo <b>brown</b> (ground) → <b>GND</b> (with a supply: its <b>−</b>, and join that − to an ESP32 <b>GND</b> too)' },
+    ],
+    wireWhy: [
+      { q: 'Why does the VRx wire go to D35?', a: `A joystick does not say just ON or OFF, it says <i>how far</i> you pushed. D35 can measure that and turn it into a number from 0 to 4095. It is on a part of the chip called ADC1, which keeps working when Wi-Fi is on, and it is listening-only, so it can never push voltage back into the joystick by mistake. ${PIN(35)}` },
+      { q: 'The joystick’s power pin says +5V. Why plug it into 3V3?', a: 'The stick’s signal can never be higher than the power it is given. On 3.3 volts it sends at most 3.3 volts, which an ESP32 pin can take. On 5 volts it could send too much and hurt the pin. The joystick works fine on 3.3 volts.' },
+      { q: 'What are VRy and SW for? Why leave them out?', a: 'VRy is the up-down number and SW is the button you get when you press the stick down. Our crane only turns left and right, so one number is enough. You can use the others in a challenge.' },
+      { q: 'Why not power the servo from 3V3?', a: 'A servo is a motor, and motors are hungry. Give it a regulated 5 V supply with its − joined to the ESP32’s GND. VIN (about 5 volts from USB on many boards) is only for a quick test with one SG90 with a light arm. Never use 3V3 or a GPIO pin.' },
+      { q: 'Why D18 for the servo’s signal?', a: `The signal wire only carries the message “turn to this angle”, not power. D18 is free and has no start-up job. ${PIN(18)}` },
+      { q: 'Why must the grounds join?', a: 'Every voltage is measured from ground. If the joystick, the servo and the ESP32 don’t share GND, they don’t agree what “0 volts” is, and the readings get muddled.' },
+    ],
+    codeIntro: 'Read the stick, then <code>if</code> the number is <i>smaller</i> than <code>MIDDLE</code> → arm left, <code>else</code> → arm right. The same shape as Rain, Rain! Push the stick and watch the numbers in the Shell. Further down you will meet the smooth version.',
+    program: `from machine import Pin, PWM, ADC
+import time
+
+stick = ADC(Pin(35))             # the joystick's number comes in here
+stick.atten(ADC.ATTN_11DB)       # measure the whole 0 to 3.3 V range
+servo = PWM(Pin(18), freq=50)    # servos want 50 pulses a second
+
+MIDDLE = 2048                    # the stick at rest reads about this
+
+def arm(angle):
+    # 0 degrees = 0.5 ms pulse, 180 degrees = 2.5 ms pulse
+    servo.duty_u16(int(1638 + angle / 180 * 6554))
+
+while True:
+    x = stick.read()             # 0 to 4095
+    print(x)
+    if x < MIDDLE:
+        arm(0)                   # do: arm all the way left
+    else:
+        arm(180)                 # undo: arm all the way right
+    time.sleep(0.1)
+`,
+    codeWhy: [
+      { q: 'What number does the stick give?', a: 'Inside is a dial that your push turns. One end of the dial gives 0 volts, the other end 3.3 volts, and the stick slides between them. <code>stick.read()</code> turns that into 0 to 4095. About 2048 is the middle. On many modules, pushing left gives a smaller number, but some are the other way round, so print the numbers and check yours.' },
+      { q: 'Why is the middle not exactly 2048?', a: 'Real parts are never perfect. A resting stick often reads something like 1800 or 2100, and the number wobbles a little. That is normal. Print it with your hands off, and if you like, change <code>MIDDLE</code> to what you see.' },
+      { q: 'Why does the loop sleep only 0.1 seconds?', a: 'A hand moves faster than rain. A tenth of a second feels instant to you, but it still stops the Shell from being flooded with numbers.' },
+      { q: 'Why does the arm jump all the way to 0 or 180?', a: 'The <code>if</code> / <code>else</code> only knows two answers: left half or right half. The arm jumps to one end, and the number in between is thrown away. Next comes a way to use every number.' },
+      { q: 'How do I turn a reading into an angle?', a: 'Squash a range onto another range. The stick goes 0 to 4095 and the arm goes 0 to 180. So divide by 4095 to get a fraction from 0 to 1, then multiply by 180: <code>x * 180 // 4095</code>. Stick in the middle: 2048 × 180 // 4095 = 90 degrees. Engineers call this <b>mapping</b>. The <code>//</code> means “divide and drop the leftovers”, so we get a whole number of degrees.' },
+      { q: 'Why freq=50 for the servo?', a: 'A servo listens for one pulse every 20 milliseconds (50 a second). The pulse’s length is the angle: short pulse 0°, long pulse 180°.' },
+    ],
+    swap: `<h3>✨ Make it smooth</h3><p>Replace the <code>if</code> / <code>else</code> lines with one line, and the arm follows your hand all the way:</p>
+      <pre style="margin:6px 0;padding:8px 10px;background:#13202A;color:#E3ECF1;border-radius:10px;overflow:auto;font:600 13px var(--font-code)">    x = stick.read()
+    arm(x * 180 // 4095)     # 0 → 0°, 2048 → 90°, 4095 → 180°
+    time.sleep(0.05)</pre>
+      <p>Tap <b>Smooth</b> in the 3D scene to see the difference.</p>
+      <h3 style="margin-top:10px">🔁 Swap the part</h3><p>No joystick? A <b>potentiometer</b> (a knob with three legs) is the same dial without the stick. The middle leg goes to D35, one outer leg to 3V3 and the other to GND. The program does not change at all, and turning the knob steers the arm.</p>`,
+    challenges: [
+      { t: 'Make the arm follow your hand smoothly.', hint: 'Swap the <code>if</code> / <code>else</code> lines for <code>arm(x * 180 // 4095)</code>, as in the purple box.' },
+      { t: 'Make the arm turn the other way, if it moves opposite to your hand.', hint: 'Flip the angle: <code>arm(180 - x * 180 // 4095)</code>. Now 0 gives 180 and 4095 gives 0.' },
+      { t: 'Use a dead zone: when the stick is near the middle, leave the arm where it is.', hint: 'Inside the loop add <code>if abs(x - MIDDLE) &gt; 200:</code> and put the <code>arm(...)</code> line inside it.' },
+    ],
+    quiz: [
+      { q: 'The stick rests in the middle. About what does <code>stick.read()</code> give?', opts: ['About 2048', 'About 0', 'About 4095'], right: 0, why: 'The dial gives 0 at one end and 4095 at the other, so the middle is about half of 4095, around 2048.' },
+      { q: 'Which line turns a reading <code>x</code> (0 to 4095) into an angle (0 to 180)?', opts: ['x * 180 // 4095', 'x + 180', 'x // 180 * 4095'], right: 0, why: 'Divide by the biggest reading to get a fraction, then multiply by the biggest angle. Half the stick makes half the angle.' },
+      { q: 'Why does the joystick’s power pin go to 3V3 even though it says +5V?', opts: ['So its signal never goes above 3.3 V, which the ESP32 pin can take', 'Because 3V3 is stronger than 5 V', 'Because the servo needs it'], right: 0, why: 'The signal can never be higher than the power given. Keeping it at 3.3 V protects the D35 pin.' },
+    ],
+    wiringOneLine: 'Joystick: GND → GND, +5V pin → 3V3, VRx → D35. Servo: orange → D18, red → + of a regulated 5 V supply whose − is joined to GND (quick test only: red → VIN), brown → GND.',
+  };
+
+  /* ================= 2. Progress, saving and the parts of the page ================= */
+  const real = !LESSON_SLUG.startsWith('_');
+  function saveProgress(patch) { if (real && window.COURSE) window.COURSE.saveProgress(LESSON_SLUG, patch); }
+  const parts = Array.from(document.querySelectorAll('[data-part]'));
+  let reached = 0;
+  function setPart(i) {
+    reached = Math.max(reached, i);
+    document.getElementById('progressFill').style.width = Math.round(((reached + 1) / parts.length) * 100) + '%';
+    document.getElementById('progressText').textContent = `Part ${reached + 1} of ${parts.length}`;
+    saveProgress({ step: reached, steps: parts.length });
+  }
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) setPart(+e.target.dataset.part); }), { threshold: 0.35 });
+    parts.forEach((p) => io.observe(p));
+  }
+  setPart(0);
+  if (window.COURSE && real) {
+    const m = window.COURSE.moduleBySlug(LESSON_SLUG);
+    if (m) { document.getElementById('modTitle').textContent = m.title; document.getElementById('modSub').textContent = `Sensor module · ${m.sensor} → ${m.output}`; document.title = m.title + ' · IoT for Young Makers'; }
+  }
+
+  const $ = (id) => document.getElementById(id);
+  $('story').innerHTML = MODULE.story;
+  $('parts').innerHTML = MODULE.parts.map((p) => `<li><span class="ic" aria-hidden="true">${p.ic}</span><span><span class="nm">${p.name}${p.isNew ? '<span class="new">NEW</span>' : ''}</span>${p.why}</span></li>`).join('');
+  $('wires').innerHTML = MODULE.wires.map((w) => `<li><i style="background:${w.c}"></i><span>${w.text}</span></li>`).join('');
+  $('codeIntro').innerHTML = MODULE.codeIntro;
+  $('swap').innerHTML = MODULE.swap;
+  function whyList(host, list) {
+    host.innerHTML = list.map((w, i) => `<div class="why-item"><button type="button" aria-expanded="false" data-i="${i}">${w.q}</button><div class="ans" hidden>${w.a}</div></div>`).join('');
+    host.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+      const item = b.parentElement, ans = item.querySelector('.ans'), open = ans.hidden;
+      document.querySelectorAll('.why-item.now').forEach((x) => x.classList.remove('now'));
+      ans.hidden = !open; b.setAttribute('aria-expanded', String(open)); item.classList.toggle('now', open);
+    }));
+  }
+  whyList($('wireWhy'), MODULE.wireWhy);
+  whyList($('codeWhy'), MODULE.codeWhy);
+
+  const CH_KEY = 'iotkids.challenges.' + LESSON_SLUG;
+  let ticked = {}; try { ticked = JSON.parse(localStorage.getItem(CH_KEY) || '{}') || {}; } catch (e) { /* not remembered */ }
+  $('challenges').innerHTML = MODULE.challenges.map((c, i) => `<li><label><input type="checkbox" data-c="${i}" ${ticked[i] ? 'checked' : ''}><span>${c.t}</span></label>
+    <details><summary>Need a hint?</summary>${c.hint}</details></li>`).join('');
+  $('challenges').addEventListener('change', (e) => {
+    if (!e.target.matches('input')) return;
+    ticked[e.target.dataset.c] = e.target.checked;
+    try { localStorage.setItem(CH_KEY, JSON.stringify(ticked)); } catch (err) { /* not remembered */ }
+  });
+
+  // quiz: a wrong answer gives a hint and another try; all right → #quizDone (rewards.js adds the badge)
+  const quiz = $('quiz'); let right = 0;
+  MODULE.quiz.forEach((q, qi) => {
+    const box = document.createElement('div'); box.className = 'q';
+    box.innerHTML = `<p>${qi + 1}. ${q.q}</p><div class="opts">${q.opts.map((o, i) => `<button type="button" data-o="${i}">${o}</button>`).join('')}</div><div class="fb"></div>`;
+    box.addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b || box.dataset.done) return;
+      const ok = +b.dataset.o === q.right;
+      b.classList.add(ok ? 'right' : 'wrong');
+      box.querySelector('.fb').innerHTML = ok ? `<div class="feedback good">Yes! ${q.why}</div>` : '<div class="feedback try">Not quite. Look back at the “Why?” taps and try again.</div>';
+      if (ok) { box.dataset.done = '1'; if (++right === MODULE.quiz.length) finish(); }
+    });
+    quiz.appendChild(box);
+  });
+  function finish() {
+    saveProgress({ done: true });
+    const done = document.createElement('div');
+    done.className = 'feedback good'; done.id = 'quizDone';
+    done.innerHTML = '<b>You finished the module!</b><p style="margin:4px 0 0">Read, map, move: your hand steers the arm. Great work, engineer!</p>';
+    quiz.appendChild(done);
+  }
+
+  /* ================= 3. The code panel: the real MicroPython runner (assets/run-panel.js) ================= */
+  window.__lessonProgram = () => (window.__codePanel ? window.__codePanel.code : MODULE.program);
+  window.__module = MODULE;
+
+  /* ================= 4. 3D: the place (the crane) and the wiring ================= */
+  const hasGL = !!(window.THREE && THREE.OrbitControls && THREE.GLTFLoader);
+  const lin = (hex) => new THREE.Color(hex).convertSRGBToLinear(); // r128: colours are linear, so convert sRGB picks
+  function makeView(host, opts) {
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.physicallyCorrectLights = true;
+    host.prepend(renderer.domElement);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(opts.fov || 40, 1, opts.near || 0.1, opts.far || 9000);
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    let visible = !host.hidden, onScreen = true, tick = null;
+    function size() {
+      const w = host.clientWidth, h = host.clientHeight; if (!w || !h) return;
+      renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+    }
+    if ('ResizeObserver' in window) new ResizeObserver(size).observe(host); else addEventListener('resize', size);
+    if ('IntersectionObserver' in window) new IntersectionObserver((es) => { onScreen = es[0].isIntersecting; }).observe(host);
+    size();
+    const clock = new THREE.Clock();
+    renderer.setAnimationLoop(() => {
+      const dt = Math.min(0.05, clock.getDelta());
+      if (!visible || !onScreen) return; // only draw what the learner can see
+      if (tick) tick(dt);
+      controls.update(); renderer.render(scene, camera);
+    });
+    return { renderer, scene, camera, controls, set tick(f) { tick = f; }, show(v) { visible = v; if (v) size(); } };
+  }
+
+  const B = (x, y, z) => new THREE.Vector3(x, z, -y); // Blender (Z up) → three (Y up)
+  let placeView = null, wireView = null;
+
+  function buildPlace() {
+    const host = $('viewPlace');
+    const v = placeView = makeView(host, { fov: 42, near: 0.1, far: 200 });
+    const { renderer, scene, camera, controls } = v;
+    renderer.physicallyCorrectLights = false; renderer.toneMapping = THREE.NoToneMapping; // bright and simple, like the wiring desk
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    scene.background = new THREE.Color(0xdfe9f0);
+    camera.position.set(0.5, 6.4, 9.6); controls.target.set(0, 0.9, -0.3);
+    controls.maxPolarAngle = Math.PI * 0.49; controls.minDistance = 4; controls.maxDistance = 22;
+    scene.add(new THREE.HemisphereLight(0xffffff, 0xb8c4cc, 0.95));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.75); sun.position.set(-5, 12, 7); sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9, near: 1, far: 40 });
+    sun.shadow.bias = -0.0006; scene.add(sun);
+    const mat = (c, r, o) => new THREE.MeshStandardMaterial(Object.assign({ color: lin(c), roughness: r == null ? 0.7 : r }, o || {}));
+    const add = (geo, m, x, y, z, parent) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; (parent || scene).add(o); return o; };
+
+    // the desk
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), mat(0xc9d4dc, 0.95)); floor.rotation.x = -Math.PI / 2; floor.position.y = -0.6; floor.receiveShadow = true; scene.add(floor);
+    add(new THREE.BoxGeometry(11, 0.5, 7.4), mat(0xd8c3a0, 0.85), 0, -0.25, 0);
+    // two trays, left and right, where the crane drops its load
+    add(new THREE.BoxGeometry(2.2, 0.08, 2.2), mat(0xc93131, 0.6), -3.9, 0.04, -1.4);
+    add(new THREE.BoxGeometry(2.2, 0.08, 2.2), mat(0x16834a, 0.6), 3.9, 0.04, -1.4);
+    // the crane: a base with the servo inside, and an arm that turns around it
+    const BASE = new THREE.Vector3(0, 0, -1.4);
+    add(new THREE.CylinderGeometry(0.75, 0.9, 0.9, 24), mat(0x2a63c9, 0.5), BASE.x, 0.45, BASE.z);
+    add(new THREE.CylinderGeometry(0.28, 0.28, 0.2, 16), mat(0xf4f4f4, 0.5), BASE.x, 1.0, BASE.z);
+    const boom = new THREE.Group(); boom.position.set(BASE.x, 1.2, BASE.z); scene.add(boom);
+    add(new THREE.BoxGeometry(3.9, 0.22, 0.34), mat(0xf2b705, 0.55), 1.85, 0, 0, boom);   // the arm along local +x
+    add(new THREE.BoxGeometry(0.34, 0.34, 0.34), mat(0x15202a, 0.5), 3.9, 0, 0, boom);    // the tip
+    const hook = new THREE.Group(); hook.position.set(3.9, 0, 0); boom.add(hook);
+    add(new THREE.CylinderGeometry(0.02, 0.02, 0.7, 6), mat(0x333333, 0.5), 0, -0.35, 0, hook);
+    add(new THREE.BoxGeometry(0.5, 0.4, 0.5), mat(0xe0524d, 0.6), 0, -0.9, 0, hook);
+    // the joystick on the desk: a base, a ball on a stick that leans left and right
+    const JX = 0, JZ = 2.5;
+    add(new THREE.BoxGeometry(1.9, 0.22, 1.9), mat(0x1f5fbf, 0.5), JX, 0.11, JZ);
+    add(new THREE.CylinderGeometry(0.55, 0.65, 0.18, 24), mat(0x222a33, 0.5), JX, 0.31, JZ);
+    const stick = new THREE.Group(); stick.position.set(JX, 0.4, JZ); scene.add(stick);
+    add(new THREE.CylinderGeometry(0.09, 0.09, 0.9, 12), mat(0x333333, 0.4), 0, 0.45, 0, stick);
+    add(new THREE.SphereGeometry(0.3, 18, 12), mat(0xc93131, 0.4), 0, 1.0, 0, stick);
+    const sprite = (text, color, x, y, z) => {
+      const cv = document.createElement('canvas'); cv.width = 320; cv.height = 64;
+      const g = cv.getContext('2d'); g.fillStyle = color; g.beginPath(); if (g.roundRect) g.roundRect(4, 8, 312, 48, 14); else g.rect(4, 8, 312, 48); g.fill();
+      g.fillStyle = '#fff'; g.font = 'bold 28px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 160, 33);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false })); sp.scale.set(2.2, 0.44, 1); sp.position.set(x, y, z); sp.renderOrder = 10; scene.add(sp);
+    };
+    sprite('Joystick', '#1f5fbf', JX, 2.0, JZ); sprite('Crane arm (servo)', '#2a63c9', 0, 2.3, BASE.z);
+    sprite('Left · 0°', '#C93131', -3.9, 0.8, -1.4); sprite('Right · 180°', '#16834A', 3.9, 0.8, -1.4);
+
+    // controls: a slider to steer by hand, and a button that switches between the jumpy and the smooth program
+    const S = { t: 0, mode: 'auto', smooth: false, x: 2048, angle: 90 };
+    const ui = document.createElement('div');
+    ui.style.cssText = 'position:absolute;left:10px;right:10px;bottom:34px;z-index:3;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;pointer-events:none';
+    ui.innerHTML = `<label style="pointer-events:auto;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.9);border-radius:999px;padding:5px 12px;font-weight:800;font-size:13px">🕹️ Stick <input id="stickRange" type="range" min="0" max="4095" value="2048" style="width:150px;max-width:34vw" aria-label="Push the stick left or right"></label>
+      <button type="button" id="smoothBtn" style="pointer-events:auto;font:inherit;font-weight:800;font-size:13px;border:0;border-radius:999px;padding:7px 14px;background:#15202A;color:#fff;cursor:pointer"></button>`;
+    host.appendChild(ui);
+    const range = $('stickRange'), sbtn = $('smoothBtn');
+    const labelBtn = () => { sbtn.textContent = S.smooth ? 'Program: Smooth' : 'Program: if / else'; sbtn.setAttribute('aria-pressed', String(S.smooth)); };
+    sbtn.addEventListener('click', () => { S.smooth = !S.smooth; labelBtn(); });
+    range.addEventListener('input', () => { S.mode = 'hand'; S.x = +range.value; });
+    labelBtn();
+    const readout = $('placeReadout');
+    function update(dt) {
+      S.t += dt;
+      if (S.mode === 'auto') { S.x = Math.round(2048 + 2048 * Math.sin(S.t * 0.7) * (Math.abs(Math.sin(S.t * 0.7)) > 0.05 ? 1 : 0)); S.x = Math.max(0, Math.min(4095, S.x)); range.value = S.x; }
+      const MIDDLE = 2048;
+      const target = S.smooth ? Math.floor(S.x * 180 / 4095) : (S.x < MIDDLE ? 0 : 180); // arm(x * 180 // 4095), or if / else
+      const step = 260 * dt; // a servo needs a moment to turn
+      S.angle += Math.max(-step, Math.min(step, target - S.angle));
+      boom.rotation.y = Math.PI - S.angle * Math.PI / 180;
+      stick.rotation.z = -(S.x / 4095 - 0.5) * 0.9;
+      if (readout) readout.textContent = S.smooth ? `x = ${S.x}\narm(${S.x} * 180 // 4095)\n  = arm(${target})` : `x = ${S.x}\n${S.x < MIDDLE ? 'if → arm(0)' : 'else → arm(180)'}`;
+    }
+    v.tick = update;
+    // grabbing the slider takes over from the demo; a tap on the 3D scene's reset starts the demo again
+    host.addEventListener('dblclick', () => { S.mode = 'auto'; });
+    if (/^#t\d+/.test(location.hash)) { const T = parseFloat(location.hash.slice(2)); for (let q = 0; q < T / 0.02; q++) update(0.02); }
+    $('placeMsg').remove();
+  }
+
+  function buildWiring() {
+    const host = $('viewWire');
+    const v = wireView = makeView(host, { fov: 36, near: 1, far: 3000 });
+    const { renderer, scene, camera, controls } = v;
+    renderer.physicallyCorrectLights = false; // a bright desk, like the other lessons
+    renderer.toneMapping = THREE.NoToneMapping;
+    scene.background = new THREE.Color(0xf3f7fa);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0xb8c4cc, 0.9));
+    const key = new THREE.DirectionalLight(0xffffff, 0.8); key.position.set(40, 120, 70); scene.add(key);
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(260, 4, 170), new THREE.MeshStandardMaterial({ color: 0xd8c3a0, roughness: 0.9 }));
+    desk.position.y = -6; scene.add(desk);
+    controls.minDistance = 40; controls.maxDistance = 420; controls.maxPolarAngle = Math.PI * 0.48;
+    const label = (text, color) => {
+      const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
+      const g = cv.getContext('2d'); g.fillStyle = color || '#15202A'; g.beginPath();
+      if (g.roundRect) g.roundRect(4, 8, 248, 48, 14); else g.rect(4, 8, 248, 48);
+      g.fill();
+      g.fillStyle = '#fff'; g.font = 'bold 30px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 128, 33);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false }));
+      sp.scale.set(20, 5, 1); sp.renderOrder = 10; return sp;
+    };
+    const mat = (c, r) => new THREE.MeshStandardMaterial({ color: lin(c), roughness: r == null ? 0.6 : r });
+    new THREE.GLTFLoader().load('../../assets/models/esp32-devkit-v1.glb', (gltf) => {
+      const board = gltf.scene; board.scale.setScalar(1000); scene.add(board); board.updateMatrixWorld(true);
+      const pad = (name) => { const o = board.getObjectByName('pad_' + name); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
+      const box = new THREE.Box3().setFromObject(board), mid = box.getCenter(new THREE.Vector3());
+      const L1 = pad('L01_EN'), L15 = pad('L15_VIN'), R1 = pad('R01_GPIO23'), R15 = pad('R15_3V3');
+      if (!L1 || !L15 || !R1 || !R15) { $('wireMsg').textContent = 'The board model has no pin pads.'; return; }
+      const Lm = L1.clone().lerp(L15, 0.5), Rm = R1.clone().lerp(R15, 0.5);
+      const out = Rm.clone().sub(Lm).setY(0).normalize();   // across the board, from the L header to the R header
+      const along = L15.clone().sub(L1).setY(0).normalize(); // down the headers, from pin 1 to pin 15
+      const top = box.max.y;
+      // joystick module beside the R header (3V3, GND), its VRx wire crossing to D35; servo beside the L header (VIN, GND) with its signal to D18
+      const sensor = new THREE.Group();
+      sensor.add(new THREE.Mesh(new THREE.BoxGeometry(34, 1.6, 26), mat(0x1f5fbf)));
+      const well = new THREE.Mesh(new THREE.CylinderGeometry(7, 8, 4, 24), mat(0x222a33, 0.5)); well.position.set(2, 2.8, 1); sensor.add(well);
+      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 9, 12), mat(0x333333, 0.4)); shaft.position.set(2, 8, 1); sensor.add(shaft);
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(4.2, 16, 12), mat(0xc93131, 0.4)); cap.position.set(2, 13.5, 1); sensor.add(cap);
+      const sPins = ['GND', '+5V', 'VRx', 'VRy', 'SW'].map((n, i) => { const p = new THREE.Mesh(new THREE.BoxGeometry(0.8, 8, 0.8), mat(0xd4af37, 0.3)); p.position.set(-6.5 + i * 2.54, 0, -11.2); sensor.add(p); return p; });
+      sensor.position.copy(pad('R06_GPIO19')).addScaledVector(out, 52).setY(top + 4);
+      sensor.lookAt(sensor.position.clone().add(out)); sensor.rotateY(-Math.PI / 2); // pins face the board
+      scene.add(sensor);
+      const servo = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.BoxGeometry(23, 22, 12.5), mat(0x2a63c9)); servo.add(body);
+      const tabs = new THREE.Mesh(new THREE.BoxGeometry(32, 2.5, 12.5), mat(0x2a63c9)); tabs.position.y = 6; servo.add(tabs);
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 4, 20), mat(0xf4f4f4)); hub.position.set(5.5, 13, 0); servo.add(hub);
+      const horn = new THREE.Mesh(new THREE.BoxGeometry(22, 1.6, 4), mat(0xf4f4f4)); horn.position.set(5.5, 15, 0); servo.add(horn);
+      servo.position.copy(L15).addScaledVector(out, -55).setY(top + 6);
+      servo.lookAt(servo.position.clone().add(along)); servo.rotateY(Math.PI / 2);
+      scene.add(servo);
+      const wirePts = (a, b, h) => new THREE.CatmullRomCurve3([a, a.clone().setY(a.y + h), a.clone().lerp(b, 0.5).setY(Math.max(a.y, b.y) + h + 6), b.clone().setY(b.y + h), b]);
+      const tube = (pts, color) => { const m = new THREE.Mesh(new THREE.TubeGeometry(pts, 48, 0.9, 8, false), mat(color, 0.45)); scene.add(m); return m; };
+      const pinTop = (m) => m.getWorldPosition(new THREE.Vector3()).setY(m.getWorldPosition(new THREE.Vector3()).y - 4);
+      sensor.updateMatrixWorld(true); servo.updateMatrixWorld(true);
+      const wires = [
+        [pinTop(sPins[0]), pad('R14_GND'), '#2B2B2B', 'GND'],
+        [pinTop(sPins[1]), pad('R15_3V3'), '#E03A3A', '3V3 · power'],
+        [pinTop(sPins[2]), pad('L05_GPIO35'), '#8A4FD3', 'D35 · VRx'],
+      ];
+      const servoEnd = (k) => servo.position.clone().addScaledVector(along, -3 + k * 3).addScaledVector(out, 14).setY(top + 2);
+      wires.push([servoEnd(0), pad('R07_GPIO18'), '#F08A24', 'D18 · signal']);
+      wires.push([servoEnd(1), pad('L15_VIN'), '#C1272D', 'VIN · quick test']);
+      wires.push([servoEnd(2), pad('L14_GND'), '#6B4226', 'GND']);
+      wires.forEach(([a, b, c, t], i) => {
+        if (!a || !b) return;
+        const curve = wirePts(a, b, 10 + i * 2.5); tube(curve, c);
+        const lb = label(t, c); lb.position.copy(curve.getPoint([0.2, 0.4, 0.65, 0.3, 0.55, 0.8][i])); lb.position.y += 5; scene.add(lb); // staggered so labels don't stack
+      });
+      const sl = label('Joystick', '#1f5fbf'); sl.position.copy(sensor.position).setY(top + 26); scene.add(sl);
+      const vl = label('SG90 servo', '#2a63c9'); vl.position.copy(servo.position).addScaledVector(out, -14).setY(top + 26); scene.add(vl);
+      const aim = mid.clone().addScaledVector(along, 8).addScaledVector(out, 20);
+      const k = Math.max(1, 1.3 / camera.aspect); // step back on tall, narrow phone screens so the whole desk fits
+      camera.position.copy(aim).addScaledVector(along, 240 * k).add(new THREE.Vector3(0, 190 * k, 0)); controls.target.copy(aim);
+      $('wireMsg').remove();
+    }, undefined, () => { $('wireMsg').textContent = 'The board model could not load. Please reload the page.'; });
+  }
+
+
+
+  // tabs: build each view the first time it is shown
+  function showTab(which) {
+    const place = which === 'place';
+    $('tabPlace').setAttribute('aria-selected', String(place)); $('tabWire').setAttribute('aria-selected', String(!place));
+    $('viewPlace').hidden = !place; $('viewWire').hidden = place;
+    if (!hasGL) return;
+    if (!place && !wireView) buildWiring();
+    if (placeView) placeView.show(place);
+    if (wireView) wireView.show(!place);
+  }
+  $('tabPlace').addEventListener('click', () => showTab('place'));
+  $('tabWire').addEventListener('click', () => showTab('wire'));
+  window.__module.showTab = showTab;
+  if (hasGL) buildPlace();
+  else { $('placeMsg').textContent = 'The 3D scene needs an internet connection. Everything else on this page still works.'; $('wireMsg').textContent = $('placeMsg').textContent; }
+})();
+</script>
+<script src="../../assets/board-link.js"></script>
+<script src="../../assets/prepare-board.js"></script>
+<script src="../../assets/run-panel.js"></script>
+<script src="../../assets/board-drawer.js"></script>
+<script>
+  // the editable code panel is the real runner (Web Serial + MicroPython), the same as run.html
+  if (window.RunPanel && window.BoardLink) window.__codePanel = RunPanel.mount(document.getElementById('codePanel'), { id: 'm-joystick-code', base: '../../', code: window.__module.program, fresh: true });
+  KKBoard.attach({ id: 'm-joystick', base: '../../', buttonHost: 'header.top .progress', program: () => window.__lessonProgram(), wiring: window.__module.wiringOneLine });
+</script>
+</body>
+</html>
