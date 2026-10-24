@@ -468,17 +468,21 @@ const SKIN = [0x5b3a24, 0x4a2e1c, 0x6e4529];
 function child(o = {}) {
   const g = new THREE.Group(); scene.add(g);
   const body = new THREE.Group(); g.add(body);
-  const skin = mat(o.skin || SKIN[0], { roughness: 0.55 }), shirt = mat(o.shirt || 0x5aa0d8, { roughness: 0.75 }), shorts = mat(o.shorts || 0x2f3c55, { roughness: 0.8 });
+  const skin = mat(o.skin || SKIN[0], { roughness: 0.55 }), shirt = mat(o.shirt || 0x5aa0d8, { roughness: 0.75 }), bottoms = mat(o.skirt || o.shorts || 0x2f3c55, { roughness: 0.8 }); // o.skirt: a skirt instead of shorts
   const shoeM = mat(o.shoes || 0x222222, { roughness: 0.5 }), sockM = mat(0xf2f2f2, { roughness: 0.8 });
   const HIP = 0.66;
-  // the shirt and shorts
+  // the shirt and shorts (or skirt)
   const torso = add(body, limbGeo(0.15, 0.26, 16), shirt, 0, HIP + 0.42, 0); torso.scale.set(1, 1, 0.72);
-  const hips = add(body, new THREE.CylinderGeometry(0.15, 0.15, 0.16, 16), shorts, 0, HIP + 0.03, 0); hips.scale.set(1, 1, 0.75);
+  const hips = add(body, new THREE.CylinderGeometry(0.15, 0.15, 0.16, 16), bottoms, 0, HIP + 0.03, 0); hips.scale.set(1, 1, 0.75);
+  if (o.skirt) { // a cone, open at both ends and seen from both sides, flaring out over the thighs
+    const sk = add(body, new THREE.CylinderGeometry(0.15, 0.215, 0.3, 24, 1, true), mat(o.skirt, { roughness: 0.8, side: THREE.DoubleSide }), 0, HIP - 0.04, 0); sk.scale.set(1, 1, 0.85);
+  }
   cyl(body, 0.045, 0.05, 0.08, skin, 0, HIP + 0.5, 0, 10);
   // the head: face, eyes, smile, ears and short hair
   const head = new THREE.Group(); head.position.set(0, HIP + 0.66, 0); body.add(head);
   const skull = sph(head, 0.125, skin, 0, 0, 0); skull.scale.set(1, 1.08, 1);
   const hair = add(head, new THREE.SphereGeometry(0.131, 20, 10, 0, Math.PI * 2, 0, Math.PI * 0.42), mat(0x141414, { roughness: 0.95 }), 0, 0.012, -0.006); hair.scale.set(1, 1.08, 1); hair.rotation.x = -0.25;
+  if (o.puffs) for (const s of [-1, 1]) sph(head, 0.06, hair.material, s * 0.085, 0.1, -0.01); // two hair puffs
   for (const s of [-1, 1]) {
     sph(head, 0.025, skin, s * 0.123, -0.005, 0, false);
     sph(head, 0.02, mat(0xffffff, { roughness: 0.3 }), s * 0.042, 0.02, 0.108, false).scale.set(1, 1.2, 0.6);
@@ -498,7 +502,7 @@ function child(o = {}) {
   }
   function leg(s) {
     const hp = new THREE.Group(); hp.position.set(s * 0.075, HIP, 0); body.add(hp);
-    add(hp, limbGeo(0.068, 0.1, 10), shorts);
+    if (!o.skirt) add(hp, limbGeo(0.068, 0.1, 10), bottoms); // the shorts' leg
     add(hp, limbGeo(0.052, 0.27, 10), skin);
     const kn = new THREE.Group(); kn.position.y = -0.3; hp.add(kn);
     add(kn, limbGeo(0.047, 0.26, 10), skin);
@@ -664,7 +668,7 @@ function wireChild(root) {
   pose(0);
   return { g: root, pose };
 }
-const girl = { g: new THREE.Group(), pose() {} };
+const girl = child({ skin: SKIN[1], shirt: 0xf4f0e2, skirt: 0x2f6b45, bag: 0x2b7fd8, shoes: 0x5a2e1a, puffs: true }); // white blouse, green pleated skirt, a blue bag
 const upgrade = libs.then(() => {
   const gl = new THREE.GLTFLoader(), dr = new THREE.DRACOLoader(); dr.setDecoderPath(LIB + 'libs/draco/gltf/'); gl.setDRACOLoader(dr);
   const load = (name) => gl.loadAsync(BASE + 'story/models/' + name + '.glb').then((g) => {
@@ -691,7 +695,7 @@ const upgrade = libs.then(() => {
       drone.userData.hang = root.getObjectByName('Hang');
     }),
     load('child_a').then((root) => { scene.remove(kid.g); const w = wireChild(root); scene.add(w.g); kid.g = w.g; kid.pose = w.pose; }),
-    load('child_b').then((root) => { const w = wireChild(root); scene.add(w.g); girl.g = w.g; girl.pose = w.pose; }),
+    load('child_b').then((root) => { scene.remove(girl.g); const w = wireChild(root); scene.add(w.g); girl.g = w.g; girl.pose = w.pose; }),
     load('smart_house').then((root) => {
       root.position.set(HOMEP.x, 0, HOMEP.z); scene.add(root);
       root.traverse((m) => {
