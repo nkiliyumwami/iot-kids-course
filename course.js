@@ -91,7 +91,7 @@
     { slug: 'm-door', badge: 'm-door', title: 'Who’s at the Door?', sensor: 'IR obstacle sensor', output: 'Buzzer', needs: '07-night-mode', uses: [], status: 'ready', minutes: 40,
       idea: 'An invisible beam of infrared light watches the door. When someone comes close, the buzzer tells you.',
       skills: ['Wired an IR obstacle sensor to a digital input', 'Turned the sensor’s little knob to set its range', 'Sounded a buzzer when someone came close'] },
-    { slug: 'm-joystick', badge: 'm-joystick', title: 'Follow My Hand', sensor: 'Joystick', output: 'SG90 servo', needs: '07-night-mode', uses: ['m-servo'], status: 'planned', minutes: 40,
+    { slug: 'm-joystick', badge: 'm-joystick', title: 'Follow My Hand', sensor: 'Joystick', output: 'SG90 servo', needs: '07-night-mode', uses: ['m-servo'], status: 'ready', minutes: 40,
       idea: 'Push the stick left and right and the servo arm follows your hand, like the controls of a crane.',
       skills: ['Read a joystick on an analog pin', 'Turned a reading into an angle', 'Made a servo follow a hand movement'] },
     { slug: 'm-too-hot', badge: 'm-too-hot', title: 'Too Hot in Here', sensor: 'DHT11 temperature sensor', output: 'LED', needs: '07-night-mode', uses: [], status: 'planned', minutes: 40,
