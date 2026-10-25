@@ -94,7 +94,7 @@
     { slug: 'm-joystick', badge: 'm-joystick', title: 'Follow My Hand', sensor: 'Joystick', output: 'SG90 servo', needs: '07-night-mode', uses: ['m-servo'], status: 'ready', minutes: 40,
       idea: 'Push the stick left and right and the servo arm follows your hand, like the controls of a crane.',
       skills: ['Read a joystick on an analog pin', 'Turned a reading into an angle', 'Made a servo follow a hand movement'] },
-    { slug: 'm-too-hot', badge: 'm-too-hot', title: 'Too Hot in Here', sensor: 'DHT11 temperature sensor', output: 'LED', needs: '07-night-mode', uses: [], status: 'planned', minutes: 40,
+    { slug: 'm-too-hot', badge: 'm-too-hot', title: 'Too Hot in Here', sensor: 'DHT11 temperature sensor', output: 'LED', needs: '07-night-mode', uses: [], status: 'ready', minutes: 40,
       idea: 'Is the kitchen getting too hot? A temperature sensor checks the air and a warning light comes on.',
       skills: ['Read temperature and humidity from a DHT11', 'Used a library with import dht', 'Lit a warning light above a temperature'] },
     { slug: 'm-touch-fence', badge: 'm-touch-fence', title: 'Don’t Touch the Fence', sensor: 'ESP32 touch pin (no extra sensor!)', output: 'Buzzer', needs: '07-night-mode', uses: [], status: 'planned', minutes: 35,
