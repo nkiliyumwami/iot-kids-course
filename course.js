@@ -97,7 +97,7 @@
     { slug: 'm-too-hot', badge: 'm-too-hot', title: 'Too Hot in Here', sensor: 'DHT11 temperature sensor', output: 'LED', needs: '07-night-mode', uses: [], status: 'ready', minutes: 40,
       idea: 'Is the kitchen getting too hot? A temperature sensor checks the air and a warning light comes on.',
       skills: ['Read temperature and humidity from a DHT11', 'Used a library with import dht', 'Lit a warning light above a temperature'] },
-    { slug: 'm-touch-fence', badge: 'm-touch-fence', title: 'Don’t Touch the Fence', sensor: 'ESP32 touch pin (no extra sensor!)', output: 'Buzzer', needs: '07-night-mode', uses: [], status: 'planned', minutes: 35,
+    { slug: 'm-touch-fence', badge: 'm-touch-fence', title: 'Don’t Touch the Fence', sensor: 'ESP32 touch pin (no extra sensor!)', output: 'Buzzer', needs: '07-night-mode', uses: [], status: 'ready', minutes: 35,
       idea: 'Protect the garden with a pretend fence made of foil. Your ESP32 can feel a touch by itself, and the buzzer sounds the alarm.',
       skills: ['Used the ESP32’s built-in touch sensing', 'Chose a touch threshold from real readings', 'Sounded an alarm when the fence was touched'] },
     { slug: 'm-radar', badge: 'm-radar', title: 'Radar Scanner', sensor: 'HC-SR04 distance sensor on a servo', output: 'SG90 servo + Shell map', needs: '07-night-mode', uses: ['m-parking-gate'], status: 'planned', minutes: 50,
