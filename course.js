@@ -100,7 +100,7 @@
     { slug: 'm-touch-fence', badge: 'm-touch-fence', title: 'Don’t Touch the Fence', sensor: 'ESP32 touch pin (no extra sensor!)', output: 'Buzzer', needs: '07-night-mode', uses: [], status: 'ready', minutes: 35,
       idea: 'Protect the garden with a pretend fence made of foil. Your ESP32 can feel a touch by itself, and the buzzer sounds the alarm.',
       skills: ['Used the ESP32’s built-in touch sensing', 'Chose a touch threshold from real readings', 'Sounded an alarm when the fence was touched'] },
-    { slug: 'm-radar', badge: 'm-radar', title: 'Radar Scanner', sensor: 'HC-SR04 distance sensor on a servo', output: 'SG90 servo + Shell map', needs: '07-night-mode', uses: ['m-parking-gate'], status: 'planned', minutes: 50,
+    { slug: 'm-radar', badge: 'm-radar', title: 'Radar Scanner', sensor: 'HC-SR04 distance sensor on a servo', output: 'SG90 servo + Shell map', needs: '07-night-mode', uses: ['m-parking-gate'], status: 'ready', minutes: 50,
       idea: 'Put the distance sensor on top of the servo and sweep it from side to side, like a ship’s radar, to find the closest thing in the room.',
       skills: ['Swept a servo with a for loop', 'Measured distance at every angle', 'Found the closest object and pointed at it'] },
   ];
