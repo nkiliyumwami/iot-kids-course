@@ -2282,6 +2282,12 @@ function renderExtra(s) {
   }
   if (s.code && s.why) { /* the code card goes first, then the Why card */ }
   if (s.why) extra.appendChild(whyCard(s.why()));
+  if (s.title === 'Read the light and print it') extra.appendChild(el(`<div class="card"><h4>🔧 The number never changes, or is stuck at 0 or 4095? Check these, in order</h4><ul class="list">
+      <li><span style="font-size:20px">1️⃣</span><span>Is the purple wire from D33 in the <b>bottom half of column 11</b>, where the sensor and the 10 kΩ resistor meet? In any other column D33 listens to nothing.</span></li>
+      <li><span style="font-size:20px">2️⃣</span><span>Does the red wire go from <b>3V3</b> to the top half of column 11, and the black wire from column 14 to the ground rail? A missing end makes the number stick at 0 or 4095.</span></li>
+      <li><span style="font-size:20px">3️⃣</span><span>Does the code say <b>Pin(33)</b>? Another number listens to a different pin.</span></li>
+      <li><span style="font-size:20px">4️⃣</span><span>Did you really cover the sensor with your hand, or shine a lamp on it? Try a big change, because small ones barely move the number.</span></li>
+    </ul><p class="note" style="margin-top:8px">Engineers debug like this too: change one thing at a time and check after each.</p></div>`));
   if (s.console && s.extra !== 'A') extra.appendChild(consoleCard());
   if (s.extra === 'E1') {
     const wrap = el(`<div style="display:grid;gap:14px"><div class="card"><h4>The light ladder</h4>
