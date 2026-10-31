@@ -10,7 +10,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <!--
   SENSOR MODULE: Rain, Rain, Go Away (m-rain-roof). Built from lessons/_module-template/ (see AGENT.md, "Sensor modules").
-  3D: a code-built washing line and house, plus the course's ESP32 model with a code-built raindrop sensor and SG90 for the wiring.
+  3D: a Blender-made yard (assets/models/modules/rain-yard.glb: washing line, clothes, sliding roof, SG90, raindrop plate, trees) beside the
+  landing story's smart_house.glb, and the course's ESP32 model with raindrop.glb and the SG90 for the wiring.
 -->
 <style>
 :root {
@@ -188,6 +189,8 @@ main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); g
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
 <script src="../../course.js"></script>
 <script src="../../assets/ohm/ohm.js"></script>
 <script src="../../assets/rewards.js"></script>
@@ -345,7 +348,22 @@ while True:
   window.__module = MODULE;
 
   /* ================= 4. 3D: the place (the washing line) and the wiring ================= */
-  const hasGL = !!(window.THREE && THREE.OrbitControls && THREE.GLTFLoader);
+  const hasGL = !!(window.THREE && THREE.OrbitControls && THREE.GLTFLoader && THREE.DRACOLoader);
+  const LIB = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/';
+  function gltfLoader() { const g = new THREE.GLTFLoader(), d = new THREE.DRACOLoader(); d.setDecoderPath(LIB + 'libs/draco/gltf/'); g.setDRACOLoader(d); return g; }
+  function woodTexture(c1, c2, lines) {
+    const cv = document.createElement('canvas'); cv.width = 512; cv.height = 512; const g = cv.getContext('2d');
+    g.fillStyle = c1; g.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < lines; i++) { g.strokeStyle = c2; g.globalAlpha = 0.12 + ((i * 37) % 17) / 90; g.lineWidth = 1 + (i % 3); g.beginPath(); const y = (i * 97) % 512; g.moveTo(0, y); for (let x = 0; x <= 512; x += 32) g.lineTo(x, y + Math.sin(x / 70 + i) * 6); g.stroke(); }
+    const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+  }
+  // a Blender part (assets/models/modules/<name>.glb, in metres) at millimetre scale for the wiring desk
+  const PART = '../../assets/models/modules/';
+  function loadParts(names, done) {
+    const got = {}; let left = names.length;
+    names.forEach((n) => gltfLoader().load(PART + n + '.glb', (g) => { const r = g.scene; r.scale.setScalar(1000); r.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.envMapIntensity = 0.7; } }); got[n] = r; if (!--left) done(got); }, undefined, () => { got[n] = new THREE.Group(); if (!--left) done(got); }));
+  }
+  const nodeAt = (root, name) => { const o = root.getObjectByName(name); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
   const lin = (hex) => new THREE.Color(hex).convertSRGBToLinear(); // r128: colours are linear, so convert sRGB picks
   function makeView(host, opts) {
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -383,72 +401,53 @@ while True:
     const host = $('viewPlace');
     const v = placeView = makeView(host, { fov: 42, near: 0.1, far: 400 });
     const { renderer, scene, camera, controls } = v;
-    renderer.physicallyCorrectLights = false; renderer.toneMapping = THREE.NoToneMapping; // bright and simple, like the wiring desk
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.physicallyCorrectLights = true; // a sunny yard that turns to rain
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    const SKY_SUN = new THREE.Color(0x8fc4ef), SKY_RAIN = new THREE.Color(0x6f7b88);
+    const SKY_SUN = lin(0x8fc4ef), SKY_RAIN = lin(0x6f7b88);
     scene.background = SKY_SUN.clone();
-    scene.fog = new THREE.Fog(0x8fc4ef, 30, 90);
+    scene.fog = new THREE.Fog(SKY_SUN.clone(), 30, 90);
+    scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new THREE.RoomEnvironment(), 0.04).texture;
     camera.position.set(9.5, 4.6, 14.5); controls.target.set(3.4, 1.5, 1.4);
     controls.maxPolarAngle = Math.PI * 0.49; controls.minDistance = 3; controls.maxDistance = 40;
-    const hemi = new THREE.HemisphereLight(0xffffff, 0x9bb07a, 0.85); scene.add(hemi);
-    const sun = new THREE.DirectionalLight(0xfff1de, 0.8); sun.position.set(-8, 14, 9); sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 12, bottom: -12, near: 1, far: 50 });
-    sun.shadow.bias = -0.0006; scene.add(sun);
+    const hemi = new THREE.HemisphereLight(lin(0xffffff), lin(0x9bb07a), 1.1); scene.add(hemi);
+    const sun = new THREE.DirectionalLight(lin(0xfff1de), 2.6); sun.position.set(-8, 14, 9); sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 12, bottom: -12, near: 1, far: 50 });
+    sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02; scene.add(sun);
     const mat = (c, r, o) => new THREE.MeshStandardMaterial(Object.assign({ color: lin(c), roughness: r == null ? 0.8 : r }, o || {}));
     const add = (geo, m, x, y, z, parent) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; (parent || scene).add(o); return o; };
 
-    // ground and path
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), mat(0x5b8c3c, 0.95)); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
-    add(new THREE.BoxGeometry(14, 0.04, 1.4), mat(0xb59a74), 2.5, 0.02, 5.2);
-    // the house: walls, a pyramid roof, a door and two windows
-    add(new THREE.BoxGeometry(5, 2.6, 4), mat(0xefe3cc), -3.2, 1.3, -3);
-    const hr = new THREE.ConeGeometry(4.1, 1.6, 4); hr.rotateY(Math.PI / 4);
-    add(hr, mat(0x9b4a2c, 0.6), -3.2, 3.4, -3).scale.set(1, 1, 0.82);
-    add(new THREE.BoxGeometry(0.9, 1.7, 0.08), mat(0x6b4226), -3.2, 0.85, -0.98);
-    for (const wx of [-4.7, -1.7]) { add(new THREE.BoxGeometry(0.9, 0.8, 0.08), mat(0x9fd0f0, 0.2), wx, 1.5, -0.98); add(new THREE.BoxGeometry(1.0, 0.1, 0.14), mat(0xffffff), wx, 1.05, -0.95); }
-
-    // the washing line: two poles with rails on top, a line, and clothes
+    // the yard: a Blender model (assets/models/modules/rain-yard.glb, in metres: washing line, clothes, sliding roof, servo, sensor, trees)
+    // and the landing story's house (assets/story/models/smart_house.glb), shown a little smaller
     const poleX = [0.6, 6.0], LINE_Z = 2.0;
-    for (const px of poleX) {
-      add(new THREE.CylinderGeometry(0.06, 0.07, 2.7, 10), mat(0x7b7f85, 0.5), px, 1.35, LINE_Z);
-      add(new THREE.BoxGeometry(0.12, 0.1, 4.2), mat(0x7b7f85, 0.5), px, 2.7, LINE_Z + 0.9);
-    }
-    const lineMesh = add(new THREE.CylinderGeometry(0.012, 0.012, poleX[1] - poleX[0], 6), mat(0xf2f2f2, 0.5), (poleX[0] + poleX[1]) / 2, 2.15, LINE_Z); lineMesh.rotation.z = Math.PI / 2;
     const clothes = [];
-    [[1.4, 0xe0524d, 0.7, 0.9], [2.3, 0x3c7be0, 0.55, 0.7], [3.3, 0xf2c744, 0.8, 0.95], [4.3, 0x4cae6b, 0.6, 0.8], [5.2, 0xffffff, 0.7, 0.75]].forEach(([x, c, w, h], i) => {
-      const g = new THREE.Group(); g.position.set(x, 2.15, LINE_Z); scene.add(g);
-      add(new THREE.BoxGeometry(w, h, 0.03), mat(c, 0.95), 0, -h / 2, 0, g);
-      add(new THREE.BoxGeometry(0.05, 0.1, 0.05), mat(0xd98a3a), -w / 2 + 0.1, 0.0, 0, g);
-      clothes.push({ g, i });
-    });
-    // the roof: a flat panel that slides along the rails. Servo 0° = open (over the house side), 90° = over the clothes
     const ROOF_OPEN_Z = -0.1, ROOF_SHUT_Z = LINE_Z + 0.2;
-    const roofMat = mat(0x2a63c9, 0.55); roofMat.transparent = true; roofMat.opacity = 0.92;
-    const roofPanel = add(new THREE.BoxGeometry(6.2, 0.1, 2.4), roofMat, 3.3, 2.82, ROOF_OPEN_Z);
-    // the servo on the pole, with an arm that turns with the roof
-    const servoBox = add(new THREE.BoxGeometry(0.34, 0.3, 0.2), mat(0x2a63c9, 0.5), poleX[1] + 0.3, 2.45, LINE_Z - 0.1);
-    const horn = add(new THREE.BoxGeometry(0.34, 0.05, 0.07), mat(0xf4f4f4, 0.5), 0.05, 0, 0.14, servoBox);
-    // the raindrop sensor: a plate on a post in the open, where the rain lands first
-    add(new THREE.CylinderGeometry(0.04, 0.05, 1.1, 8), mat(0x7b7f85, 0.5), 7.4, 0.55, 3.6);
-    const plate = new THREE.Group(); plate.position.set(7.4, 1.18, 3.6); plate.rotation.x = -0.35; plate.scale.setScalar(1.7); scene.add(plate);
-    add(new THREE.BoxGeometry(0.62, 0.025, 0.42), mat(0x1d3d2a, 0.5), 0, 0, 0, plate);
-    for (let k = -4; k <= 4; k++) add(new THREE.BoxGeometry(0.02, 0.012, 0.36), mat(0xd9dde0, 0.3), k * 0.065, 0.02, 0, plate);
+    let roofPanel = new THREE.Object3D(), horn = new THREE.Object3D();
+    roofPanel.position.z = ROOF_OPEN_Z;
+    gltfLoader().load('../../assets/models/modules/rain-yard.glb', (g) => {
+      const yard = g.scene; scene.add(yard);
+      yard.traverse((o) => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; if (o.material.name === 'Roof_Clear_Blue') { o.material.transparent = true; o.material.opacity = 0.85; } } });
+      const rp = yard.getObjectByName('Roof_Panel'); rp.position.z = roofPanel.position.z; roofPanel = rp;
+      const hn = yard.getObjectByName('Servo_Horn'); hn.rotation.z = horn.rotation.z; horn = hn;
+      for (let i = 0; i < 5; i++) { const c = yard.getObjectByName('Cloth_' + i); if (c) clothes.push({ g: c, i }); }
+      const msg = $('placeMsg'); if (msg) msg.remove();
+    }, undefined, () => { $('placeMsg').textContent = 'The 3D yard could not load. Please reload the page.'; });
+    gltfLoader().load('../../assets/story/models/smart_house.glb', (g) => {
+      const house = g.scene; house.scale.setScalar(0.55); house.position.set(-3.6, 0, -3.4); scene.add(house);
+      house.traverse((o) => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; } });
+    });
+    // the wet drops on the sensor plate (the plate itself is in the yard model)
+    const plate = new THREE.Group(); plate.position.set(7.4, 1.235, 3.6); plate.rotation.x = 0.6; plate.scale.setScalar(0.85); scene.add(plate);
     const wetMat = new THREE.MeshStandardMaterial({ color: 0x7fc4ff, roughness: 0.1, transparent: true, opacity: 0 });
     for (let k = 0; k < 7; k++) add(new THREE.SphereGeometry(0.03, 8, 6), wetMat, -0.24 + k * 0.08, 0.035, ((k * 37) % 5) * 0.06 - 0.12, plate);
-    // trees behind
-    for (const [tx, tz, s] of [[10, -4, 1.3], [12.5, 1, 1], [-9, -2, 1.5], [-10, 5, 1.1], [4, -9, 1.6], [-2, -11, 1.2]]) {
-      add(new THREE.CylinderGeometry(0.15 * s, 0.2 * s, 1.5 * s, 8), mat(0x6b4226), tx, 0.75 * s, tz);
-      add(new THREE.IcosahedronGeometry(1.2 * s, 0), mat(0x3b6b29, 0.9, { flatShading: true }), tx, 2.2 * s, tz);
-    }
     // clouds and sun
-    const cloudMat = new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false });
+    const cloudMat = new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false, toneMapped: false });
     const clouds = new THREE.Group(); scene.add(clouds);
     [[-6, 11, -14, 3], [3, 12, -16, 3.6], [11, 10.5, -10, 2.8], [-14, 10, -4, 2.6], [14, 11.5, 4, 3]].forEach(([x, y, z, s]) => {
       for (const [dx, dy, ds] of [[0, 0, 1], [1.2, -0.2, 0.8], [-1.2, -0.15, 0.75], [0.5, 0.45, 0.7]]) {
         const m = new THREE.Mesh(new THREE.SphereGeometry(s * ds, 14, 10), cloudMat); m.position.set(x + dx * s, y + dy * s, z); m.scale.y = 0.6; clouds.add(m);
       }
     });
-    const sunDisc = new THREE.Mesh(new THREE.SphereGeometry(1.6, 20, 14), new THREE.MeshBasicMaterial({ color: 0xffe27a, fog: false })); sunDisc.position.set(-16, 14, -20); scene.add(sunDisc);
+    const sunDisc = new THREE.Mesh(new THREE.SphereGeometry(1.6, 20, 14), new THREE.MeshBasicMaterial({ color: 0xffe27a, fog: false, toneMapped: false })); sunDisc.position.set(-16, 14, -20); scene.add(sunDisc);
     // rain: short falling streaks around the house and line
     const N = 420, rp = new Float32Array(N * 6), rv = new Float32Array(N);
     const rg = new THREE.BufferGeometry(); rg.setAttribute('position', new THREE.BufferAttribute(rp, 3));
@@ -471,7 +470,7 @@ while True:
       const cv = document.createElement('canvas'); cv.width = 320; cv.height = 64;
       const g = cv.getContext('2d'); g.fillStyle = color; g.beginPath(); if (g.roundRect) g.roundRect(4, 8, 312, 48, 14); else g.rect(4, 8, 312, 48); g.fill();
       g.fillStyle = '#fff'; g.font = 'bold 28px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 160, 33);
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false })); sp.scale.set(2.0, 0.4, 1); sp.position.set(x, y, z); sp.renderOrder = 10; scene.add(sp);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false, toneMapped: false })); sp.scale.set(2.0, 0.4, 1); sp.position.set(x, y, z); sp.renderOrder = 10; scene.add(sp);
     };
     sprite('Raindrop sensor', '#8A4FD3', 7.2, 2.1, 3.6); sprite('Roof (servo)', '#2a63c9', 3.3, 3.5, ROOF_OPEN_Z + 1.2); sprite('Washing', '#C93131', 3.3, 0.9, LINE_Z + 0.9);
     const readout = $('placeReadout');
@@ -496,7 +495,7 @@ while True:
       horn.rotation.z = -S.angle;
       // look: sky, light, clouds, sun, rain, wet plate
       scene.background.copy(SKY_SUN).lerp(SKY_RAIN, S.rain); scene.fog.color.copy(scene.background);
-      hemi.intensity = 0.85 - 0.3 * S.rain; sun.intensity = 0.8 * (1 - S.rain);
+      hemi.intensity = 1.1 - 0.4 * S.rain; sun.intensity = 2.6 * (1 - S.rain);
       cloudMat.color.setRGB(1 - 0.5 * S.rain, 1 - 0.5 * S.rain, 1 - 0.45 * S.rain);
       sunDisc.visible = S.rain < 0.6;
       rainMat.opacity = 0.65 * S.rain; rainLines.visible = S.rain > 0.02;
@@ -516,32 +515,34 @@ while True:
     v.tick = updateRain;
     labelBtn();
     if (/^#t\d+/.test(location.hash)) { const T = parseFloat(location.hash.slice(2)); for (let q = 0; q < T / 0.02; q++) updateRain(0.02); }
-    $('placeMsg').remove();
   }
 
   function buildWiring() {
     const host = $('viewWire');
     const v = wireView = makeView(host, { fov: 36, near: 1, far: 3000 });
     const { renderer, scene, camera, controls } = v;
-    renderer.physicallyCorrectLights = false; // a bright desk, like the other lessons
-    renderer.toneMapping = THREE.NoToneMapping;
-    scene.background = new THREE.Color(0xf3f7fa);
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xb8c4cc, 0.9));
-    const key = new THREE.DirectionalLight(0xffffff, 0.8); key.position.set(40, 120, 70); scene.add(key);
-    const desk = new THREE.Mesh(new THREE.BoxGeometry(260, 4, 170), new THREE.MeshStandardMaterial({ color: 0xd8c3a0, roughness: 0.9 }));
-    desk.position.y = -6; scene.add(desk);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.physicallyCorrectLights = true; // lit like the Parking Gate desk
+    scene.background = lin(0xf0f4f7);
+    scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+    scene.add(new THREE.HemisphereLight(lin(0xffffff), lin(0xb8c4cc), 1.0));
+    const key = new THREE.DirectionalLight(lin(0xffffff), 1.6); key.position.set(60, 200, 120); scene.add(key);
+    const wood = woodTexture('#d8c3a0', '#9b7a4f', 50); wood.repeat.set(1.4, 1);
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(760, 8, 460), new THREE.MeshStandardMaterial({ map: wood, roughness: 0.85 }));
+    desk.position.y = -8; scene.add(desk);
+    const deskTop = desk.position.y + 4;
     controls.minDistance = 40; controls.maxDistance = 420; controls.maxPolarAngle = Math.PI * 0.48;
     const label = (text, color) => {
       const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
       const g = cv.getContext('2d'); g.fillStyle = color || '#15202A'; g.beginPath();
       if (g.roundRect) g.roundRect(4, 8, 248, 48, 14); else g.rect(4, 8, 248, 48); g.fill();
       g.fillStyle = '#fff'; g.font = 'bold 30px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 128, 33);
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false }));
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false, toneMapped: false }));
       sp.scale.set(20, 5, 1); sp.renderOrder = 10; return sp;
     };
     const mat = (c, r) => new THREE.MeshStandardMaterial({ color: lin(c), roughness: r == null ? 0.6 : r });
     new THREE.GLTFLoader().load('../../assets/models/esp32-devkit-v1.glb', (gltf) => {
       const board = gltf.scene; board.scale.setScalar(1000); scene.add(board); board.updateMatrixWorld(true);
+      board.position.y += deskTop + 3 - new THREE.Box3().setFromObject(board).min.y; board.updateMatrixWorld(true); // the board's pins rest on the desk
       const pad = (name) => { const o = board.getObjectByName('pad_' + name); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
       const box = new THREE.Box3().setFromObject(board), mid = box.getCenter(new THREE.Vector3());
       const L1 = pad('L01_EN'), L15 = pad('L15_VIN'), R1 = pad('R01_GPIO23'), R15 = pad('R15_3V3');
@@ -551,40 +552,32 @@ while True:
       const along = L15.clone().sub(L1).setY(0).normalize(); // down the headers, from pin 1 to pin 15
       const top = box.max.y;
       // raindrop sensor beside the R header (3V3, GND), its AO wire crossing to D34; servo beside the L header (VIN, GND) with its signal to D18
-      const sensor = new THREE.Group();
-      const pcb = new THREE.Mesh(new THREE.BoxGeometry(32, 1.6, 15), mat(0x1f5fbf)); sensor.add(pcb);
-      const chip = new THREE.Mesh(new THREE.BoxGeometry(8, 2.4, 6), mat(0x222a33, 0.5)); chip.position.set(-4, 2, 1); sensor.add(chip);
-      const pot = new THREE.Mesh(new THREE.BoxGeometry(8, 7, 8), mat(0x2f6fd0, 0.4)); pot.position.set(8, 4.2, 1); sensor.add(pot);
-      const sPins = ['VCC', 'GND', 'DO', 'AO'].map((n, i) => { const p = new THREE.Mesh(new THREE.BoxGeometry(0.8, 8, 0.8), mat(0xd4af37, 0.3)); p.position.set(-6 + i * 2.54, 0, -6.2); sensor.add(p); return p; });
-      sensor.position.copy(pad('R06_GPIO19')).addScaledVector(out, 50).setY(top + 4);
-      sensor.lookAt(sensor.position.clone().add(out)); sensor.rotateY(-Math.PI / 2); // pins face the board
+      loadParts(['raindrop', 'sg90-servo'], (P) => {
+      // the raindrop board beside the R header, pins facing the board; its plate lies further out, joined by its two-wire lead
+      const sensor = new THREE.Group(); sensor.add(P.raindrop);
+      sensor.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), out);
+      sensor.position.copy(pad('R06_GPIO19')).addScaledVector(out, 40).setY(deskTop);
       scene.add(sensor);
-      // the plate that gets wet, joined to the little board by two short wires
-      const plate = new THREE.Group();
-      plate.add(new THREE.Mesh(new THREE.BoxGeometry(34, 1.2, 24), mat(0x1d3d2a, 0.5)));
-      for (let k = -6; k <= 6; k++) { const tr = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.5, 21), mat(0xd9dde0, 0.3)); tr.position.set(k * 2.5, 0.8, 0); plate.add(tr); }
-      plate.position.copy(sensor.position).addScaledVector(out, 34).setY(top - 1);
-      plate.rotation.y = sensor.rotation.y;
-      scene.add(plate);
-      scene.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([sensor.position.clone().addScaledVector(out, 12).setY(top + 3), sensor.position.clone().addScaledVector(out, 24).setY(top + 2), plate.position.clone().addScaledVector(out, -12).setY(top + 1)]), 12, 0.7, 6, false), mat(0x777777)));
-      const servo = new THREE.Group();
-      const body = new THREE.Mesh(new THREE.BoxGeometry(23, 22, 12.5), mat(0x2a63c9)); servo.add(body);
-      const tabs = new THREE.Mesh(new THREE.BoxGeometry(32, 2.5, 12.5), mat(0x2a63c9)); tabs.position.y = 6; servo.add(tabs);
-      const hub = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 4, 20), mat(0xf4f4f4)); hub.position.set(5.5, 13, 0); servo.add(hub);
-      const horn = new THREE.Mesh(new THREE.BoxGeometry(22, 1.6, 4), mat(0xf4f4f4)); horn.position.set(5.5, 15, 0); servo.add(horn);
-      servo.position.copy(L15).addScaledVector(out, -55).setY(top + 6);
-      servo.lookAt(servo.position.clone().add(along)); servo.rotateY(Math.PI / 2);
+      // the SG90 from Servo Says Hello beside the L header, facing you, on a wooden block (no bracket); its own cable and plug lie on the desk
+      const servo = P['sg90-servo'];
+      ['Hand', 'Stand'].forEach((n) => { const o = servo.getObjectByName(n); if (o) o.visible = false; });
+      servo.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), along);
+      servo.position.copy(L15).addScaledVector(out, -58).addScaledVector(along, -6).setY(deskTop);
       scene.add(servo);
+      const block = new THREE.Mesh(new THREE.BoxGeometry(40, 23.8, 10), new THREE.MeshStandardMaterial({ map: woodTexture('#c9a46e', '#8a6538', 24), roughness: 0.8 }));
+      block.quaternion.copy(servo.quaternion); // the block sits behind the cable, under the case
+      block.position.copy(servo.position).add(new THREE.Vector3(0, 0, -6).applyQuaternion(servo.quaternion)).setY(deskTop + 11.9); scene.add(block);
+      const sPins = ['VCC', 'GND', 'DO', 'AO'].map((n) => sensor.getObjectByName('Pin_' + n));
       const wirePts = (a, b, h) => new THREE.CatmullRomCurve3([a, a.clone().setY(a.y + h), a.clone().lerp(b, 0.5).setY(Math.max(a.y, b.y) + h + 6), b.clone().setY(b.y + h), b]);
       const tube = (pts, color) => { const m = new THREE.Mesh(new THREE.TubeGeometry(pts, 48, 0.9, 8, false), mat(color, 0.45)); scene.add(m); return m; };
-      const pinTop = (m) => m.getWorldPosition(new THREE.Vector3()).setY(m.getWorldPosition(new THREE.Vector3()).y - 4);
+      const pinTop = (m) => (m ? m.getWorldPosition(new THREE.Vector3()) : null); // the tip of a header pin
       sensor.updateMatrixWorld(true); servo.updateMatrixWorld(true);
       const wires = [
         [pinTop(sPins[0]), pad('R15_3V3'), '#E03A3A', '3V3'],
         [pinTop(sPins[1]), pad('R14_GND'), '#2B2B2B', 'GND'],
         [pinTop(sPins[3]), pad('L04_GPIO34'), '#8A4FD3', 'D34 · AO'],
       ];
-      const servoEnd = (k) => servo.position.clone().addScaledVector(along, -3 + k * 3).addScaledVector(out, 14).setY(top + 2);
+      const servoEnd = (k) => nodeAt(servo, ['Sock_Signal', 'Sock_Power', 'Sock_Ground'][k]); // the servo plug's three sockets
       wires.push([servoEnd(0), pad('R07_GPIO18'), '#F08A24', 'D18 · signal']);
       wires.push([servoEnd(1), pad('L15_VIN'), '#C1272D', 'VIN · quick test']);
       wires.push([servoEnd(2), pad('L14_GND'), '#6B4226', 'GND']);
@@ -593,12 +586,13 @@ while True:
         const curve = wirePts(a, b, 10 + i * 2.5); tube(curve, c);
         const lb = label(t, c); lb.position.copy(curve.getPoint([0.2, 0.4, 0.65, 0.3, 0.55, 0.8][i])); lb.position.y += 5; scene.add(lb); // staggered so labels don't stack
       });
-      const sl = label('Raindrop sensor', '#1f5fbf'); sl.position.copy(plate.position).setY(top + 14); scene.add(sl);
-      const vl = label('SG90 servo', '#2a63c9'); vl.position.copy(servo.position).addScaledVector(out, -14).setY(top + 26); scene.add(vl);
+      const sl = label('Raindrop sensor', '#1f5fbf'); sl.position.copy(nodeAt(sensor, 'Rain_Plate') || sensor.position).setY(deskTop + 22); scene.add(sl);
+      const vl = label('SG90 servo', '#2a63c9'); vl.position.copy(servo.position).setY(deskTop + 72); scene.add(vl);
       const aim = mid.clone().addScaledVector(along, 8).addScaledVector(out, 20);
       const k = Math.max(1, 1.3 / camera.aspect); // step back on tall, narrow phone screens so the whole desk fits
       camera.position.copy(aim).addScaledVector(along, 240 * k).add(new THREE.Vector3(0, 190 * k, 0)); controls.target.copy(aim);
       $('wireMsg').remove();
+      });
     }, undefined, () => { $('wireMsg').textContent = 'The board model could not load. Please reload the page.'; });
   }
 
