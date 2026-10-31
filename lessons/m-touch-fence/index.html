@@ -10,7 +10,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <!--
   SENSOR MODULE: Don’t Touch the Fence (m-touch-fence). Built from lessons/_module-template/ (see AGENT.md, "Sensor modules").
-  3D: a code-built vegetable garden with a foil fence, plus the course's ESP32 model with a cardboard-and-foil fence and buzzer for the wiring.
+  3D: a Blender-made vegetable garden (assets/models/modules/goat-garden.glb: fence, foil panel, buzzer box, a goat) and the course's
+  ESP32 model with foil-card.glb and buzzer.glb for the wiring.
 -->
 <style>
 :root {
@@ -203,6 +204,8 @@ main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); g
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
 <script src="../../course.js"></script>
 <script src="../../assets/ohm/ohm.js"></script>
 <script src="../../assets/rewards.js"></script>
@@ -366,7 +369,22 @@ while True:
   window.__module = MODULE;
 
   /* ================= 4. 3D: the place (the front door) and the wiring ================= */
-  const hasGL = !!(window.THREE && THREE.OrbitControls && THREE.GLTFLoader);
+  const hasGL = !!(window.THREE && THREE.OrbitControls && THREE.GLTFLoader && THREE.DRACOLoader);
+  const LIB = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/';
+  function gltfLoader() { const g = new THREE.GLTFLoader(), d = new THREE.DRACOLoader(); d.setDecoderPath(LIB + 'libs/draco/gltf/'); g.setDRACOLoader(d); return g; }
+  function woodTexture(c1, c2, lines) {
+    const cv = document.createElement('canvas'); cv.width = 512; cv.height = 512; const g = cv.getContext('2d');
+    g.fillStyle = c1; g.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < lines; i++) { g.strokeStyle = c2; g.globalAlpha = 0.12 + ((i * 37) % 17) / 90; g.lineWidth = 1 + (i % 3); g.beginPath(); const y = (i * 97) % 512; g.moveTo(0, y); for (let x = 0; x <= 512; x += 32) g.lineTo(x, y + Math.sin(x / 70 + i) * 6); g.stroke(); }
+    const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+  }
+  // a Blender part (assets/models/modules/<name>.glb, in metres) at millimetre scale for the wiring desk
+  const PART = '../../assets/models/modules/';
+  function loadParts(names, done) {
+    const got = {}; let left = names.length;
+    names.forEach((n) => gltfLoader().load(PART + n + '.glb', (g) => { const r = g.scene; r.scale.setScalar(1000); r.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.envMapIntensity = 0.7; } }); got[n] = r; if (!--left) done(got); }, undefined, () => { got[n] = new THREE.Group(); if (!--left) done(got); }));
+  }
+  const nodeAt = (root, name) => { const o = root.getObjectByName(name); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
   const lin = (hex) => new THREE.Color(hex).convertSRGBToLinear(); // r128: colours are linear, so convert sRGB picks
   function makeView(host, opts) {
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -404,56 +422,41 @@ while True:
     const host = $('viewPlace');
     const v = placeView = makeView(host, { fov: 42, near: 0.1, far: 400 });
     const { renderer, scene, camera, controls } = v;
-    renderer.physicallyCorrectLights = false; renderer.toneMapping = THREE.NoToneMapping; // bright and simple, like the wiring desk
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.physicallyCorrectLights = true; // a sunny garden
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    scene.background = new THREE.Color(0xbfe0f5);
-    scene.fog = new THREE.Fog(0xbfe0f5, 30, 80);
+    scene.background = lin(0xbfe0f5);
+    scene.fog = new THREE.Fog(lin(0xbfe0f5), 30, 80);
+    scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new THREE.RoomEnvironment(), 0.04).texture;
     const wide = Math.max(1, 1.5 / camera.aspect); // step back on tall, narrow phone screens
     camera.position.set(4.5 * wide, 3.4 + 0.6 * (wide - 1), 8.2 * wide); controls.target.set(0, 0.9, 0);
     controls.maxPolarAngle = Math.PI * 0.49; controls.minDistance = 2.5; controls.maxDistance = 30;
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x6a8a55, 0.85));
-    const sun = new THREE.DirectionalLight(0xfff2d0, 0.7); sun.position.set(-6, 12, 8); sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 10, bottom: -10, near: 1, far: 40 });
-    scene.add(sun);
+    scene.add(new THREE.HemisphereLight(lin(0xffffff), lin(0x6a8a55), 1.1));
+    const sun = new THREE.DirectionalLight(lin(0xfff2d0), 2.6); sun.position.set(-6, 12, 8); sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 10, bottom: -10, near: 1, far: 40 });
+    sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02; scene.add(sun);
     const mat = (c, r, o) => new THREE.MeshStandardMaterial(Object.assign({ color: lin(c), roughness: r == null ? 0.8 : r }, o || {}));
     const add = (geo, m, x, y, z, parent) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; (parent || scene).add(o); return o; };
 
-    // ground, and a vegetable bed behind the fence (z < 0); the path and the goat are in front (z > 0)
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), mat(0x5d9a3c, 0.95)); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
-    add(new THREE.BoxGeometry(9, 0.12, 3.4), mat(0x6b4a30, 0.95), 0, 0.06, -2.2);
-    for (let i = 0; i < 5; i++) for (let j = 0; j < 2; j++) {
-      const x = -3.4 + i * 1.7, z = -2.9 + j * 1.4;
-      add(new THREE.SphereGeometry(0.34, 12, 8), mat(j ? 0xd8342b : 0x3e9b3a, 0.6), x, 0.4, z);
-      add(new THREE.ConeGeometry(0.22, 0.4, 8), mat(0x2f7a2c, 0.8), x, 0.78, z);
-    }
-    add(new THREE.BoxGeometry(2.6, 0.04, 14), mat(0xb9a98a), 0, 0.02, 7.4); // path to the gate
-    // the fence: posts, two rails, and a big foil panel that is the touch sensor
-    const wood = mat(0x8a5a35, 0.85);
-    for (let i = 0; i < 5; i++) add(new THREE.BoxGeometry(0.16, 1.5, 0.16), wood, -3.6 + i * 1.8, 0.75, 0);
-    for (const ry of [0.55, 1.1]) add(new THREE.BoxGeometry(7.6, 0.1, 0.07), wood, 0, ry, 0);
-    const foilMat = new THREE.MeshStandardMaterial({ color: lin(0xe6e9ee), metalness: 0.3, roughness: 0.3, emissive: 0x000000 });
-    const foil = add(new THREE.BoxGeometry(2.2, 0.8, 0.05), foilMat, 0, 0.9, 0.06);
-    const post = add(new THREE.BoxGeometry(0.46, 0.46, 0.16), mat(0x2b2f36, 0.5), 3.6, 1.45, 0.14); // buzzer on the last post
-    const buzzerDisc = add(new THREE.CylinderGeometry(0.17, 0.17, 0.1, 18), mat(0x181818, 0.4), 3.6, 1.45, 0.3); buzzerDisc.rotation.x = Math.PI / 2;
-    // a wire from the foil to the ESP32 box on the post, so the picture says where the sensor "is" (the chip)
-    const wireCurve = new THREE.CatmullRomCurve3([new THREE.Vector3(1.1, 0.9, 0.1), new THREE.Vector3(1.8, 1.2, 0.12), new THREE.Vector3(2.8, 1.25, 0.14), new THREE.Vector3(3.5, 1.4, 0.16)]);
-    const wireMesh = new THREE.Mesh(new THREE.TubeGeometry(wireCurve, 30, 0.025, 6, false), mat(0x2f7de1, 0.5)); scene.add(wireMesh);
+    // the garden, the fence, the foil, the buzzer box and the goat: a Blender model (assets/models/modules/goat-garden.glb, in metres).
+    // The foil gets the material that glows on an alarm; the goat, its head and legs are moved by the story below.
+    const foilMat = new THREE.MeshStandardMaterial({ color: lin(0xe6e9ee), metalness: 0.5, roughness: 0.3, emissive: 0x000000 });
+    let buzzerDisc = new THREE.Object3D(), goat = new THREE.Group(), head = new THREE.Object3D();
+    let legs = [0, 1, 2, 3].map(() => new THREE.Object3D());
+    head.position.set(0, 0.85, 0.55);
+    gltfLoader().load('../../assets/models/modules/goat-garden.glb', (g) => {
+      const yard = g.scene; scene.add(yard);
+      yard.traverse((o) => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; } });
+      yard.getObjectByName('Foil').material = foilMat;
+      buzzerDisc = yard.getObjectByName('Buzzer_Disc');
+      const gt = yard.getObjectByName('Goat'); scene.attach(gt); gt.position.copy(goat.position); gt.rotation.y = goat.rotation.y; goat = gt;
+      head = gt.getObjectByName('Goat_Head'); legs = [0, 1, 2, 3].map((i) => gt.getObjectByName('Leg_' + i));
+      const msg = $('placeMsg'); if (msg) msg.remove();
+    }, undefined, () => { $('placeMsg').textContent = 'The 3D garden could not load. Please reload the page.'; });
     // sound ripples around the buzzer
     const ripples = [0, 1, 2].map(() => {
-      const m = new THREE.MeshBasicMaterial({ color: 0xe0a000, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
+      const m = new THREE.MeshBasicMaterial({ color: 0xe0a000, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, toneMapped: false });
       const r = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.0, 36), m); r.position.set(3.6, 1.45, 0.45); scene.add(r); return r;
     });
-    // the pretend goat: a body, a head, four legs and horns, walking up to the fence and pushing its nose onto the foil
-    const goat = new THREE.Group(); scene.add(goat);
-    const fur = mat(0xf2ede0, 0.9), dark = mat(0x3a2e24, 0.7);
-    add(new THREE.BoxGeometry(0.45, 0.42, 0.95), fur, 0, 0.62, 0, goat);
-    const head = new THREE.Group(); head.position.set(0, 0.85, 0.55); goat.add(head);
-    add(new THREE.BoxGeometry(0.26, 0.28, 0.32), fur, 0, 0, 0, head);
-    add(new THREE.BoxGeometry(0.2, 0.18, 0.18), dark, 0, -0.06, 0.2, head);
-    for (const s of [-1, 1]) { add(new THREE.ConeGeometry(0.04, 0.25, 6), dark, s * 0.1, 0.24, -0.04, head).rotation.z = -s * 0.25; add(new THREE.BoxGeometry(0.05, 0.1, 0.18), fur, s * 0.17, 0.08, -0.02, head); }
-    const legs = [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([sx, sz]) => { const g = new THREE.Group(); g.position.set(sx * 0.15, 0.42, sz * 0.35); goat.add(g); add(new THREE.BoxGeometry(0.08, 0.42, 0.08), dark, 0, -0.21, 0, g); return g; });
-    goat.rotation.y = Math.PI; // faces the fence (−z)
-
     // the story: a goat wanders about, walks up to the fence, touches the foil, gets scared and leaves. The button forces a touch.
     const S = { t: 0, mode: 'auto', z: 6.5, touched: false };
     const btn = document.createElement('button'); btn.type = 'button'; btn.id = 'touchBtn';
@@ -465,7 +468,7 @@ while True:
       const cv = document.createElement('canvas'); cv.width = 320; cv.height = 64;
       const g = cv.getContext('2d'); g.fillStyle = color; g.beginPath(); if (g.roundRect) g.roundRect(4, 8, 312, 48, 14); else g.rect(4, 8, 312, 48); g.fill();
       g.fillStyle = '#fff'; g.font = 'bold 28px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 160, 33);
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false })); sp.scale.set(1.7, 0.34, 1); sp.position.set(x, y, z); sp.renderOrder = 10; scene.add(sp);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false, toneMapped: false })); sp.scale.set(1.7, 0.34, 1); sp.position.set(x, y, z); sp.renderOrder = 10; scene.add(sp);
     };
     sprite('Foil fence (D32)', '#2F7DE1', -1.7, 1.75, 0.3); sprite('Buzzer (D13)', '#B57A00', 3.6, 2.15, 0.3);
     const readout = $('placeReadout');
@@ -505,20 +508,21 @@ while True:
     v.tick = updateGarden;
     labelBtn();
     if (/^#t\d+/.test(location.hash)) { const T = parseFloat(location.hash.slice(2)); for (let q = 0; q < T / 0.02; q++) updateGarden(0.02); }
-    $('placeMsg').remove();
   }
 
   function buildWiring() {
     const host = $('viewWire');
     const v = wireView = makeView(host, { fov: 36, near: 1, far: 3000 });
     const { renderer, scene, camera, controls } = v;
-    renderer.physicallyCorrectLights = false; // a bright desk, like the other lessons
-    renderer.toneMapping = THREE.NoToneMapping;
-    scene.background = new THREE.Color(0xf3f7fa);
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xb8c4cc, 0.9));
-    const key = new THREE.DirectionalLight(0xffffff, 0.8); key.position.set(40, 120, 70); scene.add(key);
-    const desk = new THREE.Mesh(new THREE.BoxGeometry(260, 4, 170), new THREE.MeshStandardMaterial({ color: 0xd8c3a0, roughness: 0.9 }));
-    desk.position.y = -6; scene.add(desk);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.physicallyCorrectLights = true; // lit like the Parking Gate desk
+    scene.background = lin(0xf0f4f7);
+    scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+    scene.add(new THREE.HemisphereLight(lin(0xffffff), lin(0xb8c4cc), 1.0));
+    const key = new THREE.DirectionalLight(lin(0xffffff), 1.6); key.position.set(60, 200, 120); scene.add(key);
+    const wood = woodTexture('#d8c3a0', '#9b7a4f', 50); wood.repeat.set(1.4, 1);
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(760, 8, 460), new THREE.MeshStandardMaterial({ map: wood, roughness: 0.85 }));
+    desk.position.y = -8; scene.add(desk);
+    const deskTop = desk.position.y + 4;
     controls.minDistance = 40; controls.maxDistance = 420; controls.maxPolarAngle = Math.PI * 0.48;
     const label = (text, color) => {
       const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
@@ -526,12 +530,13 @@ while True:
       if (g.roundRect) g.roundRect(4, 8, 248, 48, 14); else g.rect(4, 8, 248, 48);
       g.fill();
       g.fillStyle = '#fff'; g.font = 'bold 30px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 128, 33);
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false }));
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false, toneMapped: false }));
       sp.scale.set(20, 5, 1); sp.renderOrder = 10; return sp;
     };
     const mat = (c, r) => new THREE.MeshStandardMaterial({ color: lin(c), roughness: r == null ? 0.6 : r });
     new THREE.GLTFLoader().load('../../assets/models/esp32-devkit-v1.glb', (gltf) => {
       const board = gltf.scene; board.scale.setScalar(1000); scene.add(board); board.updateMatrixWorld(true);
+      board.position.y += deskTop + 3 - new THREE.Box3().setFromObject(board).min.y; board.updateMatrixWorld(true); // the board's pins rest on the desk
       const pad = (name) => { const o = board.getObjectByName('pad_' + name); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
       const box = new THREE.Box3().setFromObject(board), mid = box.getCenter(new THREE.Vector3());
       const L1 = pad('L01_EN'), L15 = pad('L15_VIN'), R1 = pad('R01_GPIO23'), R15 = pad('R15_3V3');
@@ -541,24 +546,20 @@ while True:
       const along = L15.clone().sub(L1).setY(0).normalize(); // down the headers, from pin 1 to pin 15
       const top = box.max.y;
       // foil fence (cardboard with foil) beside the R header with one wire across the board to D32; buzzer beside the L header further down (D13, GND)
-      const fence = new THREE.Group();
-      fence.add(new THREE.Mesh(new THREE.BoxGeometry(36, 1.6, 20), mat(0xb98a55, 0.9)));
-      const foilM = new THREE.Mesh(new THREE.BoxGeometry(30, 0.4, 14), new THREE.MeshStandardMaterial({ color: 0xf2f4f7, metalness: 0.1, roughness: 0.3 })); foilM.position.set(0, 1.0, 0); fence.add(foilM);
-      const tape = new THREE.Mesh(new THREE.BoxGeometry(5, 0.5, 5), mat(0xe8d070, 0.6)); tape.position.set(-13, 1.3, 0); fence.add(tape);
-      fence.position.copy(pad('R06_GPIO19')).addScaledVector(out, 55).setY(top + 1);
-      fence.rotation.y = Math.atan2(-out.z, out.x); // long side across the desk, like the sensor in the other modules
+      loadParts(['foil-card', 'buzzer'], (P) => {
+      const fence = new THREE.Group(); fence.add(P['foil-card']);   // its crocodile clip faces the board
+      fence.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), out);
+      fence.position.copy(pad('R06_GPIO19')).addScaledVector(out, 46).setY(deskTop);
       scene.add(fence);
-      // the passive buzzer: a black disc with a sound hole on top and two legs
-      const buzzer = new THREE.Group();
-      buzzer.add(new THREE.Mesh(new THREE.CylinderGeometry(11, 11, 9, 28), mat(0x181818, 0.4)));
-      const hole = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, 0.4, 14), mat(0x000000, 0.9)); hole.position.y = 4.6; buzzer.add(hole);
-      buzzer.position.copy(L15).addScaledVector(out, -55).setY(top + 5);
+      const buzzer = new THREE.Group(); buzzer.add(P.buzzer);       // its two legs point at the board
+      buzzer.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), out.clone().negate());
+      buzzer.position.copy(L15).addScaledVector(out, -46).setY(deskTop);
       scene.add(buzzer);
       const wirePts = (a, b, h) => new THREE.CatmullRomCurve3([a, a.clone().setY(a.y + h), a.clone().lerp(b, 0.5).setY(Math.max(a.y, b.y) + h + 6), b.clone().setY(b.y + h), b]);
       const tube = (pts, color) => { const m = new THREE.Mesh(new THREE.TubeGeometry(pts, 48, 0.9, 8, false), mat(color, 0.45)); scene.add(m); return m; };
-      fence.updateMatrixWorld(true);
-      const foilEnd = tape.getWorldPosition(new THREE.Vector3()).setY(top + 3);
-      const bz = (k) => buzzer.position.clone().addScaledVector(along, -3 + k * 6).addScaledVector(out, 12).setY(top + 1);
+      fence.updateMatrixWorld(true); buzzer.updateMatrixWorld(true);
+      const foilEnd = nodeAt(fence, 'Pin_FOIL');
+      const bz = (k) => nodeAt(buzzer, k ? 'Pin_MINUS' : 'Pin_PLUS');
       const wires = [
         [foilEnd, pad('L06_GPIO32'), '#2F7DE1', 'D32 · foil'],
         [bz(0), pad('L13_GPIO13'), '#E8A317', 'D13 · +'],
@@ -569,12 +570,13 @@ while True:
         const curve = wirePts(a, b, 10 + i * 2.5); tube(curve, c);
         const lb = label(t, c); lb.position.copy(curve.getPoint([0.35, 0.4, 0.65][i])); lb.position.y += 5; scene.add(lb);
       });
-      const sl = label('Foil fence', '#2F7DE1'); sl.position.copy(fence.position).setY(top + 24); scene.add(sl);
-      const vl = label('Buzzer', '#B57A00'); vl.position.copy(buzzer.position).addScaledVector(out, -10).setY(top + 22); scene.add(vl);
+      const sl = label('Foil fence', '#2F7DE1'); sl.position.copy(fence.localToWorld(new THREE.Vector3(20, 16, 0))); scene.add(sl);
+      const vl = label('Buzzer', '#B57A00'); vl.position.copy(buzzer.localToWorld(new THREE.Vector3(8, 22, 0))); scene.add(vl);
       const aim = mid.clone().addScaledVector(along, 8).addScaledVector(out, -3);
       const k = Math.max(1, 1.3 / camera.aspect); // step back on tall, narrow phone screens so the whole desk fits
       camera.position.copy(aim).addScaledVector(along, 180 * k).add(new THREE.Vector3(0, 140 * k, 0)); controls.target.copy(aim);
       $('wireMsg').remove();
+      });
     }, undefined, () => { $('wireMsg').textContent = 'The board model could not load. Please reload the page.'; });
   }
 
