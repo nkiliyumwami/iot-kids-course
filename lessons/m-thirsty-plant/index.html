@@ -10,7 +10,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <!--
   SENSOR MODULE: The Thirsty Plant (m-thirsty-plant). Built from lessons/_module-template/ (see AGENT.md, "Sensor modules").
-  3D: a code-built garden bed (no model files) and the course's ESP32 model with a code-built soil probe, breadboard and LED for the wiring.
+  3D: a Blender-made garden (assets/models/modules/plant-garden.glb: raised bed, soil, probe, lamp box, watering can, a plant the page clones)
+  and the course's ESP32 model with soil-probe.glb and breadboard.glb for the wiring.
 -->
 <style>
 :root {
@@ -204,6 +205,8 @@ main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); g
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
 <script src="../../course.js"></script>
 <script src="../../assets/ohm/ohm.js"></script>
 <script src="../../assets/rewards.js"></script>
@@ -362,7 +365,20 @@ while True:
 
   /* ================= 4. 3D: the place (the garden) and the wiring ================= */
   const LIB = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/';
-  const hasGL = !!(window.THREE && THREE.OrbitControls && THREE.GLTFLoader);
+  const hasGL = !!(window.THREE && THREE.OrbitControls && THREE.GLTFLoader && THREE.DRACOLoader);
+  function woodTexture(c1, c2, lines) {
+    const cv = document.createElement('canvas'); cv.width = 512; cv.height = 512; const g = cv.getContext('2d');
+    g.fillStyle = c1; g.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < lines; i++) { g.strokeStyle = c2; g.globalAlpha = 0.12 + ((i * 37) % 17) / 90; g.lineWidth = 1 + (i % 3); g.beginPath(); const y = (i * 97) % 512; g.moveTo(0, y); for (let x = 0; x <= 512; x += 32) g.lineTo(x, y + Math.sin(x / 70 + i) * 6); g.stroke(); }
+    const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+  }
+  // a Blender part (assets/models/modules/<name>.glb, in metres) at millimetre scale for the wiring desk
+  const PART = '../../assets/models/modules/';
+  function loadParts(names, done) {
+    const got = {}; let left = names.length;
+    names.forEach((n) => gltfLoader().load(PART + n + '.glb', (g) => { const r = g.scene; r.scale.setScalar(1000); r.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.envMapIntensity = 0.7; } }); got[n] = r; if (!--left) done(got); }, undefined, () => { got[n] = new THREE.Group(); if (!--left) done(got); }));
+  }
+  const nodeAt = (root, name) => { const o = root.getObjectByName(name); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
   function gltfLoader() {
     const g = new THREE.GLTFLoader(), d = new THREE.DRACOLoader();
     d.setDecoderPath(LIB + 'libs/draco/gltf/'); g.setDRACOLoader(d); return g;
@@ -404,76 +420,69 @@ while True:
     const host = $('viewPlace');
     const v = placeView = makeView(host, { fov: 38, near: 0.5, far: 3000 });
     const { renderer, scene, camera, controls } = v;
-    renderer.physicallyCorrectLights = false; renderer.toneMapping = THREE.NoToneMapping; // a bright, friendly garden
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.physicallyCorrectLights = true; // a bright, friendly garden
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    scene.background = lin(0xcfe5f3); scene.fog = new THREE.Fog(lin(0xcfe5f3), 260, 700);
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x8aa070, 0.95));
-    const sun = new THREE.DirectionalLight(0xfff1de, 0.85); sun.position.set(-60, 120, 80); sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -90, right: 90, top: 70, bottom: -70, near: 20, far: 400 });
-    sun.shadow.bias = -0.0006; scene.add(sun);
+    scene.background = lin(0xcfe5f3); scene.fog = new THREE.Fog(lin(0xcfe5f3), 320, 900);
+    scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+    scene.add(new THREE.HemisphereLight(lin(0xffffff), lin(0x8aa070), 1.1));
+    const sun = new THREE.DirectionalLight(lin(0xfff1de), 2.6); sun.position.set(-60, 120, 80); sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -110, right: 110, top: 90, bottom: -90, near: 20, far: 400 });
+    sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.3; scene.add(sun);
     const std = (c, r) => new THREE.MeshStandardMaterial({ color: lin(c), roughness: r == null ? 0.85 : r });
     const add = (geo, m, x, y, z, parent) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = true; o.receiveShadow = true; (parent || scene).add(o); return o; };
-    camera.position.set(14, 78, 150); controls.target.set(14, 16, 6);
+    const kk = Math.max(1, 1.2 / camera.aspect); // step back on tall, narrow phone screens
+    camera.position.set(14, 78 * kk, 150 * kk); controls.target.set(14, 16, 6);
     controls.minDistance = 30; controls.maxDistance = 260; controls.maxPolarAngle = Math.PI * 0.47;
 
-    // ground and paving
-    const grass = add(new THREE.CircleGeometry(600, 48), std(0x6fa04a, 1), 0, -0.2, 0); grass.rotation.x = -Math.PI / 2; grass.castShadow = false;
-    add(new THREE.BoxGeometry(150, 1, 90), std(0xc9c4b8), 0, -0.5, 4).castShadow = false;
-    // raised bed: four boards and the soil
-    const wood = std(0xa5703d, 0.8);
-    add(new THREE.BoxGeometry(100, 16, 3), wood, 0, 8, 22); add(new THREE.BoxGeometry(100, 16, 3), wood, 0, 8, -22);
-    add(new THREE.BoxGeometry(3, 16, 47), wood, 48.5, 8, 0); add(new THREE.BoxGeometry(3, 16, 47), wood, -48.5, 8, 0);
-    const soilMat = std(0xa8855a, 1);
-    const soil = add(new THREE.BoxGeometry(94, 13, 41), soilMat, 0, 6.5, 0); soil.castShadow = false;
+    // the garden: a Blender model (assets/models/modules/plant-garden.glb, in centimetres like this scene).
+    // The soil, the lamp and the can get what the story animates; each plant is a clone of the model's Plant, its leaves drooping on their own.
+    const soilMat = new THREE.MeshStandardMaterial({ color: lin(0xa8855a), roughness: 1 });
     const dry = lin(0xb08a5a), wet = lin(0x3a2818);
-
-    // plants: leaves droop and turn pale when the soil is dry
     const plants = [];
-    const leafGeo = new THREE.SphereGeometry(1, 14, 10); leafGeo.scale(1, 0.12, 0.55); leafGeo.translate(1, 0, 0);
-    const stemMat = std(0x4f8a34), greenLeaf = lin(0x3f9a3a), paleLeaf = lin(0xb7b44a);
-    function makePlant(x, z, s) {
-      const g = new THREE.Group(); g.position.set(x, 13, z); g.scale.setScalar(s); scene.add(g);
-      const stem = add(new THREE.CylinderGeometry(0.7, 1, 16, 8), stemMat, 0, 8, 0, g);
-      const leaves = [];
-      for (let k = 0; k < 7; k++) {
-        const arm = new THREE.Group(); arm.position.y = 5 + k * 1.6; arm.rotation.y = k * 2.4; g.add(arm);
-        const m = new THREE.MeshStandardMaterial({ color: greenLeaf.clone(), roughness: 0.7, side: THREE.DoubleSide });
-        const leaf = add(leafGeo, m, 0, 0, 0, arm); leaf.scale.setScalar(5.5 - k * 0.35);
-        leaves.push({ arm, leaf, mat: m });
+    const greenLeaf = lin(0x3f9a3a), paleLeaf = lin(0xb7b44a);
+    const bulb = { material: new THREE.MeshStandardMaterial({ color: lin(0x5a1010), roughness: 0.15 }), position: new THREE.Vector3(52, 46.5, 30) };
+    const glow = new THREE.Mesh(new THREE.SphereGeometry(7, 20, 14), new THREE.MeshBasicMaterial({ color: lin(0xff3a2a), transparent: true, opacity: 0, depthWrite: false, toneMapped: false })); glow.position.copy(bulb.position); scene.add(glow);
+    const lamp = new THREE.PointLight(lin(0xff3a2a), 0, 120, 2); lamp.position.copy(bulb.position); scene.add(lamp);
+    let can = new THREE.Group(); can.visible = false;
+    gltfLoader().load('../../assets/models/modules/plant-garden.glb', (g) => {
+      const yard = g.scene; yard.scale.setScalar(100); scene.add(yard);
+      yard.traverse((o) => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; } });
+      yard.getObjectByName('Soil').material = soilMat;
+      const lampNode = yard.getObjectByName('Lamp'); lampNode.material = bulb.material;
+      yard.updateMatrixWorld(true);
+      bulb.position.copy(nodeAt(yard, 'Lamp')); glow.position.copy(bulb.position); lamp.position.copy(bulb.position);
+      const c = yard.getObjectByName('Watering_Can'); scene.attach(c); c.visible = can.visible; can = c;
+      const tpl = yard.getObjectByName('Plant'); tpl.visible = false;
+      const x1 = new THREE.Vector3(1, 0, 0);
+      function makePlant(x, z, sc) {
+        const p = tpl.clone(true); p.visible = true; scene.add(p);
+        p.position.set(x, 13, z); p.scale.setScalar(sc); // the template is in centimetres, like this scene
+        const leaves = [];
+        p.traverse((o) => {
+          if (!/^Leaf_\d/.test(o.name)) return;
+          const v = x1.clone().applyQuaternion(o.quaternion), spin = Math.atan2(-v.z, v.x); // its turn about the stem
+          o.rotation.set(0, spin, -0.35);
+          o.traverse((m) => { if (m.isMesh) { m.material = new THREE.MeshStandardMaterial({ color: greenLeaf.clone(), roughness: 0.65, side: THREE.DoubleSide }); m.castShadow = true; } });
+          let mat = null; o.traverse((m) => { if (m.isMesh && !mat) mat = m.material; });
+          leaves.push({ arm: o, mat });
+        });
+        const stem = p.getObjectByName('Stem'), bud = p.getObjectByName('Bud'); bud.userData.bud = true;
+        plants.push({ g: p, stem, leaves, bud });
       }
-      const bud = add(new THREE.SphereGeometry(1.5, 12, 10), std(0xe9573f, 0.5), 0, 16.5, 0, g); bud.userData.bud = true;
-      plants.push({ g, stem, leaves, bud }); return g;
-    }
-    makePlant(0, 0, 1.25); makePlant(-30, -8, 0.9); makePlant(30, 6, 0.95); makePlant(-18, 11, 0.7); makePlant(20, -10, 0.75);
-
-    // the probe in the soil, with its wire running to a little box on a post
-    const probe = new THREE.Group(); probe.position.set(10, 13, 8); scene.add(probe);
-    add(new THREE.BoxGeometry(4.2, 18, 0.5), std(0x1f7a46, 0.5), 0, 2, 0, probe);
-    add(new THREE.BoxGeometry(4.2, 1.2, 0.55), std(0xf4f4f4, 0.4), 0, 6.5, 0, probe);
-    add(new THREE.BoxGeometry(2.4, 3, 1.2), std(0x15202a, 0.6), 0, 12.5, 0, probe);
-    const post = add(new THREE.BoxGeometry(3, 34, 3), wood, 52, 17, 30);
-    const box = add(new THREE.BoxGeometry(16, 11, 8), std(0x2d3a46, 0.5), 52, 38, 30);
-    const bulb = add(new THREE.SphereGeometry(3, 20, 14), new THREE.MeshStandardMaterial({ color: lin(0x5a1010), roughness: 0.3 }), 52, 46.5, 30);
-    const glow = new THREE.Mesh(new THREE.SphereGeometry(7, 20, 14), new THREE.MeshBasicMaterial({ color: lin(0xff3a2a), transparent: true, opacity: 0, depthWrite: false })); glow.position.copy(bulb.position); scene.add(glow);
-    const lamp = new THREE.PointLight(0xff3a2a, 0, 120); lamp.position.copy(bulb.position); scene.add(lamp);
-    const cable = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(10, 26, 8), new THREE.Vector3(20, 29, 16), new THREE.Vector3(40, 24, 26), new THREE.Vector3(48, 34, 28)]), 30, 0.45, 6), std(0x15202a, 0.5)); cable.castShadow = true; scene.add(cable);
+      makePlant(0, 0, 1.25); makePlant(-30, -8, 0.9); makePlant(30, 6, 0.95); makePlant(-18, 11, 0.7); makePlant(20, -10, 0.75);
+      const msg = $('placeMsg'); if (msg) msg.remove();
+    }, undefined, () => { $('placeMsg').textContent = 'The 3D garden could not load. Please reload the page.'; });
 
     const tag = (text, color, w) => {
       const cv = document.createElement('canvas'); cv.width = 320; cv.height = 72;
       const g = cv.getContext('2d'); g.fillStyle = color; g.beginPath();
       if (g.roundRect) g.roundRect(4, 8, 312, 56, 16); else g.rect(4, 8, 312, 56); g.fill();
       g.fillStyle = '#fff'; g.font = 'bold 32px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 160, 37);
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false })); sp.scale.set(w || 24, (w || 24) * 72 / 320, 1); sp.renderOrder = 10; return sp;
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false, toneMapped: false })); sp.scale.set(w || 24, (w || 24) * 72 / 320, 1); sp.renderOrder = 10; return sp;
     };
     const t1 = tag('soil probe', '#1f7a46'); t1.position.set(10, 32, 8); scene.add(t1);
     const t2 = tag('ESP32 + LED', '#15202a'); t2.position.set(52, 58, 30); scene.add(t2);
 
-    // a watering can that comes in, tips, and pours
-    const can = new THREE.Group(); scene.add(can);
-    add(new THREE.CylinderGeometry(6, 6.5, 12, 20), std(0x2f7de1, 0.4), 0, 0, 0, can);
-    const spout = add(new THREE.CylinderGeometry(0.9, 1.4, 12, 10), std(0x2f7de1, 0.4), -9, 3, 0, can); spout.rotation.z = 0.9;
-    add(new THREE.TorusGeometry(4.5, 0.7, 8, 16, Math.PI), std(0x2f7de1, 0.4), 4, 7, 0, can).rotation.z = 0;
-    can.visible = false;
     const drops = []; const dropMat = new THREE.MeshBasicMaterial({ color: lin(0x5cc8ff), transparent: true, opacity: 0.85 }), dropGeo = new THREE.SphereGeometry(0.6, 8, 6);
     for (let i = 0; i < 40; i++) { const d = new THREE.Mesh(dropGeo, dropMat); d.visible = false; scene.add(d); drops.push({ m: d, vy: 0 }); }
 
@@ -505,11 +514,11 @@ while True:
           l.mat.color.copy(greenLeaf).lerp(paleLeaf, S.k * 0.9);
         });
         p.g.rotation.z = S.k * 0.08; p.stem.scale.y = 1 - S.k * 0.12;
-        p.g.children.forEach((c) => { if (c.userData.bud) c.position.y = 16.5 - S.k * 2.2; });
+        p.bud.position.y = 16.5 - S.k * 2.2;
       }
       bulb.material.color.copy(isDry ? lin(0xff2a1a) : lin(0x5a1010));
       bulb.material.emissive = isDry ? lin(0xff2a1a) : new THREE.Color(0);
-      glow.material.opacity = isDry ? 0.28 + 0.12 * Math.sin(S.t * 8) : 0; lamp.intensity = isDry ? 1.2 : 0;
+      glow.material.opacity = isDry ? 0.28 + 0.12 * Math.sin(S.t * 8) : 0; lamp.intensity = isDry ? 900 : 0;
       // the can
       const pouring = S.state === 'watering';
       const inK = pouring ? ss(0, 1, S.t) * (1 - ss(3.4, 4.2, S.t)) : 0;
@@ -520,7 +529,6 @@ while True:
       for (const d of drops) if (d.m.visible) { d.vy -= 120 * dt; d.m.position.y += d.vy * dt; d.m.position.x += 2 * dt; if (d.m.position.y < 13.5) d.m.visible = false; }
       readout.textContent = `moisture = ${Math.round(S.m)}\n${isDry ? 'if → led.value(1)' : 'else → led.value(0)'}   (DRY = ${DRY})`;
     };
-    $('placeMsg').remove();
   }
 
   // the wiring: the course's ESP32 model, a code-built soil probe, breadboard, resistor and LED, and one tube per wire (millimetres)
@@ -528,25 +536,28 @@ while True:
     const host = $('viewWire');
     const v = wireView = makeView(host, { fov: 36, near: 1, far: 3000 });
     const { renderer, scene, camera, controls } = v;
-    renderer.physicallyCorrectLights = false; // a bright desk, like the other lessons
-    renderer.toneMapping = THREE.NoToneMapping;
-    scene.background = new THREE.Color(0xf3f7fa);
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xb8c4cc, 0.9));
-    const key = new THREE.DirectionalLight(0xffffff, 0.8); key.position.set(40, 120, 70); scene.add(key);
-    const desk = new THREE.Mesh(new THREE.BoxGeometry(380, 4, 230), new THREE.MeshStandardMaterial({ color: 0x9a7a52, roughness: 1 }));
-    desk.position.y = -6; scene.add(desk);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.physicallyCorrectLights = true; // lit like the Parking Gate desk
+    scene.background = lin(0xf0f4f7);
+    scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+    scene.add(new THREE.HemisphereLight(lin(0xffffff), lin(0xb8c4cc), 1.0));
+    const key = new THREE.DirectionalLight(lin(0xffffff), 1.6); key.position.set(60, 200, 120); scene.add(key);
+    const wood = woodTexture('#d8c3a0', '#9b7a4f', 50); wood.repeat.set(1.4, 1);
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(760, 8, 460), new THREE.MeshStandardMaterial({ map: wood, roughness: 0.85 }));
+    desk.position.y = -8; scene.add(desk);
+    const deskTop = desk.position.y + 4;
     controls.minDistance = 40; controls.maxDistance = 520; controls.maxPolarAngle = Math.PI * 0.48;
     const label = (text, color) => {
       const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
       const g = cv.getContext('2d'); g.fillStyle = color || '#15202A'; g.beginPath();
       if (g.roundRect) g.roundRect(4, 8, 248, 48, 14); else g.rect(4, 8, 248, 48); g.fill();
       g.fillStyle = '#fff'; g.font = 'bold 30px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 128, 33);
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false }));
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false, toneMapped: false }));
       sp.scale.set(20, 5, 1); sp.renderOrder = 10; return sp;
     };
     const mat = (c, r) => new THREE.MeshStandardMaterial({ color: lin(c), roughness: r == null ? 0.6 : r });
     new THREE.GLTFLoader().load('../../assets/models/esp32-devkit-v1.glb', (gltf) => {
       const board = gltf.scene; board.scale.setScalar(1000); scene.add(board); board.updateMatrixWorld(true);
+      board.position.y += deskTop + 3 - new THREE.Box3().setFromObject(board).min.y; board.updateMatrixWorld(true); // the board's pins rest on the desk
       const pad = (name) => { const o = board.getObjectByName('pad_' + name); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
       const box = new THREE.Box3().setFromObject(board), mid = box.getCenter(new THREE.Vector3());
       const L1 = pad('L01_EN'), L15 = pad('L15_VIN'), R1 = pad('R01_GPIO23'), R15 = pad('R15_3V3');
@@ -558,44 +569,35 @@ while True:
       // a group whose local +X points along `dir` (flat on the desk), local +Y is up
       const flat = (dir) => { const g = new THREE.Group(); g.matrixAutoUpdate = false; g.matrix.makeBasis(dir.clone(), up, new THREE.Vector3().crossVectors(dir, up)); g.matrixWorldNeedsUpdate = true; return g; };
       const put = (g, p) => { g.matrix.setPosition(p); g.matrixWorldNeedsUpdate = true; scene.add(g); g.updateMatrixWorld(true); return g; };
-      // soil probe beside the L header (D33, GND), its tip pointing away from the board; its pins face the board
-      const pr = flat(out.clone().negate());
-      const pcb = new THREE.Mesh(new THREE.BoxGeometry(100, 1.6, 23), mat(0x1f7a46)); pcb.position.set(52, 0, 0); pr.add(pcb);
-      const seal = new THREE.Mesh(new THREE.BoxGeometry(6, 1.8, 23.2), mat(0xf4f4f4, 0.4)); seal.position.set(50, 0.1, 0); pr.add(seal);
-      const chip = new THREE.Mesh(new THREE.BoxGeometry(14, 2.6, 8), mat(0x15202a)); chip.position.set(12, 1.6, -4); pr.add(chip);
-      const pPins = ['AOUT', 'VCC', 'GND'].map((n, i) => { const p = new THREE.Mesh(new THREE.BoxGeometry(8, 0.8, 0.8), mat(0xd4af37, 0.3)); p.position.set(-0.5, 2.4, (i - 1) * 5); pr.add(p); return p; });
-      put(pr, pad('L07_GPIO33').clone().addScaledVector(out, -34).setY(top + 6));
-      // a mini breadboard with a 330 Ω resistor and a red LED, beside the R header
-      const bb = flat(along.clone());
-      const plate = new THREE.Mesh(new THREE.BoxGeometry(46, 8, 28), mat(0xb9c6d2, 0.8)); plate.position.set(0, 0, 0); bb.add(plate);
-      for (let i = -9; i <= 9; i++) for (const zz of [-8, -5, 5, 8]) { const h = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.3, 1.4), mat(0x888d92)); h.position.set(i * 2.2, 4.1, zz); bb.add(h); }
-      const res = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 9, 14), mat(0xd9b27c, 0.7)); res.rotation.z = Math.PI / 2; res.position.set(-8, 6.4, 5); bb.add(res);
-      for (const [k, c] of [[-10.5, 0x8a4a22], [-8.8, 0x15202a], [-7, 0x8a4a22]]) { const r = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 0.8, 14), mat(c)); r.rotation.z = Math.PI / 2; r.position.set(k + 0.8, 6.4, 5); bb.add(r); }
-      const led = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 6, 20), mat(0xe03a3a, 0.3)); led.position.set(8, 8, 5); bb.add(led);
-      const dome = new THREE.Mesh(new THREE.SphereGeometry(2.6, 20, 12), mat(0xe03a3a, 0.3)); dome.position.set(8, 11, 5); bb.add(dome);
-      put(bb, pad('R08_GPIO5').clone().addScaledVector(out, 48).setY(top + 2));
+      loadParts(['soil-probe', 'breadboard'], (P) => {
+      // the soil probe beside the L header (D33, GND), its tip pointing away from the board; its pins face the board
+      const pr = flat(out.clone().negate()); pr.add(P['soil-probe']);
+      put(pr, pad('L07_GPIO33').clone().addScaledVector(out, -34).setY(deskTop));
+      // a mini breadboard with one 330 Ω resistor and a red LED beside the R header (the second pair is hidden)
+      const bb = flat(out.clone()); bb.add(P.breadboard);
+      ['LED_Green', 'Resistor_B'].forEach((n) => { const o = P.breadboard.getObjectByName(n); if (o) o.visible = false; });
+      put(bb, pad('R08_GPIO5').clone().addScaledVector(out, 40).setY(deskTop));
       const wirePts = (a, b, h) => new THREE.CatmullRomCurve3([a, a.clone().setY(a.y + h), a.clone().lerp(b, 0.5).setY(Math.max(a.y, b.y) + h + 6), b.clone().setY(b.y + h), b]);
       const tube = (pts, color) => { const m = new THREE.Mesh(new THREE.TubeGeometry(pts, 48, 0.9, 8, false), mat(color, 0.45)); scene.add(m); return m; };
-      const wp = (m) => m.getWorldPosition(new THREE.Vector3()).setY(top + 6);
-      const bbAt = (x, y, z) => bb.localToWorld(new THREE.Vector3(x, y, z));
       const wires = [
-        [wp(pPins[1]), pad('R15_3V3'), '#F08A24', '3V3 · VCC'],
-        [wp(pPins[2]), pad('L14_GND'), '#2B2B2B', 'GND'],
-        [wp(pPins[0]), pad('L07_GPIO33'), '#8A4FD6', 'D33 · AOUT'],
-        [bbAt(-12, 4.4, 5), pad('L08_GPIO25'), '#E03A3A', 'D25 → resistor'],
-        [bbAt(6.8, 4.4, -5), pad('R14_GND'), '#6B4226', 'LED − → GND'],
+        [nodeAt(pr, 'Pin_VCC'), pad('R15_3V3'), '#F08A24', '3V3 · VCC'],
+        [nodeAt(pr, 'Pin_GND'), pad('L14_GND'), '#2B2B2B', 'GND'],
+        [nodeAt(pr, 'Pin_AOUT'), pad('L07_GPIO33'), '#8A4FD6', 'D33 · AOUT'],
+        [nodeAt(bb, 'Hole_A'), pad('L08_GPIO25'), '#E03A3A', 'D25 → resistor'],
+        [nodeAt(bb, 'Hole_Rail'), pad('R14_GND'), '#6B4226', 'LED − → GND'],
       ];
       wires.forEach(([a, b, c, t], i) => {
         if (!a || !b) return;
         const curve = wirePts(a, b, 8 + i * 3); tube(curve, c);
         const lb = label(t, c); lb.position.copy(curve.getPoint([0.3, 0.45, 0.5, 0.5, 0.55][i])); lb.position.y += 5; scene.add(lb);
       });
-      const sl = label('Soil probe', '#1f7a46'); sl.position.copy(pr.localToWorld(new THREE.Vector3(60, 14, 0))); scene.add(sl);
-      const bl = label('Resistor + LED', '#b02a2a'); bl.position.copy(bb.localToWorld(new THREE.Vector3(0, 24, 0))); scene.add(bl);
-      const aim = mid.clone().addScaledVector(out, -20);
+      const sl = label('Soil probe', '#1f7a46'); sl.position.copy(pr.localToWorld(new THREE.Vector3(60, 16, 0))); scene.add(sl);
+      const bl = label('Resistor + LED', '#b02a2a'); bl.position.copy(bb.localToWorld(new THREE.Vector3(14, 36, 0))); scene.add(bl);
+      const aim = mid.clone().addScaledVector(out, -8);
       const k = Math.max(1, 1.3 / camera.aspect); // step back on tall, narrow phone screens so the whole desk fits
-      camera.position.copy(aim).addScaledVector(along, 215 * k).add(new THREE.Vector3(0, 175 * k, 0)); controls.target.copy(aim);
+      camera.position.copy(aim).addScaledVector(along, 250 * k).add(new THREE.Vector3(0, 200 * k, 0)); controls.target.copy(aim);
       $('wireMsg').remove();
+      });
     }, undefined, () => { $('wireMsg').textContent = 'The board model could not load. Please reload the page.'; });
   }
 
