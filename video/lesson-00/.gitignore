@@ -1,0 +1,10 @@
+node_modules/
+frames/
+# rendered media is large: it lives in out/ on disk, not in git (see DECISIONS.md)
+out/*.mp4
+out/*.png
+out/*.zip
+!out/CONTACT_SHEET.png
+render.log
+out/*_alpha_png/
+out/EDIT_READY/

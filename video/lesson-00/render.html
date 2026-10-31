@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lesson 0 · cinema renderer</title>
+<!-- The video renderer for Lesson 0. It builds the board with the lesson's own viewer (assets/esp32/board.js,
+     the same GLB model, lights and pin labels) and lets render.mjs step it frame by frame. Not linked from the course. -->
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; cursor: none; }
+#stage { position: fixed; left: 0; top: 0; width: 1920px; height: 1080px; background: #F6F8FA; overflow: hidden; }
+body.alpha #stage { background: transparent; }
+#scene, #scene canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.labels, #fx, #fxUnder { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+/* the lesson's pin labels, but sized by the frame and with no real-time transitions (every frame is set by cinema.js) */
+#stage .pl { font-size: 20px; padding: .36em .6em; border-radius: .52em; border-width: .17em; transition: none; animation: none;
+  box-shadow: 0 .1em .4em rgba(21,32,42,.28); will-change: transform; }
+#stage .pl.sel { border-color: #F2B705; box-shadow: 0 0 0 .26em rgba(242,183,5,.55); }
+.fx { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); }
+.fx.warn { font-family: 'Nunito', system-ui, sans-serif; font-weight: 800; color: #fff; background: #D9443A; border-radius: 999px;
+  padding: .25em .7em .3em; white-space: nowrap; box-shadow: 0 .2em .8em rgba(217,68,58,.45); }
+.fx.count { font-family: 'Baloo 2', system-ui, sans-serif; font-weight: 800; color: #15202A; background: #FFF6D6; border: .12em solid #F2B705;
+  border-radius: 999px; min-width: 1.6em; text-align: center; line-height: 1.45; padding: 0 .3em; box-shadow: 0 .15em .5em rgba(21,32,42,.2); }
+</style>
+</head>
+<body>
+<div id="stage"><div id="scene"></div><div id="fxUnder"></div><div class="labels" id="labels"></div><div id="fx"></div></div>
+<script src="node_modules/three/build/three.min.js"></script>
+<script src="node_modules/three/examples/js/controls/OrbitControls.js"></script>
+<script src="node_modules/three/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+// The viewer runs its own requestAnimationFrame loop. Keep its frame function instead, so cinema.js can call it
+// once per video frame with an exact time. Keep its renderer too, with alpha (for transparent shots) and a
+// drawing buffer that survives until the screenshot is taken.
+window.__viewerFrame = null;
+window.requestAnimationFrame = (cb) => { window.__viewerFrame = cb; return 1; };
+const BaseRenderer = THREE.WebGLRenderer;
+THREE.WebGLRenderer = function (p) {
+  const r = new BaseRenderer(Object.assign({}, p, { alpha: true, preserveDrawingBuffer: true }));
+  window.__renderer = r;
+  return r;
+};
+</script>
+<script src="../../assets/esp32/board.js"></script>
+<script src="cinema.js"></script>
+</body>
+</html>
