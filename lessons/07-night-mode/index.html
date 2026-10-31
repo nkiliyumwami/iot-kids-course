@@ -2150,6 +2150,12 @@ function renderExtra(s) {
     if (s.extra !== 'E1') extra.appendChild(codeCard);
   }
   if (s.why) extra.appendChild(whyCard(s.why()));
+  if (s.title === 'Day: the normal cycle') extra.appendChild(el(`<div class="card"><h4>🔧 It blinks at the wrong time, or never switches? Check these, in order</h4><ul class="list">
+      <li><span style="font-size:20px">1️⃣</span><span>Print <b>light</b> first. Cover the sensor and look at the number: is it below <b>DARK</b>? If not, the line is in the wrong place, so raise <b>DARK</b>.</span></li>
+      <li><span style="font-size:20px">2️⃣</span><span>Is it always night, even in a bright room? Check that the line says <b>light &lt; DARK</b>. With <b>&gt;</b> the answers swap over.</span></li>
+      <li><span style="font-size:20px">3️⃣</span><span>Is the <b>else:</b> lined up under the <b>if</b>, with the same spaces at the start? If it is not, Python stops with an error.</span></li>
+      <li><span style="font-size:20px">4️⃣</span><span>The number is stuck at 0 or 4095? Go back to lesson 6 and check the sensor wiring on D33.</span></li>
+    </ul><p class="note" style="margin-top:8px">Engineers debug like this too: change one thing at a time and check after each.</p></div>`));
   if (s.console && s.extra !== 'A' && s.extra !== 'E1') extra.appendChild(consoleCard());
   if (s.extra === 'E1') {
     const wrap = el(`<div style="display:grid;gap:14px"></div>`);

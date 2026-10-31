@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Radar Scanner · IoT for Young Makers</title>
+<script src="../../assets/brand.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<!--
+  SENSOR MODULE: Radar Scanner (m-radar). Built from lessons/_module-template/ (see AGENT.md, "Sensor modules").
+  3D: a code-built pretend ship's radar screen with a distance sensor on a servo, plus the course's ESP32 model with the sensor-on-servo wiring.
+-->
+<style>
+:root {
+  --bg: #E3EBF0; --surface: #FFFFFF; --surface-2: #F1F5F8; --ink: #15202A; --muted: #526170; --line: #D2DCE3;
+  --accent: #0A7480; --accent-strong: #075A63; --accent-soft: #DAEEF0; --red: #C93131; --green: #16834A; --hl: #F2B705;
+  --font-display: 'Baloo 2', 'Trebuchet MS', system-ui, sans-serif;
+  --font-body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --font-code: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16.5px; line-height: 1.55; }
+h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.15; margin: 0; }
+a { color: var(--accent-strong); }
+code { font-family: var(--font-code); font-size: .92em; background: var(--surface-2); border-radius: 5px; padding: 0 4px; }
+header.top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 12px 18px; background: var(--surface); border-bottom: 1px solid var(--line); }
+header.top .title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+header.top h1 { font-size: 24px; }
+header.top p { margin: 0; color: var(--muted); font-size: 14px; }
+.home-link { font-weight: 800; font-size: 14px; text-decoration: none; }
+.progress { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-left: auto; }
+.progress .bar { width: 160px; height: 10px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.progress .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .4s; }
+.progress span { font-weight: 700; font-size: 13px; color: var(--muted); }
+main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; padding: 18px; max-width: 1400px; margin: 0 auto; align-items: start; }
+.stage { position: sticky; top: 12px; display: grid; gap: 10px; }
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.tabs button { font: inherit; font-weight: 800; border: 2px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 16px; cursor: pointer; color: var(--ink); }
+.tabs button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.view { position: relative; height: min(64vh, 620px); min-height: 320px; border-radius: 18px; overflow: hidden; background: #cdd8e2; border: 1px solid var(--line); }
+.view canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.view .msg { position: absolute; inset: 0; display: grid; place-items: center; color: #334; font-weight: 700; padding: 20px; text-align: center; }
+.view .hint { position: absolute; left: 10px; bottom: 10px; font-size: 13px; background: rgba(255,255,255,.82); padding: 3px 9px; border-radius: 8px; pointer-events: none; }
+.view .tag { position: absolute; left: 10px; top: 10px; font-size: 13px; font-weight: 800; background: rgba(21,32,42,.78); color: #fff; padding: 3px 10px; border-radius: 8px; pointer-events: none; }
+.view .readout { position: absolute; right: 10px; top: 10px; font: 600 13px var(--font-code); background: #13202A; color: #E3ECF1; padding: 6px 10px; border-radius: 8px; pointer-events: none; white-space: pre; }
+.note { font-size: 13.5px; color: var(--muted); margin: 0; }
+.cards { display: grid; gap: 14px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; min-width: 0; }
+.card > h2 { font-size: 22px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.card > h2 .n { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-strong); font-size: 16px; flex: none; }
+.card p { margin: 0 0 8px; }
+.story { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 12px; align-items: start; }
+.guide img, .guide svg { width: 88px; height: auto; display: block; }
+.say { background: var(--accent-soft); border-radius: 14px; padding: 10px 12px; }
+.parts { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.parts li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; align-items: start; background: var(--surface-2); border-radius: 12px; padding: 8px 10px; }
+.parts .ic { font-size: 22px; line-height: 1.2; text-align: center; }
+.parts .nm { display: block; font-weight: 800; }
+.parts .new { display: inline-block; font-size: 11.5px; font-weight: 800; background: #FFF1C2; color: #7A5400; border-radius: 99px; padding: 0 8px; margin-left: 4px; vertical-align: 1px; }
+.wires { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 6px; }
+.wires li { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 10px; align-items: center; font-size: 15px; }
+.wires i { width: 14px; height: 14px; border-radius: 4px; display: block; }
+.why { display: grid; gap: 6px; margin-top: 8px; }
+.why-item button { width: 100%; text-align: left; font: inherit; font-weight: 800; color: var(--accent-strong); background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 7px 12px; cursor: pointer; }
+.why-item button::before { content: '❓ '; }
+.why-item.now button { background: var(--accent-soft); border-color: var(--accent); }
+.why-item .ans { padding: 8px 12px 4px; font-size: 15px; }
+.pin-link { font-weight: 800; white-space: nowrap; }
+.finder { background: #EAF6EE; border: 2px solid #9CD3B0; border-radius: 14px; padding: 10px 12px; margin-top: 10px; }
+.finder h3 { font-size: 17px; margin-bottom: 4px; color: #136B3C; }
+.finder .row { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 6px 0; }
+.finder label { font-weight: 700; font-size: 15px; display: grid; gap: 2px; }
+.finder input { font: inherit; width: 120px; padding: 5px 8px; border: 2px solid var(--line); border-radius: 10px; }
+.finder pre.map { margin: 6px 0; padding: 8px 10px; background: #13202A; color: #7CFF9E; border-radius: 10px; font: 600 12.5px/1.35 var(--font-code); overflow-x: auto; }
+.finder .res { font-weight: 800; }
+.swap { border: 2px dashed #B79BE0; background: #F7F2FD; border-radius: 14px; padding: 10px 12px; margin-top: 10px; }
+.swap h3 { font-size: 17px; color: #5A2E9C; margin-bottom: 4px; }
+.swap ul { margin: 4px 0 0; padding-left: 20px; }
+.challenges { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.challenges li { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+.challenges label { display: flex; gap: 10px; align-items: flex-start; font-weight: 700; cursor: pointer; }
+.challenges input { width: 20px; height: 20px; margin-top: 3px; flex: none; accent-color: var(--green); }
+.challenges details { margin: 6px 0 0 30px; font-size: 15px; }
+.challenges summary { cursor: pointer; color: var(--accent-strong); font-weight: 800; }
+.q { margin-bottom: 12px; }
+.q p { font-weight: 800; margin-bottom: 6px; }
+.q .opts { display: grid; gap: 6px; }
+.q button { text-align: left; font: inherit; border: 2px solid var(--line); background: var(--surface); border-radius: 12px; padding: 7px 12px; cursor: pointer; }
+.q button.right { border-color: var(--green); background: #E3F5EA; }
+.q button.wrong { border-color: var(--red); background: #FBE9E9; }
+.feedback { border-radius: 12px; padding: 8px 12px; margin-top: 6px; font-size: 15px; }
+.feedback.good { background: #E3F5EA; border-left: 5px solid var(--green); }
+.feedback.try { background: #FFF6D6; border-left: 5px solid var(--hl); }
+.btn { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 9px 18px; font: inherit; font-weight: 800; background: var(--accent); color: #fff; border: 0; text-decoration: none; }
+.template-badge { display: flex; gap: 12px; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(21,32,42,.2); }
+.kkb-open { margin-left: 4px; }
+@media (max-width: 900px) {
+  main { grid-template-columns: minmax(0, 1fr); padding: 12px; }
+  .stage { position: static; }
+  .view { height: 58vh; min-height: 300px; }
+  .progress { margin-left: 0; flex: 1 1 100%; }
+  .progress .bar { flex: 1; width: auto; }
+}
+@media (max-width: 440px) {
+  header.top { padding: 10px 12px; }
+  header.top h1 { font-size: 21px; }
+  .story { grid-template-columns: 64px minmax(0, 1fr); }
+  .guide img, .guide svg { width: 64px; }
+  .card { padding: 13px; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="title">
+    <div>
+      <a class="home-link" href="../../lessons.html#modules">← All lessons</a>
+      <h1 id="modTitle">Radar Scanner</h1>
+      <p id="modSub">Sensor module · HC-SR04 distance sensor on a servo → SG90 servo + Shell map</p>
+    </div>
+  </div>
+  <div class="progress" aria-live="polite">
+    <div class="bar" role="progressbar" aria-label="Module progress"><i id="progressFill"></i></div>
+    <span id="progressText">Part 1 of 6</span>
+  </div>
+</header>
+
+<main>
+  <section class="stage" aria-label="3D scene">
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" id="tabPlace" aria-selected="true" aria-controls="viewPlace">📡 The radar</button>
+      <button type="button" role="tab" id="tabWire" aria-selected="false" aria-controls="viewWire">🔧 The wiring</button>
+    </div>
+    <div class="view" id="viewPlace" role="tabpanel" aria-labelledby="tabPlace">
+      <div class="msg" id="placeMsg">Loading the 3D radar…</div>
+      <span class="tag">Animation: a pretend radar screen</span>
+      <div class="readout" id="placeReadout" aria-hidden="true"></div>
+      <span class="hint">Drag to turn · pinch or scroll to zoom</span>
+    </div>
+    <div class="view" id="viewWire" role="tabpanel" aria-labelledby="tabWire" hidden>
+      <div class="msg" id="wireMsg">Loading the wiring…</div>
+      <span class="tag">Your desk: sensor taped on the servo horn</span>
+      <span class="hint">Drag to turn · pinch or scroll to zoom</span>
+    </div>
+    <p class="note">The 3D scene is an educational animation, not a safety test. Ask an adult to check your real circuit before you plug it in.</p>
+  </section>
+
+  <div class="cards">
+    <article class="card" data-part="0" id="storyCard">
+      <h2><span class="n">1</span> The story</h2>
+      <div class="story">
+        <div class="guide">
+          <svg viewBox="0 0 58 70" aria-hidden="true"><rect x="12" y="44" width="34" height="26" rx="10" fill="#2C4E9E"/><circle cx="29" cy="30" r="16" fill="#F2C9A0"/><circle cx="23" cy="31" r="2.2" fill="#15202A"/><circle cx="35" cy="31" r="2.2" fill="#15202A"/><path d="M23 37 q6 5 12 0" stroke="#15202A" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        </div>
+        <div class="say" id="story"></div>
+      </div>
+    </article>
+
+    <article class="card" data-part="1">
+      <h2><span class="n">2</span> What you need</h2>
+      <ul class="parts" id="parts"></ul>
+    </article>
+
+    <article class="card" data-part="2">
+      <h2><span class="n">3</span> Wire it up</h2>
+      <p>Unplug the USB cable first. Then add these wires (tap <b>🔧 The wiring</b> to see them in 3D):</p>
+      <ul class="wires" id="wires"></ul>
+      <div class="why" id="wireWhy"></div>
+    </article>
+
+    <article class="card" data-part="3">
+      <h2><span class="n">4</span> The program</h2>
+      <p id="codeIntro"></p>
+      <section id="codePanel" aria-label="Your MicroPython program"></section>
+      <div class="why" id="codeWhy"></div>
+      <div class="finder" id="finder">
+        <h3>🗺️ Read your Shell map</h3>
+        <p>Every angle prints one line: the angle, a bar, and the distance. A <b>longer bar means something is closer</b>, like a blip on a radar. This is a sample run (yours will differ):</p>
+        <pre class="map" id="mapSample" aria-label="Sample Shell map"></pre>
+        <p class="res" id="mapRes">The longest bar is at <b>60</b>, so the closest thing is about <b>18 cm</b> away at 60 degrees. The servo ends up pointing there.</p>
+      </div>
+      <div class="swap" id="swap"></div>
+    </article>
+
+    <article class="card" data-part="4">
+      <h2><span class="n">5</span> Three challenges</h2>
+      <ol class="challenges" id="challenges"></ol>
+    </article>
+
+    <article class="card" data-part="5">
+      <h2><span class="n">6</span> Quick quiz</h2>
+      <div id="quiz"></div>
+    </article>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="../../course.js"></script>
+<script src="../../assets/ohm/ohm.js"></script>
+<script src="../../assets/rewards.js"></script>
+<script>
+(function () {
+  'use strict';
+  /* ================= 1. The module: everything a new module changes ================= */
+  const LESSON_SLUG = 'm-radar';
+  const PIN = (n, text) => `<a class="pin-link" href="../../pins.html?pin=D${n}" target="_blank" rel="noopener">🔍 ${text || 'D' + n + ' in the Pin Explorer'}</a>`;
+  const MODULE = {
+    story: `<p><b>Officer Ohm:</b> “In The Parking Gate your distance sensor looked in <i>one</i> direction. A ship’s captain needs more: where is the nearest rock, in <i>which</i> direction? Let’s build a radar scanner that looks all around!”</p>
+      <p>No new part today. You tape the distance sensor on top of the servo’s horn. The one new idea is a <b>sweep</b>: a <code>for</code> loop turns the servo a little at a time, measures the distance at every angle, and <b>remembers the closest one</b>. At the end the servo points straight at it and the Shell prints a little map.</p>`,
+    parts: [
+      { ic: '🧠', name: 'ESP32 DevKit + USB cable', why: 'Your board from every lesson. Start with nothing else plugged in.' },
+      { ic: '🦇', name: 'HC-SR04P distance sensor', why: 'The sensor from <i>The Parking Gate</i>. The <b>P</b> version works on 3.3 volts, so it is safe for the ESP32’s pins.' },
+      { ic: '⚙️', name: 'SG90 servo', why: 'The motor from <i>Servo Says Hello</i>. It will carry the sensor round, like a radar dish.' },
+      { ic: '🩹', name: 'Tape or sticky putty', isNew: true, why: 'Fix the sensor flat on the servo’s horn, eyes pointing out. Nothing new to buy! Leave slack in the wires so they never pull the sensor off.' },
+      { ic: '🔋', name: 'A regulated 5 V supply (recommended)', why: 'Gives the servo its own energy, as in <i>Servo Says Hello</i>. For a quick test, VIN on a USB-powered board can do it.' },
+      { ic: '🧵', name: 'Jumper wires', why: 'Female–female wires plug straight onto the ESP32 header pins, no breadboard needed.' },
+      { ic: '📦', name: 'A few things to find (optional)', why: 'Put a book, a mug and a box in front of the radar at different distances, between 10 and 60 centimetres away.' },
+    ],
+    wires: [
+      { c: '#E03A3A', text: 'Sensor <b>VCC</b> → <b>3V3</b>' },
+      { c: '#2B2B2B', text: 'Sensor <b>GND</b> → <b>GND</b>' },
+      { c: '#2F7DE1', text: 'Sensor <b>TRIG</b> → <b>D19</b>' },
+      { c: '#18A558', text: 'Sensor <b>ECHO</b> → <b>D21</b>' },
+      { c: '#F08A24', text: 'Servo <b>orange</b> (signal) → <b>D18</b>' },
+      { c: '#C1272D', text: 'Servo <b>red</b> (power) → <b>+ of the 5 V supply</b> (quick test only: <b>VIN</b>, as drawn in the 3D wiring)' },
+      { c: '#6B4226', text: 'Servo <b>brown</b> (ground) → <b>GND</b> (with a supply: its <b>−</b>, and join that − to an ESP32 <b>GND</b> too)' },
+    ],
+    wireWhy: [
+      { q: 'Why is the wiring the same as The Parking Gate?', a: 'Nothing about the parts changed, only where the sensor sits. Same pins, same wires: D19 and D21 for the sensor, D18 for the servo’s signal. Only the tape is new.' },
+      { q: 'Why do the sensor’s eyes point out from the horn?', a: 'The sensor can only hear what is in front of its two “eyes”. Fixed on the horn, it turns with the servo, so each new angle shows it a new part of the room.' },
+      { q: 'Why D19 and D21 for the sensor?', a: `They are ordinary GPIO pins with no job while the board starts. TRIG is an output (we send a ping), ECHO is an input (we time the echo). ${PIN(19)} ${PIN(21)}` },
+      { q: 'Why does the sensor get 3V3?', a: 'The HC-SR04P is the 3.3-volt version, so 3V3 is what it wants, and its ECHO wire sends back only 3.3 volts, which an ESP32 pin can take. A plain 5 V HC-SR04 would need a voltage divider on ECHO (see The Parking Gate).' },
+      { q: 'Why not power the servo from 3V3?', a: 'A servo is a motor, and motors are hungry. Give it a regulated 5 V supply with its − joined to the ESP32’s GND. VIN (about 5 volts from USB on many boards) is only for a quick test with one SG90 carrying a light sensor. Never use 3V3 or a GPIO pin. If the board restarts when the servo moves, use the separate supply.' },
+      { q: 'Why D18 for the servo’s signal?', a: `The signal wire only carries the message “turn to this angle”, not power. D18 is free and has no start-up job. ${PIN(18)}` },
+      { q: 'Why must the grounds join?', a: 'Every voltage is measured from ground. If the sensor, the servo and the ESP32 don’t share GND, they don’t agree what “0 volts” is, and the signals get muddled.' },
+    ],
+    codeIntro: 'A <code>for</code> loop turns the servo through 19 angles. At each one it measures, and <code>if</code> this is closer than anything so far → remember it. At the end the servo points at the winner.',
+    program: `from machine import Pin, PWM, time_pulse_us
+import time
+
+trig = Pin(19, Pin.OUT)          # we send the ping
+echo = Pin(21, Pin.IN)           # we time the echo
+servo = PWM(Pin(18), freq=50)    # servos want 50 pulses a second
+
+def turn(angle):
+    # 0 degrees = 0.5 ms pulse, 180 degrees = 2.5 ms pulse
+    servo.duty_u16(int(1638 + angle / 180 * 6554))
+
+def distance_cm():
+    trig.value(1)
+    time.sleep_us(10)
+    trig.value(0)
+    t = time_pulse_us(echo, 1, 30000)
+    if t < 0:
+        return 999               # no echo: nothing there
+    return t / 58
+
+closest = 999                    # nothing seen yet
+closest_angle = 90
+
+for angle in range(0, 181, 10):  # 0, 10, 20 ... 180
+    turn(angle)
+    time.sleep(0.4)              # let the servo arrive and stop shaking
+    d = distance_cm()
+    bar = '#' * ((60 - min(int(d), 60)) // 3)   # closer = longer bar
+    print(angle, bar, int(d), 'cm')
+    if d < closest:              # closer than anything so far?
+        closest = d              # do: remember it
+        closest_angle = angle
+
+turn(closest_angle)              # point at the closest thing
+print('Closest:', int(closest), 'cm at', closest_angle, 'degrees')
+`,
+    codeWhy: [
+      { q: 'What does range(0, 181, 10) mean?', a: 'It counts from 0 up to <i>but not including</i> 181, in steps of 10: 0, 10, 20 … 180. We write 181 so that 180 is included. The loop runs its indented lines once for every number, and <code>angle</code> holds the current one.' },
+      { q: 'Why do we start with closest = 999?', a: 'The first reading must always win, so we start with a number nothing can beat. 999 is the same “nothing there” number the distance function gives when no echo comes back.' },
+      { q: 'Why is the if-line d &lt; closest?', a: 'Read it as “is this reading smaller than the smallest so far?”. If yes, we remember the new distance <i>and</i> the angle it came from. If not, the old winner stays. It is the same <code>if</code> shape as Night Mode, but it compares with a number that changes.' },
+      { q: 'Why is there a sleep after turn()?', a: 'A servo takes a moment to swing, and it wobbles when it stops. If we measured straight away, the sensor would still be moving and would read the wrong direction. 0.4 seconds is long enough for 10 degrees.' },
+      { q: 'How does the bar work?', a: 'The distance is cut off at 60 and taken away from 60, so close things give big numbers. Dividing by 3 makes each <code>#</code> worth 3 centimetres. <code>\'#\' * 5</code> in Python simply gives five hash signs in a row.' },
+      { q: 'Why does the servo end up pointing at the closest thing?', a: 'We saved the winning angle in <code>closest_angle</code>. After the loop, <code>turn(closest_angle)</code> sends the servo straight back there, like a radar locking on.' },
+    ],
+    swap: `<h3>🔁 Swap the part</h3><p>No part to swap in this module, but you can change what it does. The program keeps its shape.</p>
+      <ul><li><b>Find the <i>farthest</i> instead:</b> start with <code>closest = 0</code> and use <code>if d &gt; closest:</code> (ignore 999 with a second check).</li>
+      <li><b>A finer sweep:</b> <code>range(0, 181, 5)</code> measures 37 angles. Lower the sleep and it still works, but never go below 0.2 s.</li></ul>`,
+    challenges: [
+      { t: 'Hide a book at a different distance and angle. Does the radar find it?', hint: 'Run the program and read the last line in the Shell. Move the book and run again. The angle should follow it.' },
+      { t: 'Make a finer map: measure every 5 degrees instead of every 10.', hint: 'Change <code>range(0, 181, 10)</code> to <code>range(0, 181, 5)</code>. Keep the 0.4 second sleep at first.' },
+      { t: 'Sweep back the other way as well, and keep scanning for ever.', hint: 'Wrap the loop in <code>while True:</code> (indent it), and add a second loop <code>for angle in range(180, -1, -10):</code> that does the same measuring.' },
+    ],
+    quiz: [
+      { q: 'What does <code>range(0, 181, 10)</code> give?', opts: ['0, 10, 20 … 180', '10, 20, 30 … 180', '0, 1, 2 … 180'], right: 0, why: 'It starts at 0, jumps by 10, and stops before 181, so 180 is the last angle.' },
+      { q: 'Why does the loop start with <code>closest = 999</code>?', opts: ['So the very first reading beats it', 'Because 999 cm is the real distance', 'To make the servo turn faster'], right: 0, why: 'A huge starting number means any real reading is smaller, so the first one is remembered.' },
+      { q: 'Which line remembers a new closest angle?', opts: ['if d < closest:', 'turn(angle)', 'print(angle, bar)'], right: 0, why: 'The if-line asks “is this closer than the winner so far?”. Only then do the lines under it save the new distance and angle.' },
+    ],
+    wiringOneLine: 'HC-SR04P taped on the servo horn: VCC → 3V3, GND → GND, TRIG → D19, ECHO → D21. Servo: orange → D18, red → + of a regulated 5 V supply whose − is joined to GND (quick test only: red → VIN), brown → GND.',
+  };
+
+  /* ================= 2. Progress, saving and the parts of the page ================= */
+  const real = !LESSON_SLUG.startsWith('_');
+  function saveProgress(patch) { if (real && window.COURSE) window.COURSE.saveProgress(LESSON_SLUG, patch); }
+  const parts = Array.from(document.querySelectorAll('[data-part]'));
+  let reached = 0;
+  function setPart(i) {
+    reached = Math.max(reached, i);
+    document.getElementById('progressFill').style.width = Math.round(((reached + 1) / parts.length) * 100) + '%';
+    document.getElementById('progressText').textContent = `Part ${reached + 1} of ${parts.length}`;
+    saveProgress({ step: reached, steps: parts.length });
+  }
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) setPart(+e.target.dataset.part); }), { threshold: 0.35 });
+    parts.forEach((p) => io.observe(p));
+  }
+  setPart(0);
+  if (window.COURSE && real) {
+    const m = window.COURSE.moduleBySlug(LESSON_SLUG);
+    if (m) { document.getElementById('modTitle').textContent = m.title; document.getElementById('modSub').textContent = `Sensor module · ${m.sensor} → ${m.output}`; document.title = m.title + ' · IoT for Young Makers'; }
+  }
+
+  const $ = (id) => document.getElementById(id);
+  $('story').innerHTML = MODULE.story;
+  $('parts').innerHTML = MODULE.parts.map((p) => `<li><span class="ic" aria-hidden="true">${p.ic}</span><span><span class="nm">${p.name}${p.isNew ? '<span class="new">NEW</span>' : ''}</span>${p.why}</span></li>`).join('');
+  $('wires').innerHTML = MODULE.wires.map((w) => `<li><i style="background:${w.c}"></i><span>${w.text}</span></li>`).join('');
+  $('codeIntro').innerHTML = MODULE.codeIntro;
+  $('swap').innerHTML = MODULE.swap;
+  function whyList(host, list) {
+    host.innerHTML = list.map((w, i) => `<div class="why-item"><button type="button" aria-expanded="false" data-i="${i}">${w.q}</button><div class="ans" hidden>${w.a}</div></div>`).join('');
+    host.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+      const item = b.parentElement, ans = item.querySelector('.ans'), open = ans.hidden;
+      document.querySelectorAll('.why-item.now').forEach((x) => x.classList.remove('now'));
+      ans.hidden = !open; b.setAttribute('aria-expanded', String(open)); item.classList.toggle('now', open);
+    }));
+  }
+  (function sampleMap() { // a made-up run, drawn the same way the program prints it
+    const sample = [[0, 999], [10, 999], [20, 52], [30, 40], [40, 31], [50, 24], [60, 18], [70, 22], [80, 35], [90, 58], [100, 999]];
+    $('mapSample').textContent = sample.map(([a, d]) => `${String(a).padEnd(3)} ${'#'.repeat((60 - Math.min(d, 60)) / 3 | 0).padEnd(20)} ${d} cm`).join('\n') + '\nClosest: 18 cm at 60 degrees';
+  })();
+  whyList($('wireWhy'), MODULE.wireWhy);
+  whyList($('codeWhy'), MODULE.codeWhy);
+
+  const CH_KEY = 'iotkids.challenges.' + LESSON_SLUG;
+  let ticked = {}; try { ticked = JSON.parse(localStorage.getItem(CH_KEY) || '{}') || {}; } catch (e) { /* not remembered */ }
+  $('challenges').innerHTML = MODULE.challenges.map((c, i) => `<li><label><input type="checkbox" data-c="${i}" ${ticked[i] ? 'checked' : ''}><span>${c.t}</span></label>
+    <details><summary>Need a hint?</summary>${c.hint}</details></li>`).join('');
+  $('challenges').addEventListener('change', (e) => {
+    if (!e.target.matches('input')) return;
+    ticked[e.target.dataset.c] = e.target.checked;
+    try { localStorage.setItem(CH_KEY, JSON.stringify(ticked)); } catch (err) { /* not remembered */ }
+  });
+
+  // quiz: a wrong answer gives a hint and another try; all right → #quizDone (rewards.js adds the badge)
+  const quiz = $('quiz'); let right = 0;
+  MODULE.quiz.forEach((q, qi) => {
+    const box = document.createElement('div'); box.className = 'q';
+    box.innerHTML = `<p>${qi + 1}. ${q.q}</p><div class="opts">${q.opts.map((o, i) => `<button type="button" data-o="${i}">${o}</button>`).join('')}</div><div class="fb"></div>`;
+    box.addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b || box.dataset.done) return;
+      const ok = +b.dataset.o === q.right;
+      b.classList.add(ok ? 'right' : 'wrong');
+      box.querySelector('.fb').innerHTML = ok ? `<div class="feedback good">Yes! ${q.why}</div>` : '<div class="feedback try">Not quite. Look back at the “Why?” taps and try again.</div>';
+      if (ok) { box.dataset.done = '1'; if (++right === MODULE.quiz.length) finish(); }
+    });
+    quiz.appendChild(box);
+  });
+  function finish() {
+    saveProgress({ done: true });
+    const done = document.createElement('div');
+    done.className = 'feedback good'; done.id = 'quizDone';
+    done.innerHTML = '<b>You finished the module!</b><p style="margin:4px 0 0">Sweep, measure, remember the closest: you built a real radar scan. Great work, engineer!</p>';
+    quiz.appendChild(done);
+  }
+
+  /* ================= 3. The code panel: the real MicroPython runner (assets/run-panel.js) ================= */
+  window.__lessonProgram = () => (window.__codePanel ? window.__codePanel.code : MODULE.program);
+  window.__module = MODULE;
+
+  /* ================= 4. 3D: the radar screen and the wiring ================= */
+  const hasGL = !!(window.THREE && THREE.OrbitControls && THREE.GLTFLoader);
+  const lin = (hex) => new THREE.Color(hex).convertSRGBToLinear(); // r128: colours are linear, so convert sRGB picks
+  function makeView(host, opts) {
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.physicallyCorrectLights = true;
+    host.prepend(renderer.domElement);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(opts.fov || 40, 1, opts.near || 0.1, opts.far || 9000);
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    let visible = !host.hidden, onScreen = true, tick = null;
+    function size() {
+      const w = host.clientWidth, h = host.clientHeight; if (!w || !h) return;
+      renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+    }
+    if ('ResizeObserver' in window) new ResizeObserver(size).observe(host); else addEventListener('resize', size);
+    if ('IntersectionObserver' in window) new IntersectionObserver((es) => { onScreen = es[0].isIntersecting; }).observe(host);
+    size();
+    const clock = new THREE.Clock();
+    renderer.setAnimationLoop(() => {
+      const dt = Math.min(0.05, clock.getDelta());
+      if (!visible || !onScreen) return; // only draw what the learner can see
+      if (tick) tick(dt);
+      controls.update(); renderer.render(scene, camera);
+    });
+    return { renderer, scene, camera, controls, set tick(f) { tick = f; }, show(v) { visible = v; if (v) size(); } };
+  }
+
+  let placeView = null, wireView = null;
+
+  // the radar screen: one unit = 10 cm. Angle 0 is on the right, 90 straight ahead, 180 on the left.
+  function buildPlace() {
+    const host = $('viewPlace');
+    const v = placeView = makeView(host, { fov: 42, near: 0.1, far: 200 });
+    const { renderer, scene, camera, controls } = v;
+    renderer.physicallyCorrectLights = false; renderer.toneMapping = THREE.NoToneMapping; // bright and simple, like the wiring desk
+    scene.background = new THREE.Color(0x1b2a36);
+    const wide = Math.max(1, 1.5 / camera.aspect); // step back on tall, narrow phone screens
+    camera.position.set(0, 8.2 * wide, 9.6 * wide); controls.target.set(0, 0, -1.6);
+    controls.maxPolarAngle = Math.PI * 0.49; controls.minDistance = 4; controls.maxDistance = 30;
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x556677, 0.95));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.6); sun.position.set(-4, 10, 6); scene.add(sun);
+    const mat = (c, r, o) => new THREE.MeshStandardMaterial(Object.assign({ color: lin(c), roughness: r == null ? 0.7 : r }, o || {}));
+    const add = (geo, m, x, y, z, parent) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); (parent || scene).add(o); return o; };
+    const R = 6, polar = (deg, r, y) => new THREE.Vector3(Math.cos(deg * Math.PI / 180) * r, y || 0, -Math.sin(deg * Math.PI / 180) * r);
+    const flat = (g) => { g.rotation.x = -Math.PI / 2; return g; };
+
+    // the table and the half-disc "screen"
+    add(new THREE.BoxGeometry(15, 0.3, 10.5), mat(0x7b5a3a, 0.9), 0, -0.15, -2.4);
+    const screen = flat(add(new THREE.CircleGeometry(R + 0.35, 72, 0, Math.PI), mat(0x0b3d2a, 0.9), 0, 0.02, 0));
+    const green = new THREE.MeshBasicMaterial({ color: 0x3ddc84, transparent: true, opacity: 0.55, side: THREE.DoubleSide });
+    for (const r of [2, 4, 6]) flat(add(new THREE.RingGeometry(r - 0.025, r + 0.025, 72, 1, 0, Math.PI), green, 0, 0.04, 0));
+    for (let a = 0; a <= 180; a += 30) {
+      const line = add(new THREE.BoxGeometry(R, 0.01, 0.03), green, 0, 0.04, 0); line.position.copy(polar(a, R / 2, 0.04)); line.rotation.y = a * Math.PI / 180;
+    }
+    const sprite = (text, color, x, y, z, w) => {
+      const cv = document.createElement('canvas'); cv.width = 320; cv.height = 64;
+      const g = cv.getContext('2d'); g.fillStyle = color; g.beginPath(); if (g.roundRect) g.roundRect(4, 8, 312, 48, 14); else g.rect(4, 8, 312, 48); g.fill();
+      g.fillStyle = '#fff'; let fs = 28; do { g.font = 'bold ' + fs + 'px Nunito, sans-serif'; fs -= 2; } while (g.measureText(text).width > 296 && fs > 12); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 160, 33);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false })); const k = w || 2.2; sp.scale.set(k, k * 0.2, 1); sp.position.set(x, y, z); sp.renderOrder = 10; scene.add(sp); return sp;
+    };
+    [[2, '20 cm'], [4, '40 cm'], [6, '60 cm']].forEach(([r, t]) => sprite(t, '#14684A', r, 0.25, 0.55, 1.1));
+    [[0, '0°'], [90, '90°'], [180, '180°']].forEach(([a, t]) => { const q = polar(a, R + 0.95); sprite(t, '#14684A', q.x, 0.25, q.z, 0.9); });
+
+    // the head: servo (fixed) with a sensor taped on its turning horn
+    const head = new THREE.Group(); head.scale.setScalar(0.7); scene.add(head);
+    const spin = new THREE.Group(); scene.add(spin); // the beam turns with the horn
+    add(new THREE.BoxGeometry(1.3, 0.9, 0.8), mat(0x2a63c9, 0.5), 0, 0.45, 0, head);
+    const turret = new THREE.Group(); turret.position.y = 0.95; head.add(turret);
+    add(new THREE.BoxGeometry(1.7, 0.12, 0.4), mat(0xf4f4f4, 0.4), 0.55, 0, 0, turret);
+    add(new THREE.BoxGeometry(0.55, 0.62, 1.6), mat(0x1f5fbf, 0.5), 0.55, 0.37, 0, turret);
+    for (const sz of [-0.45, 0.45]) { const eye = add(new THREE.CylinderGeometry(0.3, 0.3, 0.45, 20), mat(0xc9ced3, 0.3), 0.98, 0.37, sz, turret); eye.rotation.z = Math.PI / 2; }
+    const beam = flat(add(new THREE.CircleGeometry(R, 20, -0.1, 0.2), new THREE.MeshBasicMaterial({ color: 0x7CFF9E, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false }), 0, 0.08, 0, spin));
+    sprite('Distance sensor on the servo', '#1F5FBF', 0, 0.3, 1.25, 3.4);
+    sprite('Pretend radar screen · rings every 20 cm', '#14684A', 0, 0.25, 2.1, 4.4);
+
+    // things in the room
+    const things = [
+      { name: 'book', a: 60, r: 2.4, size: 0.8, geo: new THREE.BoxGeometry(0.8, 0.5, 0.6), color: 0xd8342b },
+      { name: 'mug', a: 130, r: 3.8, size: 0.6, geo: new THREE.CylinderGeometry(0.3, 0.3, 0.7, 18), color: 0xf08a24 },
+      { name: 'box', a: 20, r: 5.0, size: 1.0, geo: new THREE.BoxGeometry(1, 0.9, 1), color: 0xc8a064 },
+    ];
+    things.forEach((t) => { t.mesh = add(t.geo, mat(t.color, 0.6), 0, 0.3, 0); });
+    const place = () => things.forEach((t) => { const q = polar(t.a, t.r); t.mesh.position.set(q.x, t.name === 'mug' ? 0.38 : 0.28, q.z); t.mesh.rotation.y = t.a * Math.PI / 180; });
+    place();
+    const BEAM = 6; // the sensor sees a cone, not a thin line: about 6 degrees either side
+    const distanceAt = (a) => {
+      let d = 999;
+      for (const t of things) { const half = BEAM + Math.atan((t.size / 2) / t.r) * 180 / Math.PI; if (Math.abs(a - t.a) <= half) d = Math.min(d, Math.round(t.r * 10)); }
+      return d;
+    };
+
+    // blips left behind by each reading, and a red ring on the closest so far
+    const blipMat = new THREE.MeshBasicMaterial({ color: 0x7CFF9E });
+    const blips = [];
+    const marker = flat(add(new THREE.RingGeometry(0.28, 0.4, 28), new THREE.MeshBasicMaterial({ color: 0xff4a4a, side: THREE.DoubleSide }), 0, 0.12, 0));
+    const lockLine = add(new THREE.BoxGeometry(R, 0.05, 0.08), new THREE.MeshBasicMaterial({ color: 0xff4a4a }), 0, 0.1, 0); lockLine.visible = false;
+    const clearBlips = () => { blips.splice(0).forEach((b) => scene.remove(b)); marker.visible = false; lockLine.visible = false; };
+
+    // the program, one step per angle: turn, wait, measure, if closer → remember; then point at the closest
+    const S = { t: 0, k: 0, step: 0, measured: false, locked: 0, angle: 0, closest: 999, closestAngle: 90, d: 0, remembered: false, started: false };
+    const readout = $('placeReadout');
+    function restart() { S.k = 0; S.step = 0; S.measured = false; S.locked = 0; S.closest = 999; S.closestAngle = 90; S.d = 0; S.remembered = false; S.started = false; clearBlips(); }
+    const box = document.createElement('div'); box.style.cssText = 'position:absolute;left:10px;bottom:42px;z-index:3;display:flex;flex-wrap:wrap;gap:6px';
+    const mk = (id, text, fn) => { const b = document.createElement('button'); b.type = 'button'; b.id = id; b.textContent = text; b.style.cssText = 'font:inherit;font-weight:800;border:0;border-radius:999px;padding:6px 13px;background:#fff;color:#15202A;cursor:pointer;font-size:14px'; b.addEventListener('click', fn); box.appendChild(b); };
+    mk('sweepBtn', '↻ Sweep again', restart);
+    mk('moveBtn', '🔄 Move the things', () => {
+      const slots = []; while (slots.length < 3) { const a = 20 + 10 * Math.floor(Math.random() * 15); if (slots.every((x) => Math.abs(x - a) >= 40)) slots.push(a); }
+      things.forEach((t, i) => { t.a = slots[i]; t.r = Math.round((2.2 + Math.random() * 3.3) * 10) / 10; }); place(); restart();
+    });
+    host.appendChild(box);
+
+    const STEP = 0.55, STEPS = 19;
+    function updateRadar(dt) {
+      S.t += dt; S.step += dt;
+      let target = S.locked > 0 || S.k >= STEPS ? S.closestAngle : S.k * 10;
+      if (S.k === 0 && !S.started) target = 0;
+      const diff = target - S.angle; S.angle += Math.max(-170 * dt, Math.min(170 * dt, diff));
+      turret.rotation.y = spin.rotation.y = S.angle * Math.PI / 180;
+      if (S.k < STEPS) {
+        if (!S.measured && S.step >= STEP * 0.55 && Math.abs(target - S.angle) < 0.5) {
+          S.measured = true; S.started = true;
+          const a = S.k * 10; S.d = distanceAt(a); S.remembered = false;
+          if (S.d < 999) { const q = polar(a, S.d / 10, 0.16); const b = add(new THREE.SphereGeometry(0.16, 12, 8), blipMat, q.x, q.y, q.z); blips.push(b); }
+          if (S.d < S.closest) {
+            S.closest = S.d; S.closestAngle = a; S.remembered = true;
+            const q = polar(a, S.d / 10, 0.12); marker.position.copy(q); marker.visible = true;
+          }
+        }
+        if (S.step >= STEP) { S.k++; S.step = 0; S.measured = false; if (S.k >= STEPS) S.locked = 3.2; }
+      } else {
+        S.locked -= dt;
+        if (Math.abs(S.angle - S.closestAngle) < 1) { lockLine.visible = S.closest < 999; lockLine.position.copy(polar(S.closestAngle, R / 2, 0.1)); lockLine.rotation.y = S.closestAngle * Math.PI / 180; }
+        if (S.locked <= 0) restart();
+      }
+      marker.scale.setScalar(1 + 0.12 * Math.sin(S.t * 6));
+      if (readout) {
+        const a = Math.round(S.angle), cl = S.closest < 999 ? `${S.closest} cm at ${S.closestAngle}` : 'nothing yet';
+        readout.textContent = S.k >= STEPS ? `done! closest = ${cl}\nturn(${S.closestAngle})` : `angle = ${S.k * 10}  d = ${S.measured ? (S.d < 999 ? S.d + ' cm' : 'no echo') : '…'}\nclosest = ${cl}\n${S.measured ? (S.remembered ? 'if → remember it!' : 'else → keep the old one') : 'turning…'}`;
+      }
+    }
+    v.tick = updateRadar;
+    if (/^#t\d+/.test(location.hash)) { const T = parseFloat(location.hash.slice(2)); for (let q = 0; q < T / 0.02; q++) updateRadar(0.02); }
+    $('placeMsg').remove();
+  }
+
+  function buildWiring() {
+    const host = $('viewWire');
+    const v = wireView = makeView(host, { fov: 36, near: 1, far: 3000 });
+    const { renderer, scene, camera, controls } = v;
+    renderer.physicallyCorrectLights = false; // a bright desk, like the other lessons
+    renderer.toneMapping = THREE.NoToneMapping;
+    scene.background = new THREE.Color(0xf3f7fa);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0xb8c4cc, 0.9));
+    const key = new THREE.DirectionalLight(0xffffff, 0.8); key.position.set(40, 120, 70); scene.add(key);
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(260, 4, 170), new THREE.MeshStandardMaterial({ color: 0xd8c3a0, roughness: 0.9 }));
+    desk.position.y = -6; scene.add(desk);
+    controls.minDistance = 40; controls.maxDistance = 420; controls.maxPolarAngle = Math.PI * 0.48;
+    const label = (text, color) => {
+      const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
+      const g = cv.getContext('2d'); g.fillStyle = color || '#15202A'; g.beginPath();
+      if (g.roundRect) g.roundRect(4, 8, 248, 48, 14); else g.rect(4, 8, 248, 48);
+      g.fill();
+      g.fillStyle = '#fff'; let fs = 30; do { g.font = 'bold ' + fs + 'px Nunito, sans-serif'; fs -= 2; } while (g.measureText(text).width > 228 && fs > 12); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 128, 33);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false }));
+      sp.scale.set(20, 5, 1); sp.renderOrder = 10; return sp;
+    };
+    const mat = (c, r) => new THREE.MeshStandardMaterial({ color: lin(c), roughness: r == null ? 0.6 : r });
+    new THREE.GLTFLoader().load('../../assets/models/esp32-devkit-v1.glb', (gltf) => {
+      const board = gltf.scene; board.scale.setScalar(1000); scene.add(board); board.updateMatrixWorld(true);
+      const pad = (name) => { const o = board.getObjectByName('pad_' + name); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
+      const box = new THREE.Box3().setFromObject(board), mid = box.getCenter(new THREE.Vector3());
+      const L1 = pad('L01_EN'), L15 = pad('L15_VIN'), R1 = pad('R01_GPIO23'), R15 = pad('R15_3V3');
+      if (!L1 || !L15 || !R1 || !R15) { $('wireMsg').textContent = 'The board model has no pin pads.'; return; }
+      const Lm = L1.clone().lerp(L15, 0.5), Rm = R1.clone().lerp(R15, 0.5);
+      const out = Rm.clone().sub(Lm).setY(0).normalize();   // across the board, from the L header to the R header
+      const along = L15.clone().sub(L1).setY(0).normalize(); // down the headers, from pin 1 to pin 15
+      const top = box.max.y;
+      // servo beside the L header (VIN, GND, signal to D18) with the HC-SR04P taped on its horn; the sensor's pins reach the R header (D19, D21, 3V3, GND)
+      const servo = new THREE.Group();
+      servo.add(new THREE.Mesh(new THREE.BoxGeometry(23, 22, 12.5), mat(0x2a63c9)));
+      const tabs = new THREE.Mesh(new THREE.BoxGeometry(32, 2.5, 12.5), mat(0x2a63c9)); tabs.position.y = 6; servo.add(tabs);
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 4, 20), mat(0xf4f4f4)); hub.position.set(5.5, 13, 0); servo.add(hub);
+      const horn = new THREE.Mesh(new THREE.BoxGeometry(22, 1.6, 4), mat(0xf4f4f4)); horn.position.set(5.5, 15, 0); servo.add(horn);
+      const sensor = new THREE.Group(); // lies flat on the horn, taped (yellow strip)
+      sensor.add(new THREE.Mesh(new THREE.BoxGeometry(45, 1.6, 20), mat(0x1f5fbf)));
+      for (const sx of [-13, 13]) {
+        const can = new THREE.Mesh(new THREE.CylinderGeometry(8, 8, 12, 28), mat(0xc9ced3, 0.3)); can.position.set(sx, 6.8, 0); sensor.add(can);
+        const mesh = new THREE.Mesh(new THREE.CylinderGeometry(6.8, 6.8, 0.6, 28), mat(0x3a3f45, 0.9)); mesh.position.set(sx, 12.9, 0); sensor.add(mesh);
+      }
+      const sPins = ['VCC', 'TRIG', 'ECHO', 'GND'].map((n, i) => { const p = new THREE.Mesh(new THREE.BoxGeometry(0.8, 8, 0.8), mat(0xd4af37, 0.3)); p.position.set(-3.8 + i * 2.54, 0, -11); sensor.add(p); return p; });
+      const tape = new THREE.Mesh(new THREE.BoxGeometry(30, 2.6, 6), mat(0xe8d070, 0.6)); tape.position.set(0, 0, 6); sensor.add(tape); // yellow tape round the lower edge
+      // stand the sensor on its edge on the horn: width along the horn's side, eyes pointing out (+x), pins on top
+      sensor.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(0, 0, -1), new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, -1, 0)));
+      sensor.position.set(8.5, 25.8, 0);
+      servo.add(sensor);
+      servo.position.copy(L15).addScaledVector(out, -55).setY(top + 6);
+      servo.lookAt(servo.position.clone().add(along)); servo.rotateY(Math.PI / 2);
+      scene.add(servo);
+      const wirePts = (a, b, h) => new THREE.CatmullRomCurve3([a, a.clone().setY(a.y + h), a.clone().lerp(b, 0.5).setY(Math.max(a.y, b.y) + h + 6), b.clone().setY(b.y + h), b]);
+      const tube = (pts, color) => { const m = new THREE.Mesh(new THREE.TubeGeometry(pts, 48, 0.9, 8, false), mat(color, 0.45)); scene.add(m); return m; };
+      const pinTop = (m) => { const q = m.getWorldPosition(new THREE.Vector3()); return q.setY(q.y - 4); };
+      servo.updateMatrixWorld(true);
+      const servoEnd = (k) => servo.position.clone().addScaledVector(along, -3 + k * 3).addScaledVector(out, -14).setY(top + 2);
+      const wires = [
+        [pinTop(sPins[0]), pad('R15_3V3'), '#E03A3A', '3V3'],
+        [pinTop(sPins[3]), pad('R14_GND'), '#2B2B2B', 'GND'],
+        [pinTop(sPins[1]), pad('R06_GPIO19'), '#2F7DE1', 'D19 · TRIG'],
+        [pinTop(sPins[2]), pad('R05_GPIO21'), '#18A558', 'D21 · ECHO'],
+        [servoEnd(0), pad('R07_GPIO18'), '#F08A24', 'D18 · signal'],
+        [servoEnd(1), pad('L15_VIN'), '#C1272D', 'VIN · quick test'],
+        [servoEnd(2), pad('L14_GND'), '#6B4226', 'GND'],
+      ];
+      wires.forEach(([a, b, c, t], i) => {
+        if (!a || !b) return;
+        const curve = wirePts(a, b, 10 + i * 2.5); tube(curve, c);
+        const lb = label(t, c); lb.position.copy(curve.getPoint([0.2, 0.4, 0.6, 0.8, 0.3, 0.55, 0.8][i])); lb.position.y += 5; scene.add(lb); // staggered so labels don't stack
+      });
+      const sl = label('HC-SR04P on the horn', '#1f5fbf'); sl.scale.set(30, 7.5, 1); sl.position.copy(servo.position).setY(top + 50); scene.add(sl);
+      const vl = label('SG90 servo', '#2a63c9'); vl.position.copy(servo.position).addScaledVector(out, -14).setY(top + 26); scene.add(vl);
+      const aim = mid.clone().addScaledVector(along, 8).addScaledVector(out, -22);
+      const k = Math.max(1, 1.3 / camera.aspect); // step back on tall, narrow phone screens so the whole desk fits
+      camera.position.copy(aim).addScaledVector(along, 215 * k).add(new THREE.Vector3(0, 170 * k, 0)); controls.target.copy(aim);
+      $('wireMsg').remove();
+    }, undefined, () => { $('wireMsg').textContent = 'The board model could not load. Please reload the page.'; });
+  }
+
+  // tabs: build each view the first time it is shown
+  function showTab(which) {
+    const place = which === 'place';
+    $('tabPlace').setAttribute('aria-selected', String(place)); $('tabWire').setAttribute('aria-selected', String(!place));
+    $('viewPlace').hidden = !place; $('viewWire').hidden = place;
+    if (!hasGL) return;
+    if (!place && !wireView) buildWiring();
+    if (placeView) placeView.show(place);
+    if (wireView) wireView.show(!place);
+  }
+  $('tabPlace').addEventListener('click', () => showTab('place'));
+  $('tabWire').addEventListener('click', () => showTab('wire'));
+  window.__module.showTab = showTab;
+  if (hasGL) buildPlace();
+  else { $('placeMsg').textContent = 'The 3D scene needs an internet connection. Everything else on this page still works.'; $('wireMsg').textContent = $('placeMsg').textContent; }
+})();
+</script>
+<script src="../../assets/board-link.js"></script>
+<script src="../../assets/prepare-board.js"></script>
+<script src="../../assets/run-panel.js"></script>
+<script src="../../assets/board-drawer.js"></script>
+<script>
+  // the editable code panel is the real runner (Web Serial + MicroPython), the same as run.html
+  if (window.RunPanel && window.BoardLink) window.__codePanel = RunPanel.mount(document.getElementById('codePanel'), { id: 'm-radar-code', base: '../../', code: window.__module.program, fresh: true });
+  KKBoard.attach({ id: 'm-radar', base: '../../', buttonHost: 'header.top .progress', program: () => window.__lessonProgram(), wiring: window.__module.wiringOneLine });
+</script>
+</body>
+</html>

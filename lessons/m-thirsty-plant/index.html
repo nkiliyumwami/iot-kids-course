@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Thirsty Plant · IoT for Young Makers</title>
+<script src="../../assets/brand.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<!--
+  SENSOR MODULE: The Thirsty Plant (m-thirsty-plant). Built from lessons/_module-template/ (see AGENT.md, "Sensor modules").
+  3D: a code-built garden bed (no model files) and the course's ESP32 model with a code-built soil probe, breadboard and LED for the wiring.
+-->
+<style>
+:root {
+  --bg: #E3EBF0; --surface: #FFFFFF; --surface-2: #F1F5F8; --ink: #15202A; --muted: #526170; --line: #D2DCE3;
+  --accent: #0A7480; --accent-strong: #075A63; --accent-soft: #DAEEF0; --red: #C93131; --green: #16834A; --hl: #F2B705;
+  --font-display: 'Baloo 2', 'Trebuchet MS', system-ui, sans-serif;
+  --font-body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --font-code: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16.5px; line-height: 1.55; }
+h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.15; margin: 0; }
+a { color: var(--accent-strong); }
+code { font-family: var(--font-code); font-size: .92em; background: var(--surface-2); border-radius: 5px; padding: 0 4px; }
+header.top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 12px 18px; background: var(--surface); border-bottom: 1px solid var(--line); }
+header.top .title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+header.top h1 { font-size: 24px; }
+header.top p { margin: 0; color: var(--muted); font-size: 14px; }
+.home-link { font-weight: 800; font-size: 14px; text-decoration: none; }
+.progress { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-left: auto; }
+.progress .bar { width: 160px; height: 10px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.progress .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .4s; }
+.progress span { font-weight: 700; font-size: 13px; color: var(--muted); }
+main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; padding: 18px; max-width: 1400px; margin: 0 auto; align-items: start; }
+.stage { position: sticky; top: 12px; display: grid; gap: 10px; }
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.tabs button { font: inherit; font-weight: 800; border: 2px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 16px; cursor: pointer; color: var(--ink); }
+.tabs button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.view { position: relative; height: min(64vh, 620px); min-height: 320px; border-radius: 18px; overflow: hidden; background: #cdd8e2; border: 1px solid var(--line); }
+.view canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.view .msg { position: absolute; inset: 0; display: grid; place-items: center; color: #334; font-weight: 700; padding: 20px; text-align: center; }
+.view .hint { position: absolute; left: 10px; bottom: 10px; font-size: 13px; background: rgba(255,255,255,.82); padding: 3px 9px; border-radius: 8px; pointer-events: none; }
+.view .tag { position: absolute; left: 10px; top: 10px; font-size: 13px; font-weight: 800; background: rgba(21,32,42,.78); color: #fff; padding: 3px 10px; border-radius: 8px; pointer-events: none; }
+.view .readout { position: absolute; right: 10px; top: 10px; font: 600 13px var(--font-code); background: #13202A; color: #E3ECF1; padding: 6px 10px; border-radius: 8px; pointer-events: none; white-space: pre; }
+.note { font-size: 13.5px; color: var(--muted); margin: 0; }
+.cards { display: grid; gap: 14px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; min-width: 0; }
+.card > h2 { font-size: 22px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.card > h2 .n { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-strong); font-size: 16px; flex: none; }
+.card p { margin: 0 0 8px; }
+.story { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 12px; align-items: start; }
+.guide img, .guide svg { width: 88px; height: auto; display: block; }
+.say { background: var(--accent-soft); border-radius: 14px; padding: 10px 12px; }
+.parts { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.parts li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; align-items: start; background: var(--surface-2); border-radius: 12px; padding: 8px 10px; }
+.parts .ic { font-size: 22px; line-height: 1.2; text-align: center; }
+.parts .nm { display: block; font-weight: 800; }
+.parts .new { display: inline-block; font-size: 11.5px; font-weight: 800; background: #FFF1C2; color: #7A5400; border-radius: 99px; padding: 0 8px; margin-left: 4px; vertical-align: 1px; }
+.wires { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 6px; }
+.wires li { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 10px; align-items: center; font-size: 15px; }
+.wires i { width: 14px; height: 14px; border-radius: 4px; display: block; }
+.why { display: grid; gap: 6px; margin-top: 8px; }
+.why-item button { width: 100%; text-align: left; font: inherit; font-weight: 800; color: var(--accent-strong); background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 7px 12px; cursor: pointer; }
+.why-item button::before { content: '❓ '; }
+.why-item.now button { background: var(--accent-soft); border-color: var(--accent); }
+.why-item .ans { padding: 8px 12px 4px; font-size: 15px; }
+.pin-link { font-weight: 800; white-space: nowrap; }
+.swap { border: 2px dashed #B79BE0; background: #F7F2FD; border-radius: 14px; padding: 10px 12px; margin-top: 10px; }
+.swap h3 { font-size: 17px; color: #5A2E9C; margin-bottom: 4px; }
+.swap ul { margin: 4px 0 0; padding-left: 20px; }
+.challenges { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.challenges li { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+.challenges label { display: flex; gap: 10px; align-items: flex-start; font-weight: 700; cursor: pointer; }
+.challenges input { width: 20px; height: 20px; margin-top: 3px; flex: none; accent-color: var(--green); }
+.challenges details { margin: 6px 0 0 30px; font-size: 15px; }
+.challenges summary { cursor: pointer; color: var(--accent-strong); font-weight: 800; }
+.q { margin-bottom: 12px; }
+.q p { font-weight: 800; margin-bottom: 6px; }
+.q .opts { display: grid; gap: 6px; }
+.q button { text-align: left; font: inherit; border: 2px solid var(--line); background: var(--surface); border-radius: 12px; padding: 7px 12px; cursor: pointer; }
+.q button.right { border-color: var(--green); background: #E3F5EA; }
+.q button.wrong { border-color: var(--red); background: #FBE9E9; }
+.feedback { border-radius: 12px; padding: 8px 12px; margin-top: 6px; font-size: 15px; }
+.feedback.good { background: #E3F5EA; border-left: 5px solid var(--green); }
+.feedback.try { background: #FFF6D6; border-left: 5px solid var(--hl); }
+.btn { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 9px 18px; font: inherit; font-weight: 800; background: var(--accent); color: #fff; border: 0; text-decoration: none; }
+.template-badge { display: flex; gap: 12px; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(21,32,42,.2); }
+.place-btn { position: absolute; right: 10px; bottom: 10px; }
+.finder { background: #EAF6EE; border: 2px solid #9CD3B0; border-radius: 14px; padding: 10px 12px; margin-top: 10px; }
+.finder h3 { font-size: 17px; margin-bottom: 4px; color: #136B3C; }
+.finder .row { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 6px 0; }
+.finder label { font-weight: 700; font-size: 15px; display: grid; gap: 2px; }
+.finder input { font: inherit; width: 120px; padding: 5px 8px; border: 2px solid var(--line); border-radius: 10px; }
+.finder .res { font-weight: 800; }
+.kkb-open { margin-left: 4px; }
+@media (max-width: 900px) {
+  main { grid-template-columns: minmax(0, 1fr); padding: 12px; }
+  .stage { position: static; }
+  .view { height: 58vh; min-height: 300px; }
+  .progress { margin-left: 0; flex: 1 1 100%; }
+  .progress .bar { flex: 1; width: auto; }
+}
+@media (max-width: 440px) {
+  header.top { padding: 10px 12px; }
+  header.top h1 { font-size: 21px; }
+  .story { grid-template-columns: 64px minmax(0, 1fr); }
+  .guide img, .guide svg { width: 64px; }
+  .card { padding: 13px; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="title">
+    <div>
+      <a class="home-link" href="../../lessons.html#modules">← All lessons</a> · <a class="home-link" href="../../index.html#proj-garden">See the project idea</a>
+      <h1 id="modTitle">The Thirsty Plant</h1>
+      <p id="modSub">Sensor module · soil moisture probe → LED</p>
+    </div>
+  </div>
+  <div class="progress" aria-live="polite">
+    <div class="bar" role="progressbar" aria-label="Module progress"><i id="progressFill"></i></div>
+    <span id="progressText">Part 1 of 6</span>
+  </div>
+</header>
+
+<main>
+  <section class="stage" aria-label="3D scene">
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" id="tabPlace" aria-selected="true" aria-controls="viewPlace">🌱 The garden</button>
+      <button type="button" role="tab" id="tabWire" aria-selected="false" aria-controls="viewWire">🔧 The wiring</button>
+    </div>
+    <div class="view" id="viewPlace" role="tabpanel" aria-labelledby="tabPlace">
+      <div class="msg" id="placeMsg">Loading the 3D garden…</div>
+      <span class="tag">Animation: the LED lights when the soil is dry</span>
+      <div class="readout" id="placeReadout" aria-hidden="true"></div>
+      <span class="hint">Drag to turn · pinch or scroll to zoom</span>
+    </div>
+    <div class="view" id="viewWire" role="tabpanel" aria-labelledby="tabWire" hidden>
+      <div class="msg" id="wireMsg">Loading the wiring…</div>
+      <span class="tag">Your desk: the probe, the LED and the ESP32</span>
+      <span class="hint">Drag to turn · pinch or scroll to zoom</span>
+    </div>
+    <p class="note">The 3D scene is an educational animation, not a safety test. Ask an adult to check your real circuit before you plug it in.</p>
+  </section>
+
+  <div class="cards">
+    <article class="card" data-part="0" id="storyCard">
+      <h2><span class="n">1</span> The story</h2>
+      <div class="story">
+        <div class="guide">
+          <svg viewBox="0 0 58 70" aria-hidden="true"><rect x="12" y="44" width="34" height="26" rx="10" fill="#2C4E9E"/><circle cx="29" cy="30" r="16" fill="#F2C9A0"/><circle cx="23" cy="31" r="2.2" fill="#15202A"/><circle cx="35" cy="31" r="2.2" fill="#15202A"/><path d="M23 37 q6 5 12 0" stroke="#15202A" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        </div>
+        <div class="say" id="story"></div>
+      </div>
+    </article>
+
+    <article class="card" data-part="1">
+      <h2><span class="n">2</span> What you need</h2>
+      <ul class="parts" id="parts"></ul>
+    </article>
+
+    <article class="card" data-part="2">
+      <h2><span class="n">3</span> Wire it up</h2>
+      <p>Unplug the USB cable first. Then add these wires (tap <b>🔧 The wiring</b> to see them in 3D):</p>
+      <ul class="wires" id="wires"></ul>
+      <div class="why" id="wireWhy"></div>
+    </article>
+
+    <article class="card" data-part="3">
+      <h2><span class="n">4</span> The program</h2>
+      <p id="codeIntro"></p>
+      <section id="codePanel" aria-label="Your MicroPython program"></section>
+      <div class="why" id="codeWhy"></div>
+      <div class="finder" id="finder">
+        <h3>🎯 Find your DRY number</h3>
+        <p>Run the program with the probe <b>in the air</b> and write down the number from the Shell. Then dip only the lower half of the probe <b>in a glass of water</b> and write that number down too.</p>
+        <div class="row">
+          <label>Reading in the air<input id="fAir" type="number" inputmode="numeric" placeholder="e.g. 3000"></label>
+          <label>Reading in water<input id="fWet" type="number" inputmode="numeric" placeholder="e.g. 1400"></label>
+        </div>
+        <p class="res" id="fRes" aria-live="polite">Type your two numbers to get <code>DRY</code>.</p>
+      </div>
+      <div class="swap" id="swap"></div>
+    </article>
+
+    <article class="card" data-part="4">
+      <h2><span class="n">5</span> Three challenges</h2>
+      <ol class="challenges" id="challenges"></ol>
+    </article>
+
+    <article class="card" data-part="5">
+      <h2><span class="n">6</span> Quick quiz</h2>
+      <div id="quiz"></div>
+    </article>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="../../course.js"></script>
+<script src="../../assets/ohm/ohm.js"></script>
+<script src="../../assets/rewards.js"></script>
+<script>
+(function () {
+  'use strict';
+  /* ================= 1. The module: everything a new module changes ================= */
+  const LESSON_SLUG = 'm-thirsty-plant';
+  const PIN = (n, text) => `<a class="pin-link" href="../../pins.html?pin=D${n}" target="_blank" rel="noopener">🔍 ${text || 'D' + n + ' in the Pin Explorer'}</a>`;
+  const MODULE = {
+    story: `<p><b>Officer Ohm:</b> “Last time a sensor made a decision with <code>if</code> and <code>else</code>, and you used the analog pin from Lesson 6. Today the sensor lives in a flower bed. Your plant can’t talk, and everyone forgets to water it. Let’s give it a light that says <b>“water me!”</b>”</p>
+      <p>The one new idea is the sensor: a soil probe gives a <b>number</b> for how dry the soil is, and you pick the “too dry” number yourself from real readings. Above <code>DRY</code>, the LED turns on. When the soil is wet again, it goes off.</p>`,
+    parts: [
+      { ic: '🧠', name: 'ESP32 DevKit + USB cable', why: 'Your board from every lesson. Start with nothing else plugged in.' },
+      { ic: '🌱', name: 'Capacitive soil moisture sensor (v1.2)', isNew: true, why: 'A flat probe you push into the soil. Get the <b>capacitive</b> kind (one flat board, no bare metal prongs): it lasts, and it runs on 3.3 volts. It has three pins: <b>AOUT</b>, <b>VCC</b> and <b>GND</b>.' },
+      { ic: '💡', name: 'One red LED + a 330 Ω resistor', why: 'The “water me!” light, the same pair as in Lesson 1. The resistor protects the LED and the pin.' },
+      { ic: '🟩', name: 'A small breadboard', why: 'Holds the resistor and the LED, just like in Lesson 1.' },
+      { ic: '🧵', name: 'Jumper wires', why: '<b>Female–female</b> wires for the probe (they plug onto its pins and onto the ESP32’s header pins). <b>Female–male</b> wires from the ESP32 to the breadboard.' },
+    ],
+    wires: [
+      { c: '#F08A24', text: 'Probe <b>VCC</b> → <b>3V3</b>' },
+      { c: '#2B2B2B', text: 'Probe <b>GND</b> → <b>GND</b> (the left one, next to VIN)' },
+      { c: '#8A4FD6', text: 'Probe <b>AOUT</b> (the number) → <b>D33</b>' },
+      { c: '#E03A3A', text: '<b>D25</b> → one end of the <b>330 Ω resistor</b> on the breadboard. The other end of the resistor meets the LED’s <b>long leg</b>' },
+      { c: '#6B4226', text: 'LED’s <b>short leg</b> → <b>GND</b> (the right-hand one, next to 3V3)' },
+    ],
+    wireWhy: [
+      { q: 'Why does the probe’s number go to D33?', a: `Most pins only know ON or OFF. D33 can measure a whole range of voltages and turn it into a number from 0 to 4095. It is on a part of the chip called ADC1, which keeps working when Wi-Fi is on, so the same wiring survives later lessons. ${PIN(33)}` },
+      { q: 'Why does the probe get 3V3?', a: 'The probe turns the moisture into a voltage between 0 and its supply voltage. At 3V3 that voltage can never go above 3.3 volts, which is the most an ESP32 pin can take. At 5 volts it might.' },
+      { q: 'Why a capacitive probe, not two bare prongs?', a: 'Cheap two-prong probes push a little current through the wet soil, and the metal slowly rusts away. A capacitive probe is coated, nothing touches the soil but plastic, and it measures how much water is nearby by an electric field. It lasts for seasons.' },
+      { q: 'Why D25, a resistor and the long leg?', a: `Same as your first LED: D25 gives the power when the code says <code>value(1)</code>, the resistor stops too much current from burning the LED, and current only flows in through the long leg. ${PIN(25)}` },
+      { q: 'Why must the grounds join?', a: 'Every voltage is measured from ground. The probe’s number only means something if the probe and the ESP32 agree what “0 volts” is. The LED needs a way back to ground to finish its circuit too.' },
+      { q: 'What stays out of the soil?', a: 'Only the lower part of the probe (below the line printed on it) goes into the soil. Keep the top, the pins and the wires dry, and never put the ESP32 near water. Ask an adult to check your circuit before you plug it in.' },
+    ],
+    codeIntro: 'Read the probe, then <code>if</code> the number is bigger than <code>DRY</code> → light the LED, <code>else</code> → turn it off. The same shape as Night Mode, but the sensor’s number goes <b>up</b> when the soil gets drier. Run it once with only the <code>print</code> to see your own numbers, then choose <code>DRY</code>.',
+    program: `from machine import Pin, ADC
+import time
+
+soil = ADC(Pin(33))              # the probe's number comes in here
+soil.atten(ADC.ATTN_11DB)        # measure the whole 0 to 3.3 V range
+led = Pin(25, Pin.OUT)           # the "water me!" light
+
+DRY = 2400                       # choose yours from real readings
+
+while True:
+    moisture = soil.read()       # 0 to 4095: bigger = drier
+    print(moisture)
+    if moisture > DRY:
+        led.value(1)             # do: water me!
+    else:
+        led.value(0)             # undo: all is well
+    time.sleep(0.5)
+`,
+    codeWhy: [
+      { q: 'Why does a drier soil give a bigger number?', a: 'This probe measures how much of its electric field is filled with water. More water, lower voltage out. So soaked soil gives a smaller number and dry air gives the biggest one. (Check yours: a different brand may do the opposite, and then you flip the <code>&gt;</code> to <code>&lt;</code>.)' },
+      { q: 'Why can’t I just copy 2400 from the lesson?', a: 'Every probe, every soil and every plant is a bit different. Your probe in dry air might read 3100 and in a glass of water 1300. Use the finder below to pick a number between them from <i>your</i> readings.' },
+      { q: 'What does atten(ADC.ATTN_11DB) do?', a: 'It tells the ADC to measure the whole range up to about 3.3 volts. Without it the ADC would stop counting at about 1 volt, and our numbers would get squashed. You met it in Lesson 6.' },
+      { q: 'Why wait half a second?', a: 'Soil takes minutes to dry out, so measuring thousands of times a second would waste power and flood the Shell with numbers.' },
+    ],
+    swap: `<h3>🔁 Swap the part</h3><p>No look-alike swaps here, but one <b>warning</b>: a cheap two-prong probe (bare metal fork on a little board) also reads soil, yet it rusts within weeks and is not made for 3.3 volts. If you already have one, use it for a short test only, and buy the capacitive kind for your plant.</p>`,
+    challenges: [
+      { t: 'Find your own DRY number: print the reading with the probe in dry air, then in a glass of water, and use the finder.', hint: 'Run the program, watch the Shell, then hold the probe in the air. Dip only its lower half in a cup of water. Put your two numbers into the finder and copy the answer to <code>DRY = …</code>.' },
+      { t: 'Add a green LED on D26 (with its own 330 Ω resistor) that is on when the soil is fine.', hint: 'Make <code>ok = Pin(26, Pin.OUT)</code>. In <code>if</code> add <code>ok.value(0)</code>; in <code>else</code> add <code>ok.value(1)</code>.' },
+      { t: 'A pretend pump: when the soil is dry, a servo (D18, from Servo Says Hello) tips a small cup of water over the plant, then goes back.', hint: 'Add the <code>servo</code> and <code>turn()</code> lines from Servo Says Hello. In <code>if</code> add <code>turn(90)</code>, <code>time.sleep(2)</code> and <code>turn(0)</code>, then <code>time.sleep(30)</code> so the soil can soak. Never use a real pump or mains power.' },
+    ],
+    quiz: [
+      { q: 'In dry air your probe reads 3000 and in water 1400. DRY is 2400. The soil reads 2900. What happens?', opts: ['The LED stays off: the soil is wet', 'The LED turns on: the soil is dry', 'Nothing: 2900 is not a real reading'], right: 1, why: '2900 is bigger than 2400, so <code>moisture &gt; DRY</code> is true and the <code>if</code> part runs: the LED says “water me!”.' },
+      { q: 'You water the plant. What happens to the number from the probe?', opts: ['It gets bigger', 'It gets smaller', 'It stays the same'], right: 1, why: 'More water means a smaller number. That is why the test is <code>moisture &gt; DRY</code>: “bigger than DRY” means too dry.' },
+      { q: 'Why does the probe’s signal wire go to D33?', opts: ['D33 can measure a range of voltages and give a number', 'D33 is the only pin that gives power', 'D33 is the same as GND'], right: 0, why: 'D33 is an analog (ADC) pin, so <code>soil.read()</code> returns a number from 0 to 4095 instead of just ON or OFF.' },
+    ],
+    wiringOneLine: 'Soil probe: VCC → 3V3, GND → GND (left), AOUT → D33. LED: D25 → 330 Ω resistor → LED long leg; LED short leg → GND (right).',
+  };
+
+  /* ================= 2. Progress, saving and the parts of the page ================= */
+  const real = !LESSON_SLUG.startsWith('_');
+  function saveProgress(patch) { if (real && window.COURSE) window.COURSE.saveProgress(LESSON_SLUG, patch); }
+  const parts = Array.from(document.querySelectorAll('[data-part]'));
+  let reached = 0;
+  function setPart(i) {
+    reached = Math.max(reached, i);
+    document.getElementById('progressFill').style.width = Math.round(((reached + 1) / parts.length) * 100) + '%';
+    document.getElementById('progressText').textContent = `Part ${reached + 1} of ${parts.length}`;
+    saveProgress({ step: reached, steps: parts.length });
+  }
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) setPart(+e.target.dataset.part); }), { threshold: 0.35 });
+    parts.forEach((p) => io.observe(p));
+  }
+  setPart(0);
+  if (window.COURSE && real) {
+    const m = window.COURSE.moduleBySlug(LESSON_SLUG);
+    if (m) { document.getElementById('modTitle').textContent = m.title; document.getElementById('modSub').textContent = `Sensor module · ${m.sensor} → ${m.output}`; document.title = m.title + ' · IoT for Young Makers'; }
+  }
+
+  const $ = (id) => document.getElementById(id);
+  $('story').innerHTML = MODULE.story;
+  $('parts').innerHTML = MODULE.parts.map((p) => `<li><span class="ic" aria-hidden="true">${p.ic}</span><span><span class="nm">${p.name}${p.isNew ? '<span class="new">NEW</span>' : ''}</span>${p.why}</span></li>`).join('');
+  $('wires').innerHTML = MODULE.wires.map((w) => `<li><i style="background:${w.c}"></i><span>${w.text}</span></li>`).join('');
+  $('codeIntro').innerHTML = MODULE.codeIntro;
+  $('swap').innerHTML = MODULE.swap;
+  function whyList(host, list) {
+    host.innerHTML = list.map((w, i) => `<div class="why-item"><button type="button" aria-expanded="false" data-i="${i}">${w.q}</button><div class="ans" hidden>${w.a}</div></div>`).join('');
+    host.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+      const item = b.parentElement, ans = item.querySelector('.ans'), open = ans.hidden;
+      document.querySelectorAll('.why-item.now').forEach((x) => x.classList.remove('now'));
+      ans.hidden = !open; b.setAttribute('aria-expanded', String(open)); item.classList.toggle('now', open);
+    }));
+  }
+  const fAir = $('fAir'), fWet = $('fWet');
+  function findDry() {
+    const air = +fAir.value, wet = +fWet.value, res = $('fRes');
+    if (!fAir.value || !fWet.value) { res.innerHTML = 'Type your two numbers to get <code>DRY</code>.'; return; }
+    if (air <= wet) { res.innerHTML = 'Hmm: the air number should be <b>bigger</b> than the water number. If yours is the other way round, your probe works backwards: flip <code>&gt;</code> to <code>&lt;</code> in the program.'; return; }
+    const dry = Math.round(wet + (air - wet) * 0.6);
+    res.innerHTML = `Try <code>DRY = ${dry}</code> (60% of the way from water to air). Wetter soil gives a smaller number than that, and drier soil a bigger one. Change it if your plant likes more or less water.`;
+  }
+  fAir.addEventListener('input', findDry); fWet.addEventListener('input', findDry);
+  whyList($('wireWhy'), MODULE.wireWhy);
+  whyList($('codeWhy'), MODULE.codeWhy);
+
+  const CH_KEY = 'iotkids.challenges.' + LESSON_SLUG;
+  let ticked = {}; try { ticked = JSON.parse(localStorage.getItem(CH_KEY) || '{}') || {}; } catch (e) { /* not remembered */ }
+  $('challenges').innerHTML = MODULE.challenges.map((c, i) => `<li><label><input type="checkbox" data-c="${i}" ${ticked[i] ? 'checked' : ''}><span>${c.t}</span></label>
+    <details><summary>Need a hint?</summary>${c.hint}</details></li>`).join('');
+  $('challenges').addEventListener('change', (e) => {
+    if (!e.target.matches('input')) return;
+    ticked[e.target.dataset.c] = e.target.checked;
+    try { localStorage.setItem(CH_KEY, JSON.stringify(ticked)); } catch (err) { /* not remembered */ }
+  });
+
+  // quiz: a wrong answer gives a hint and another try; all right → #quizDone (rewards.js adds the badge)
+  const quiz = $('quiz'); let right = 0;
+  MODULE.quiz.forEach((q, qi) => {
+    const box = document.createElement('div'); box.className = 'q';
+    box.innerHTML = `<p>${qi + 1}. ${q.q}</p><div class="opts">${q.opts.map((o, i) => `<button type="button" data-o="${i}">${o}</button>`).join('')}</div><div class="fb"></div>`;
+    box.addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b || box.dataset.done) return;
+      const ok = +b.dataset.o === q.right;
+      b.classList.add(ok ? 'right' : 'wrong');
+      box.querySelector('.fb').innerHTML = ok ? `<div class="feedback good">Yes! ${q.why}</div>` : '<div class="feedback try">Not quite. Look back at the “Why?” taps and try again.</div>';
+      if (ok) { box.dataset.done = '1'; if (++right === MODULE.quiz.length) finish(); }
+    });
+    quiz.appendChild(box);
+  });
+  function finish() {
+    saveProgress({ done: true });
+    const done = document.createElement('div');
+    done.className = 'feedback good'; done.id = 'quizDone';
+    done.innerHTML = '<b>You finished the module!</b><p style="margin:4px 0 0">Measure, compare, act: your plant can ask for water now. Great work, engineer!</p>';
+    quiz.appendChild(done);
+  }
+
+  /* ================= 3. The code panel: the real MicroPython runner (assets/run-panel.js) ================= */
+  window.__lessonProgram = () => (window.__codePanel ? window.__codePanel.code : MODULE.program);
+  window.__module = MODULE;
+
+  /* ================= 4. 3D: the place (the garden) and the wiring ================= */
+  const LIB = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/';
+  const hasGL = !!(window.THREE && THREE.OrbitControls && THREE.GLTFLoader);
+  function gltfLoader() {
+    const g = new THREE.GLTFLoader(), d = new THREE.DRACOLoader();
+    d.setDecoderPath(LIB + 'libs/draco/gltf/'); g.setDRACOLoader(d); return g;
+  }
+  const lin = (hex) => new THREE.Color(hex).convertSRGBToLinear(); // r128: colours are linear, so convert sRGB picks
+  function makeView(host, opts) {
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.physicallyCorrectLights = true;
+    host.prepend(renderer.domElement);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(opts.fov || 40, 1, opts.near || 0.1, opts.far || 9000);
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    let visible = !host.hidden, onScreen = true, tick = null;
+    function size() {
+      const w = host.clientWidth, h = host.clientHeight; if (!w || !h) return;
+      renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+    }
+    if ('ResizeObserver' in window) new ResizeObserver(size).observe(host); else addEventListener('resize', size);
+    if ('IntersectionObserver' in window) new IntersectionObserver((es) => { onScreen = es[0].isIntersecting; }).observe(host);
+    size();
+    const clock = new THREE.Clock();
+    renderer.setAnimationLoop(() => {
+      const dt = Math.min(0.05, clock.getDelta());
+      if (!visible || !onScreen) return; // only draw what the learner can see
+      if (tick) tick(dt);
+      controls.update(); renderer.render(scene, camera);
+    });
+    return { renderer, scene, camera, controls, set tick(f) { tick = f; }, show(v) { visible = v; if (v) size(); } };
+  }
+
+  const B = (x, y, z) => new THREE.Vector3(x, z, -y); // Blender (Z up) → three (Y up)
+  let placeView = null, wireView = null;
+
+  function buildPlace() {
+    const host = $('viewPlace');
+    const v = placeView = makeView(host, { fov: 38, near: 0.5, far: 3000 });
+    const { renderer, scene, camera, controls } = v;
+    renderer.physicallyCorrectLights = false; renderer.toneMapping = THREE.NoToneMapping; // a bright, friendly garden
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    scene.background = lin(0xcfe5f3); scene.fog = new THREE.Fog(lin(0xcfe5f3), 260, 700);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x8aa070, 0.95));
+    const sun = new THREE.DirectionalLight(0xfff1de, 0.85); sun.position.set(-60, 120, 80); sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -90, right: 90, top: 70, bottom: -70, near: 20, far: 400 });
+    sun.shadow.bias = -0.0006; scene.add(sun);
+    const std = (c, r) => new THREE.MeshStandardMaterial({ color: lin(c), roughness: r == null ? 0.85 : r });
+    const add = (geo, m, x, y, z, parent) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = true; o.receiveShadow = true; (parent || scene).add(o); return o; };
+    camera.position.set(14, 78, 150); controls.target.set(14, 16, 6);
+    controls.minDistance = 30; controls.maxDistance = 260; controls.maxPolarAngle = Math.PI * 0.47;
+
+    // ground and paving
+    const grass = add(new THREE.CircleGeometry(600, 48), std(0x6fa04a, 1), 0, -0.2, 0); grass.rotation.x = -Math.PI / 2; grass.castShadow = false;
+    add(new THREE.BoxGeometry(150, 1, 90), std(0xc9c4b8), 0, -0.5, 4).castShadow = false;
+    // raised bed: four boards and the soil
+    const wood = std(0xa5703d, 0.8);
+    add(new THREE.BoxGeometry(100, 16, 3), wood, 0, 8, 22); add(new THREE.BoxGeometry(100, 16, 3), wood, 0, 8, -22);
+    add(new THREE.BoxGeometry(3, 16, 47), wood, 48.5, 8, 0); add(new THREE.BoxGeometry(3, 16, 47), wood, -48.5, 8, 0);
+    const soilMat = std(0xa8855a, 1);
+    const soil = add(new THREE.BoxGeometry(94, 13, 41), soilMat, 0, 6.5, 0); soil.castShadow = false;
+    const dry = lin(0xb08a5a), wet = lin(0x3a2818);
+
+    // plants: leaves droop and turn pale when the soil is dry
+    const plants = [];
+    const leafGeo = new THREE.SphereGeometry(1, 14, 10); leafGeo.scale(1, 0.12, 0.55); leafGeo.translate(1, 0, 0);
+    const stemMat = std(0x4f8a34), greenLeaf = lin(0x3f9a3a), paleLeaf = lin(0xb7b44a);
+    function makePlant(x, z, s) {
+      const g = new THREE.Group(); g.position.set(x, 13, z); g.scale.setScalar(s); scene.add(g);
+      const stem = add(new THREE.CylinderGeometry(0.7, 1, 16, 8), stemMat, 0, 8, 0, g);
+      const leaves = [];
+      for (let k = 0; k < 7; k++) {
+        const arm = new THREE.Group(); arm.position.y = 5 + k * 1.6; arm.rotation.y = k * 2.4; g.add(arm);
+        const m = new THREE.MeshStandardMaterial({ color: greenLeaf.clone(), roughness: 0.7, side: THREE.DoubleSide });
+        const leaf = add(leafGeo, m, 0, 0, 0, arm); leaf.scale.setScalar(5.5 - k * 0.35);
+        leaves.push({ arm, leaf, mat: m });
+      }
+      const bud = add(new THREE.SphereGeometry(1.5, 12, 10), std(0xe9573f, 0.5), 0, 16.5, 0, g); bud.userData.bud = true;
+      plants.push({ g, stem, leaves, bud }); return g;
+    }
+    makePlant(0, 0, 1.25); makePlant(-30, -8, 0.9); makePlant(30, 6, 0.95); makePlant(-18, 11, 0.7); makePlant(20, -10, 0.75);
+
+    // the probe in the soil, with its wire running to a little box on a post
+    const probe = new THREE.Group(); probe.position.set(10, 13, 8); scene.add(probe);
+    add(new THREE.BoxGeometry(4.2, 18, 0.5), std(0x1f7a46, 0.5), 0, 2, 0, probe);
+    add(new THREE.BoxGeometry(4.2, 1.2, 0.55), std(0xf4f4f4, 0.4), 0, 6.5, 0, probe);
+    add(new THREE.BoxGeometry(2.4, 3, 1.2), std(0x15202a, 0.6), 0, 12.5, 0, probe);
+    const post = add(new THREE.BoxGeometry(3, 34, 3), wood, 52, 17, 30);
+    const box = add(new THREE.BoxGeometry(16, 11, 8), std(0x2d3a46, 0.5), 52, 38, 30);
+    const bulb = add(new THREE.SphereGeometry(3, 20, 14), new THREE.MeshStandardMaterial({ color: lin(0x5a1010), roughness: 0.3 }), 52, 46.5, 30);
+    const glow = new THREE.Mesh(new THREE.SphereGeometry(7, 20, 14), new THREE.MeshBasicMaterial({ color: lin(0xff3a2a), transparent: true, opacity: 0, depthWrite: false })); glow.position.copy(bulb.position); scene.add(glow);
+    const lamp = new THREE.PointLight(0xff3a2a, 0, 120); lamp.position.copy(bulb.position); scene.add(lamp);
+    const cable = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(10, 26, 8), new THREE.Vector3(20, 29, 16), new THREE.Vector3(40, 24, 26), new THREE.Vector3(48, 34, 28)]), 30, 0.45, 6), std(0x15202a, 0.5)); cable.castShadow = true; scene.add(cable);
+
+    const tag = (text, color, w) => {
+      const cv = document.createElement('canvas'); cv.width = 320; cv.height = 72;
+      const g = cv.getContext('2d'); g.fillStyle = color; g.beginPath();
+      if (g.roundRect) g.roundRect(4, 8, 312, 56, 16); else g.rect(4, 8, 312, 56); g.fill();
+      g.fillStyle = '#fff'; g.font = 'bold 32px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 160, 37);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false })); sp.scale.set(w || 24, (w || 24) * 72 / 320, 1); sp.renderOrder = 10; return sp;
+    };
+    const t1 = tag('soil probe', '#1f7a46'); t1.position.set(10, 32, 8); scene.add(t1);
+    const t2 = tag('ESP32 + LED', '#15202a'); t2.position.set(52, 58, 30); scene.add(t2);
+
+    // a watering can that comes in, tips, and pours
+    const can = new THREE.Group(); scene.add(can);
+    add(new THREE.CylinderGeometry(6, 6.5, 12, 20), std(0x2f7de1, 0.4), 0, 0, 0, can);
+    const spout = add(new THREE.CylinderGeometry(0.9, 1.4, 12, 10), std(0x2f7de1, 0.4), -9, 3, 0, can); spout.rotation.z = 0.9;
+    add(new THREE.TorusGeometry(4.5, 0.7, 8, 16, Math.PI), std(0x2f7de1, 0.4), 4, 7, 0, can).rotation.z = 0;
+    can.visible = false;
+    const drops = []; const dropMat = new THREE.MeshBasicMaterial({ color: lin(0x5cc8ff), transparent: true, opacity: 0.85 }), dropGeo = new THREE.SphereGeometry(0.6, 8, 6);
+    for (let i = 0; i < 40; i++) { const d = new THREE.Mesh(dropGeo, dropMat); d.visible = false; scene.add(d); drops.push({ m: d, vy: 0 }); }
+
+    // the story of the soil: dries out, glows "water me!", gets watered, repeats (same rule as the program)
+    const DRY = 2400, WET = 1400, AIR = 3000;
+    const S = { m: 1500, state: 'drying', t: 0, k: 0, spill: 0 }; // k: how thirsty the plant looks, 0 (happy) to 1 (wilting)
+    const ss = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+    function water() { if (S.state !== 'watering') { S.state = 'watering'; S.t = 0; } }
+    window.__module.water = water;
+    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'btn place-btn'; btn.textContent = '💧 Water it now';
+    btn.addEventListener('click', water); host.appendChild(btn);
+    const readout = $('placeReadout');
+    let spawn = 0;
+    v.tick = (dt) => {
+      S.t += dt;
+      if (S.state === 'drying') { S.m = Math.min(AIR + 80, S.m + 110 * dt); if (S.m >= AIR + 80) { S.state = 'thirsty'; S.t = 0; } }
+      else if (S.state === 'thirsty') { if (S.t > 3) water(); }
+      else if (S.state === 'watering') {
+        if (S.t > 1.2) S.m = Math.max(WET + 60, S.m - 520 * dt);
+        if (S.t > 4.2) { S.state = 'resting'; S.t = 0; }
+      } else if (S.state === 'resting' && S.t > 2) { S.state = 'drying'; S.t = 0; }
+      const isDry = S.m > DRY;
+      const wetness = 1 - ss(WET, AIR, S.m);
+      soilMat.color.copy(dry).lerp(wet, wetness);
+      const target = ss(2000, 2900, S.m); S.k += (target - S.k) * Math.min(1, dt * 1.6);
+      for (const p of plants) {
+        p.leaves.forEach((l, i) => {
+          l.arm.rotation.z = -0.35 - S.k * (0.75 + i * 0.05);
+          l.mat.color.copy(greenLeaf).lerp(paleLeaf, S.k * 0.9);
+        });
+        p.g.rotation.z = S.k * 0.08; p.stem.scale.y = 1 - S.k * 0.12;
+        p.g.children.forEach((c) => { if (c.userData.bud) c.position.y = 16.5 - S.k * 2.2; });
+      }
+      bulb.material.color.copy(isDry ? lin(0xff2a1a) : lin(0x5a1010));
+      bulb.material.emissive = isDry ? lin(0xff2a1a) : new THREE.Color(0);
+      glow.material.opacity = isDry ? 0.28 + 0.12 * Math.sin(S.t * 8) : 0; lamp.intensity = isDry ? 1.2 : 0;
+      // the can
+      const pouring = S.state === 'watering';
+      const inK = pouring ? ss(0, 1, S.t) * (1 - ss(3.4, 4.2, S.t)) : 0;
+      can.visible = inK > 0.01;
+      can.position.set(-40 + 30 * inK, 36 + 4 * inK, 6); can.rotation.z = inK * 0.8;
+      spawn += dt;
+      if (pouring && inK > 0.8) while (spawn > 0.04) { spawn -= 0.04; const d = drops.find((x) => !x.m.visible); if (d) { d.m.visible = true; d.m.position.set(-40 + 30 * inK - 15, 34, 6 + (Math.random() - 0.5) * 3); d.vy = -10; } }
+      for (const d of drops) if (d.m.visible) { d.vy -= 120 * dt; d.m.position.y += d.vy * dt; d.m.position.x += 2 * dt; if (d.m.position.y < 13.5) d.m.visible = false; }
+      readout.textContent = `moisture = ${Math.round(S.m)}\n${isDry ? 'if → led.value(1)' : 'else → led.value(0)'}   (DRY = ${DRY})`;
+    };
+    $('placeMsg').remove();
+  }
+
+  // the wiring: the course's ESP32 model, a code-built soil probe, breadboard, resistor and LED, and one tube per wire (millimetres)
+  function buildWiring() {
+    const host = $('viewWire');
+    const v = wireView = makeView(host, { fov: 36, near: 1, far: 3000 });
+    const { renderer, scene, camera, controls } = v;
+    renderer.physicallyCorrectLights = false; // a bright desk, like the other lessons
+    renderer.toneMapping = THREE.NoToneMapping;
+    scene.background = new THREE.Color(0xf3f7fa);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0xb8c4cc, 0.9));
+    const key = new THREE.DirectionalLight(0xffffff, 0.8); key.position.set(40, 120, 70); scene.add(key);
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(380, 4, 230), new THREE.MeshStandardMaterial({ color: 0x9a7a52, roughness: 1 }));
+    desk.position.y = -6; scene.add(desk);
+    controls.minDistance = 40; controls.maxDistance = 520; controls.maxPolarAngle = Math.PI * 0.48;
+    const label = (text, color) => {
+      const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
+      const g = cv.getContext('2d'); g.fillStyle = color || '#15202A'; g.beginPath();
+      if (g.roundRect) g.roundRect(4, 8, 248, 48, 14); else g.rect(4, 8, 248, 48); g.fill();
+      g.fillStyle = '#fff'; g.font = 'bold 30px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 128, 33);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false }));
+      sp.scale.set(20, 5, 1); sp.renderOrder = 10; return sp;
+    };
+    const mat = (c, r) => new THREE.MeshStandardMaterial({ color: lin(c), roughness: r == null ? 0.6 : r });
+    new THREE.GLTFLoader().load('../../assets/models/esp32-devkit-v1.glb', (gltf) => {
+      const board = gltf.scene; board.scale.setScalar(1000); scene.add(board); board.updateMatrixWorld(true);
+      const pad = (name) => { const o = board.getObjectByName('pad_' + name); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
+      const box = new THREE.Box3().setFromObject(board), mid = box.getCenter(new THREE.Vector3());
+      const L1 = pad('L01_EN'), L15 = pad('L15_VIN'), R1 = pad('R01_GPIO23'), R15 = pad('R15_3V3');
+      if (!L1 || !L15 || !R1 || !R15) { $('wireMsg').textContent = 'The board model has no pin pads.'; return; }
+      const Lm = L1.clone().lerp(L15, 0.5), Rm = R1.clone().lerp(R15, 0.5);
+      const out = Rm.clone().sub(Lm).setY(0).normalize();   // across the board, from the L header to the R header
+      const along = L15.clone().sub(L1).setY(0).normalize(); // down the headers, from pin 1 to pin 15
+      const top = box.max.y, up = new THREE.Vector3(0, 1, 0);
+      // a group whose local +X points along `dir` (flat on the desk), local +Y is up
+      const flat = (dir) => { const g = new THREE.Group(); g.matrixAutoUpdate = false; g.matrix.makeBasis(dir.clone(), up, new THREE.Vector3().crossVectors(dir, up)); g.matrixWorldNeedsUpdate = true; return g; };
+      const put = (g, p) => { g.matrix.setPosition(p); g.matrixWorldNeedsUpdate = true; scene.add(g); g.updateMatrixWorld(true); return g; };
+      // soil probe beside the L header (D33, GND), its tip pointing away from the board; its pins face the board
+      const pr = flat(out.clone().negate());
+      const pcb = new THREE.Mesh(new THREE.BoxGeometry(100, 1.6, 23), mat(0x1f7a46)); pcb.position.set(52, 0, 0); pr.add(pcb);
+      const seal = new THREE.Mesh(new THREE.BoxGeometry(6, 1.8, 23.2), mat(0xf4f4f4, 0.4)); seal.position.set(50, 0.1, 0); pr.add(seal);
+      const chip = new THREE.Mesh(new THREE.BoxGeometry(14, 2.6, 8), mat(0x15202a)); chip.position.set(12, 1.6, -4); pr.add(chip);
+      const pPins = ['AOUT', 'VCC', 'GND'].map((n, i) => { const p = new THREE.Mesh(new THREE.BoxGeometry(8, 0.8, 0.8), mat(0xd4af37, 0.3)); p.position.set(-0.5, 2.4, (i - 1) * 5); pr.add(p); return p; });
+      put(pr, pad('L07_GPIO33').clone().addScaledVector(out, -34).setY(top + 6));
+      // a mini breadboard with a 330 Ω resistor and a red LED, beside the R header
+      const bb = flat(along.clone());
+      const plate = new THREE.Mesh(new THREE.BoxGeometry(46, 8, 28), mat(0xb9c6d2, 0.8)); plate.position.set(0, 0, 0); bb.add(plate);
+      for (let i = -9; i <= 9; i++) for (const zz of [-8, -5, 5, 8]) { const h = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.3, 1.4), mat(0x888d92)); h.position.set(i * 2.2, 4.1, zz); bb.add(h); }
+      const res = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 9, 14), mat(0xd9b27c, 0.7)); res.rotation.z = Math.PI / 2; res.position.set(-8, 6.4, 5); bb.add(res);
+      for (const [k, c] of [[-10.5, 0x8a4a22], [-8.8, 0x15202a], [-7, 0x8a4a22]]) { const r = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 0.8, 14), mat(c)); r.rotation.z = Math.PI / 2; r.position.set(k + 0.8, 6.4, 5); bb.add(r); }
+      const led = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 6, 20), mat(0xe03a3a, 0.3)); led.position.set(8, 8, 5); bb.add(led);
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(2.6, 20, 12), mat(0xe03a3a, 0.3)); dome.position.set(8, 11, 5); bb.add(dome);
+      put(bb, pad('R08_GPIO5').clone().addScaledVector(out, 48).setY(top + 2));
+      const wirePts = (a, b, h) => new THREE.CatmullRomCurve3([a, a.clone().setY(a.y + h), a.clone().lerp(b, 0.5).setY(Math.max(a.y, b.y) + h + 6), b.clone().setY(b.y + h), b]);
+      const tube = (pts, color) => { const m = new THREE.Mesh(new THREE.TubeGeometry(pts, 48, 0.9, 8, false), mat(color, 0.45)); scene.add(m); return m; };
+      const wp = (m) => m.getWorldPosition(new THREE.Vector3()).setY(top + 6);
+      const bbAt = (x, y, z) => bb.localToWorld(new THREE.Vector3(x, y, z));
+      const wires = [
+        [wp(pPins[1]), pad('R15_3V3'), '#F08A24', '3V3 · VCC'],
+        [wp(pPins[2]), pad('L14_GND'), '#2B2B2B', 'GND'],
+        [wp(pPins[0]), pad('L07_GPIO33'), '#8A4FD6', 'D33 · AOUT'],
+        [bbAt(-12, 4.4, 5), pad('L08_GPIO25'), '#E03A3A', 'D25 → resistor'],
+        [bbAt(6.8, 4.4, -5), pad('R14_GND'), '#6B4226', 'LED − → GND'],
+      ];
+      wires.forEach(([a, b, c, t], i) => {
+        if (!a || !b) return;
+        const curve = wirePts(a, b, 8 + i * 3); tube(curve, c);
+        const lb = label(t, c); lb.position.copy(curve.getPoint([0.3, 0.45, 0.5, 0.5, 0.55][i])); lb.position.y += 5; scene.add(lb);
+      });
+      const sl = label('Soil probe', '#1f7a46'); sl.position.copy(pr.localToWorld(new THREE.Vector3(60, 14, 0))); scene.add(sl);
+      const bl = label('Resistor + LED', '#b02a2a'); bl.position.copy(bb.localToWorld(new THREE.Vector3(0, 24, 0))); scene.add(bl);
+      const aim = mid.clone().addScaledVector(out, -20);
+      const k = Math.max(1, 1.3 / camera.aspect); // step back on tall, narrow phone screens so the whole desk fits
+      camera.position.copy(aim).addScaledVector(along, 215 * k).add(new THREE.Vector3(0, 175 * k, 0)); controls.target.copy(aim);
+      $('wireMsg').remove();
+    }, undefined, () => { $('wireMsg').textContent = 'The board model could not load. Please reload the page.'; });
+  }
+
+  // tabs: build each view the first time it is shown
+  function showTab(which) {
+    const place = which === 'place';
+    $('tabPlace').setAttribute('aria-selected', String(place)); $('tabWire').setAttribute('aria-selected', String(!place));
+    $('viewPlace').hidden = !place; $('viewWire').hidden = place;
+    if (!hasGL) return;
+    if (!place && !wireView) buildWiring();
+    if (placeView) placeView.show(place);
+    if (wireView) wireView.show(!place);
+  }
+  $('tabPlace').addEventListener('click', () => showTab('place'));
+  $('tabWire').addEventListener('click', () => showTab('wire'));
+  window.__module.showTab = showTab;
+  if (hasGL) buildPlace();
+  else { $('placeMsg').textContent = 'The 3D scene needs an internet connection. Everything else on this page still works.'; $('wireMsg').textContent = $('placeMsg').textContent; }
+})();
+</script>
+<script src="../../assets/board-link.js"></script>
+<script src="../../assets/prepare-board.js"></script>
+<script src="../../assets/run-panel.js"></script>
+<script src="../../assets/board-drawer.js"></script>
+<script>
+  // the editable code panel is the real runner (Web Serial + MicroPython), the same as run.html
+  if (window.RunPanel && window.BoardLink) window.__codePanel = RunPanel.mount(document.getElementById('codePanel'), { id: 'm-thirsty-plant-code', base: '../../', code: window.__module.program, fresh: true });
+  KKBoard.attach({ id: 'm-thirsty-plant', base: '../../', buttonHost: 'header.top .progress', program: () => window.__lessonProgram(), wiring: window.__module.wiringOneLine });
+</script>
+</body>
+</html>
