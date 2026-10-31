@@ -10,7 +10,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <!--
   SENSOR MODULE: Who’s at the Door? (m-door). Built from lessons/_module-template/ (see AGENT.md, "Sensor modules").
-  3D: a code-built front door at night, plus the course's ESP32 model with a code-built IR sensor and buzzer for the wiring.
+  3D: a Blender-made front porch at night (assets/models/modules/front-porch.glb: door, windows, lantern, the IR sensor and buzzer) with
+  the landing story's pupil (child_a.glb) as the visitor, and the course's ESP32 model with ir-obstacle.glb and buzzer.glb for the wiring.
 -->
 <style>
 :root {
@@ -188,6 +189,8 @@ main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); g
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
 <script src="../../course.js"></script>
 <script src="../../assets/ohm/ohm.js"></script>
 <script src="../../assets/rewards.js"></script>
@@ -340,7 +343,22 @@ while True:
   window.__module = MODULE;
 
   /* ================= 4. 3D: the place (the front door) and the wiring ================= */
-  const hasGL = !!(window.THREE && THREE.OrbitControls && THREE.GLTFLoader);
+  const hasGL = !!(window.THREE && THREE.OrbitControls && THREE.GLTFLoader && THREE.DRACOLoader);
+  const LIB = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/';
+  function gltfLoader() { const g = new THREE.GLTFLoader(), d = new THREE.DRACOLoader(); d.setDecoderPath(LIB + 'libs/draco/gltf/'); g.setDRACOLoader(d); return g; }
+  function woodTexture(c1, c2, lines) {
+    const cv = document.createElement('canvas'); cv.width = 512; cv.height = 512; const g = cv.getContext('2d');
+    g.fillStyle = c1; g.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < lines; i++) { g.strokeStyle = c2; g.globalAlpha = 0.12 + ((i * 37) % 17) / 90; g.lineWidth = 1 + (i % 3); g.beginPath(); const y = (i * 97) % 512; g.moveTo(0, y); for (let x = 0; x <= 512; x += 32) g.lineTo(x, y + Math.sin(x / 70 + i) * 6); g.stroke(); }
+    const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+  }
+  // a Blender part (assets/models/modules/<name>.glb, in metres) at millimetre scale for the wiring desk
+  const PART = '../../assets/models/modules/';
+  function loadParts(names, done) {
+    const got = {}; let left = names.length;
+    names.forEach((n) => gltfLoader().load(PART + n + '.glb', (g) => { const r = g.scene; r.scale.setScalar(1000); r.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.envMapIntensity = 0.7; } }); got[n] = r; if (!--left) done(got); }, undefined, () => { got[n] = new THREE.Group(); if (!--left) done(got); }));
+  }
+  const nodeAt = (root, name) => { const o = root.getObjectByName(name); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
   const lin = (hex) => new THREE.Color(hex).convertSRGBToLinear(); // r128: colours are linear, so convert sRGB picks
   function makeView(host, opts) {
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -378,58 +396,54 @@ while True:
     const host = $('viewPlace');
     const v = placeView = makeView(host, { fov: 42, near: 0.1, far: 400 });
     const { renderer, scene, camera, controls } = v;
-    renderer.physicallyCorrectLights = false; renderer.toneMapping = THREE.NoToneMapping; // bright and simple, like the wiring desk
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.physicallyCorrectLights = true; // a front door at night
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    scene.background = new THREE.Color(0x0e1633);
-    scene.fog = new THREE.Fog(0x0e1633, 22, 70);
+    scene.background = lin(0x0e1633);
+    scene.fog = new THREE.Fog(lin(0x0e1633), 22, 70);
+    scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new THREE.RoomEnvironment(), 0.04).texture;
     const wide = Math.max(1, 1.05 / camera.aspect); // step back on tall, narrow phone screens
     camera.position.set(5.2 * wide, 2.6 + 0.6 * (wide - 1), 9.2 * wide); controls.target.set(0, 1.3, 2.2);
     controls.maxPolarAngle = Math.PI * 0.49; controls.minDistance = 2.5; controls.maxDistance = 30;
-    scene.add(new THREE.HemisphereLight(0x7f95d6, 0x2a3a2a, 0.75));
-    const moon = new THREE.DirectionalLight(0xaec0ff, 0.45); moon.position.set(-6, 12, 8); moon.castShadow = true;
-    moon.shadow.mapSize.set(1024, 1024); Object.assign(moon.shadow.camera, { left: -12, right: 12, top: 10, bottom: -10, near: 1, far: 40 });
-    scene.add(moon);
-    const porch = new THREE.PointLight(0xffd9a0, 0.9, 11); porch.position.set(0, 2.9, 1.0); scene.add(porch);
+    scene.add(new THREE.HemisphereLight(lin(0x7f95d6), lin(0x2a3a2a), 0.55));
+    const moon = new THREE.DirectionalLight(lin(0xaec0ff), 0.9); moon.position.set(-6, 12, 8); moon.castShadow = true;
+    moon.shadow.mapSize.set(2048, 2048); Object.assign(moon.shadow.camera, { left: -12, right: 12, top: 10, bottom: -10, near: 1, far: 40 });
+    moon.shadow.bias = -0.0004; moon.shadow.normalBias = 0.02; scene.add(moon);
+    const porch = new THREE.PointLight(lin(0xffd9a0), 30, 12, 2); porch.position.set(0, 2.8, 1.0); porch.castShadow = true; porch.shadow.bias = -0.002; scene.add(porch);
+    for (const wx of [-3.2, 3.2]) { const w = new THREE.PointLight(lin(0xffd890), 6, 5, 2); w.position.set(wx, 1.9, 0.8); scene.add(w); } // the windows' warm light
     const mat = (c, r, o) => new THREE.MeshStandardMaterial(Object.assign({ color: lin(c), roughness: r == null ? 0.8 : r }, o || {}));
     const add = (geo, m, x, y, z, parent) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; (parent || scene).add(o); return o; };
 
-    // ground and the path to the door
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), mat(0x2f5a2c, 0.95)); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
-    add(new THREE.BoxGeometry(1.8, 0.04, 16), mat(0x9a8d78), 0, 0.02, 8);
-    add(new THREE.BoxGeometry(4.2, 0.16, 2.2), mat(0x8a8274), 0, 0.08, 1.1); // the doorstep
-    // the house front: a wall, a door with a knob, a porch roof and two windows with a warm glow
-    add(new THREE.BoxGeometry(9, 3.6, 0.4), mat(0xe8dcc4), 0, 1.8, -0.2);
-    add(new THREE.BoxGeometry(1.2, 2.3, 0.06), mat(0x6b4226), 0, 1.23, 0.03);
-    add(new THREE.SphereGeometry(0.06, 8, 6), mat(0xe0b040, 0.3), 0.4, 1.2, 0.09);
-    add(new THREE.BoxGeometry(4.2, 0.12, 2.4), mat(0x9b4a2c, 0.6), 0, 3.1, 1.2);
-    for (const px of [-1.9, 1.9]) add(new THREE.CylinderGeometry(0.07, 0.07, 3.0, 8), mat(0xf4efe6), px, 1.6, 2.3);
-    const glow = new THREE.MeshBasicMaterial({ color: 0xffe0a0 });
-    for (const wx of [-3.2, 3.2]) { add(new THREE.BoxGeometry(1.2, 1.0, 0.06), glow, wx, 1.9, 0.03); }
-    const lamp = add(new THREE.SphereGeometry(0.12, 12, 8), new THREE.MeshBasicMaterial({ color: 0xfff0c0 }), 0, 2.95, 1.0); lamp.castShadow = false;
-    // the sensor and the buzzer on the doorframe, both facing out toward the path
-    const SENSOR = new THREE.Vector3(1.0, 1.25, 0.1), RANGE = 2.4;
-    const sensorBox = add(new THREE.BoxGeometry(0.32, 0.2, 0.08), mat(0x1f5fbf, 0.5), SENSOR.x, SENSOR.y, SENSOR.z);
-    add(new THREE.CylinderGeometry(0.035, 0.035, 0.07, 10), mat(0xe8f6ff, 0.2), -0.08, 0, 0.07, sensorBox).rotation.x = Math.PI / 2;
-    add(new THREE.CylinderGeometry(0.035, 0.035, 0.07, 10), mat(0x2a1a1a, 0.3), 0.08, 0, 0.07, sensorBox).rotation.x = Math.PI / 2;
-    const redLed = new THREE.MeshBasicMaterial({ color: 0x4a1010 });
-    add(new THREE.BoxGeometry(0.04, 0.04, 0.03), redLed, 0, 0.09, 0.05, sensorBox);
-    const buzzerDisc = add(new THREE.CylinderGeometry(0.16, 0.16, 0.12, 18), mat(0x181818, 0.4), SENSOR.x, 1.8, 0.1);
-    buzzerDisc.rotation.x = Math.PI / 2;
+    // the porch, the door, the sensor and the buzzer: a Blender model (assets/models/modules/front-porch.glb, in metres)
+    const SENSOR = new THREE.Vector3(1.0, 1.27, 0.2), RANGE = 2.4;
+    const redLed = new THREE.MeshBasicMaterial({ color: 0x4a1010, toneMapped: false });
+    let buzzerDisc = new THREE.Object3D();
+    gltfLoader().load('../../assets/models/modules/front-porch.glb', (g) => {
+      const house = g.scene; scene.add(house);
+      house.traverse((o) => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; } });
+      const led = house.getObjectByName('Sensor_LED'); if (led) led.material = redLed;
+      const glass = house.getObjectByName('Lamp_Glow'); if (glass) glass.castShadow = false;
+      buzzerDisc = house.getObjectByName('Buzzer_Disc');
+      const msg = $('placeMsg'); if (msg) msg.remove();
+    }, undefined, () => { $('placeMsg').textContent = 'The 3D porch could not load. Please reload the page.'; });
     // the invisible beam, drawn as a faint cone (pretend: the real light cannot be seen)
     const beamGeo = new THREE.ConeGeometry(0.55, RANGE, 20, 1, true); beamGeo.translate(0, -RANGE / 2, 0); beamGeo.rotateX(-Math.PI / 2);
-    const beamMat = new THREE.MeshBasicMaterial({ color: 0xff6a5a, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false });
+    const beamMat = new THREE.MeshBasicMaterial({ color: 0xff6a5a, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false, toneMapped: false });
     const beam = new THREE.Mesh(beamGeo, beamMat); beam.position.copy(SENSOR).add(new THREE.Vector3(0, 0, 0.1)); scene.add(beam);
     // sound ripples around the buzzer
     const ripples = [0, 1, 2].map(() => {
-      const m = new THREE.MeshBasicMaterial({ color: 0xffe27a, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
-      const r = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.0, 36), m); r.position.set(SENSOR.x, 1.8, 0.2); scene.add(r); return r;
+      const m = new THREE.MeshBasicMaterial({ color: 0xffe27a, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, toneMapped: false });
+      const r = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.0, 36), m); r.position.set(SENSOR.x, 1.8, 0.12); scene.add(r); return r;
     });
-    // the visitor: a child with swinging legs and arms, walking along the path
+    // the visitor: the pupil from the landing story (assets/story/models/child_a.glb), walking on its hip and shoulder joints
     const visitor = new THREE.Group(); scene.add(visitor);
-    const legs = [-1, 1].map((s) => { const g = new THREE.Group(); g.position.set(s * 0.1, 0.55, 0); visitor.add(g); add(new THREE.BoxGeometry(0.14, 0.55, 0.16), mat(0x2f3e6b), 0, -0.27, 0, g); return g; });
-    add(new THREE.BoxGeometry(0.42, 0.55, 0.22), mat(0xe8782a), 0, 0.82, 0, visitor);
-    add(new THREE.SphereGeometry(0.17, 14, 10), mat(0x8a5a3a, 0.7), 0, 1.3, 0, visitor);
-    const arms = [-1, 1].map((s) => { const g = new THREE.Group(); g.position.set(s * 0.28, 1.05, 0); visitor.add(g); add(new THREE.BoxGeometry(0.1, 0.5, 0.12), mat(0xe8782a), 0, -0.22, 0, g); return g; });
+    let legs = [new THREE.Object3D(), new THREE.Object3D()], arms = [new THREE.Object3D(), new THREE.Object3D()];
+    gltfLoader().load('../../assets/story/models/child_a.glb', (g) => {
+      const kid = g.scene; kid.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
+      visitor.add(kid);
+      const n = (k) => kid.getObjectByName(k);
+      legs = [n('Hip_L'), n('Hip_R')]; arms = [n('Shoulder_L'), n('Shoulder_R')];
+      ['Elbow_L', 'Elbow_R'].forEach((k) => { const o = n(k); if (o) o.rotation.x = -0.3; });
+    });
     visitor.rotation.y = Math.PI; // faces the door
 
     // the story: empty path, a visitor walks up, waits at the door, then leaves. The button forces a visit or sends them away.
@@ -443,9 +457,9 @@ while True:
       const cv = document.createElement('canvas'); cv.width = 320; cv.height = 64;
       const g = cv.getContext('2d'); g.fillStyle = color; g.beginPath(); if (g.roundRect) g.roundRect(4, 8, 312, 48, 14); else g.rect(4, 8, 312, 48); g.fill();
       g.fillStyle = '#fff'; g.font = 'bold 28px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 160, 33);
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false })); sp.scale.set(1.7, 0.34, 1); sp.position.set(x, y, z); sp.renderOrder = 10; scene.add(sp);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false, toneMapped: false })); sp.scale.set(1.7, 0.34, 1); sp.position.set(x, y, z); sp.renderOrder = 10; scene.add(sp);
     };
-    sprite('IR sensor', '#8A4FD3', 1.9, 1.25, 0.5); sprite('Buzzer', '#B57A00', 1.9, 1.85, 0.5); sprite('Invisible beam', '#C93131', 1.0, 0.55, RANGE + 0.3);
+    sprite('IR sensor', '#8A4FD3', 2.55, 1.2, 0.35); sprite('Buzzer', '#B57A00', 2.55, 1.85, 0.35); sprite('Invisible beam', '#C93131', 1.0, 0.55, RANGE + 0.3);
     const readout = $('placeReadout');
     const DOOR_Z = 1.2, FAR_Z = 9;
     function updateDoor(dt) {
@@ -480,20 +494,21 @@ while True:
     v.tick = updateDoor;
     labelBtn();
     if (/^#t\d+/.test(location.hash)) { const T = parseFloat(location.hash.slice(2)); for (let q = 0; q < T / 0.02; q++) updateDoor(0.02); }
-    $('placeMsg').remove();
   }
 
   function buildWiring() {
     const host = $('viewWire');
     const v = wireView = makeView(host, { fov: 36, near: 1, far: 3000 });
     const { renderer, scene, camera, controls } = v;
-    renderer.physicallyCorrectLights = false; // a bright desk, like the other lessons
-    renderer.toneMapping = THREE.NoToneMapping;
-    scene.background = new THREE.Color(0xf3f7fa);
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xb8c4cc, 0.9));
-    const key = new THREE.DirectionalLight(0xffffff, 0.8); key.position.set(40, 120, 70); scene.add(key);
-    const desk = new THREE.Mesh(new THREE.BoxGeometry(260, 4, 170), new THREE.MeshStandardMaterial({ color: 0xd8c3a0, roughness: 0.9 }));
-    desk.position.y = -6; scene.add(desk);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.physicallyCorrectLights = true; // lit like the Parking Gate desk
+    scene.background = lin(0xf0f4f7);
+    scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+    scene.add(new THREE.HemisphereLight(lin(0xffffff), lin(0xb8c4cc), 1.0));
+    const key = new THREE.DirectionalLight(lin(0xffffff), 1.6); key.position.set(60, 200, 120); scene.add(key);
+    const wood = woodTexture('#d8c3a0', '#9b7a4f', 50); wood.repeat.set(1.4, 1);
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(760, 8, 460), new THREE.MeshStandardMaterial({ map: wood, roughness: 0.85 }));
+    desk.position.y = -8; scene.add(desk);
+    const deskTop = desk.position.y + 4;
     controls.minDistance = 40; controls.maxDistance = 420; controls.maxPolarAngle = Math.PI * 0.48;
     const label = (text, color) => {
       const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
@@ -501,12 +516,13 @@ while True:
       if (g.roundRect) g.roundRect(4, 8, 248, 48, 14); else g.rect(4, 8, 248, 48);
       g.fill();
       g.fillStyle = '#fff'; g.font = 'bold 30px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 128, 33);
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false }));
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false, toneMapped: false }));
       sp.scale.set(20, 5, 1); sp.renderOrder = 10; return sp;
     };
     const mat = (c, r) => new THREE.MeshStandardMaterial({ color: lin(c), roughness: r == null ? 0.6 : r });
     new THREE.GLTFLoader().load('../../assets/models/esp32-devkit-v1.glb', (gltf) => {
       const board = gltf.scene; board.scale.setScalar(1000); scene.add(board); board.updateMatrixWorld(true);
+      board.position.y += deskTop + 3 - new THREE.Box3().setFromObject(board).min.y; board.updateMatrixWorld(true); // the board's pins rest on the desk
       const pad = (name) => { const o = board.getObjectByName('pad_' + name); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
       const box = new THREE.Box3().setFromObject(board), mid = box.getCenter(new THREE.Vector3());
       const L1 = pad('L01_EN'), L15 = pad('L15_VIN'), R1 = pad('R01_GPIO23'), R15 = pad('R15_3V3');
@@ -516,30 +532,21 @@ while True:
       const along = L15.clone().sub(L1).setY(0).normalize(); // down the headers, from pin 1 to pin 15
       const top = box.max.y;
       // IR sensor beside the R header (3V3, GND), its OUT wire crossing to D14; buzzer beside the L header (D13, GND)
-      const sensor = new THREE.Group();
-      const pcb = new THREE.Mesh(new THREE.BoxGeometry(32, 1.6, 15), mat(0x1f5fbf)); sensor.add(pcb);
-      const chip = new THREE.Mesh(new THREE.BoxGeometry(8, 2.4, 6), mat(0x222a33, 0.5)); chip.position.set(-1, 2, -1); sensor.add(chip);
-      const pot = new THREE.Mesh(new THREE.BoxGeometry(8, 7, 8), mat(0x2f6fd0, 0.4)); pot.position.set(9, 4.2, -1); sensor.add(pot);
-      const screw = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 1.2, 14), mat(0xd4af37, 0.3)); screw.position.set(9, 8.2, -1); sensor.add(screw);
-      const eyeA = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.1, 6, 14), new THREE.MeshStandardMaterial({ color: 0xdff2ff, transparent: true, opacity: 0.85, roughness: 0.2 })); eyeA.rotation.x = Math.PI / 2; eyeA.position.set(-9, 3.4, 9); sensor.add(eyeA);
-      const eyeB = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.1, 6, 14), mat(0x1b1010, 0.3)); eyeB.rotation.x = Math.PI / 2; eyeB.position.set(-3, 3.4, 9); sensor.add(eyeB);
-      const redOn = new THREE.Mesh(new THREE.BoxGeometry(2, 1.2, 2), new THREE.MeshBasicMaterial({ color: 0xff3030 })); redOn.position.set(-14, 1.4, 4); sensor.add(redOn);
-      const grnOn = new THREE.Mesh(new THREE.BoxGeometry(2, 1.2, 2), new THREE.MeshBasicMaterial({ color: 0x40d070 })); grnOn.position.set(-14, 1.4, -3); sensor.add(grnOn);
-      const sPins = ['OUT', 'GND', 'VCC'].map((n, i) => { const p = new THREE.Mesh(new THREE.BoxGeometry(0.8, 8, 0.8), mat(0xd4af37, 0.3)); p.position.set(-6 + i * 2.54, 0, -6.2); sensor.add(p); return p; });
-      sensor.position.copy(pad('R06_GPIO19')).addScaledVector(out, 50).setY(top + 4);
-      sensor.lookAt(sensor.position.clone().add(out)); sensor.rotateY(-Math.PI / 2); // pins face the board
+      loadParts(['ir-obstacle', 'buzzer'], (P) => {
+      const sensor = new THREE.Group(); sensor.add(P['ir-obstacle']);   // its pins face the board, its eyes look away
+      sensor.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), out);
+      sensor.position.copy(pad('R06_GPIO19')).addScaledVector(out, 44).setY(deskTop);
       scene.add(sensor);
-      // the passive buzzer: a black disc with a sound hole on top and two legs
-      const buzzer = new THREE.Group();
-      buzzer.add(new THREE.Mesh(new THREE.CylinderGeometry(11, 11, 9, 28), mat(0x181818, 0.4)));
-      const hole = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, 0.4, 14), mat(0x000000, 0.9)); hole.position.y = 4.6; buzzer.add(hole);
-      buzzer.position.copy(L15).addScaledVector(out, -55).setY(top + 5);
+      const buzzer = new THREE.Group(); buzzer.add(P.buzzer);            // its two legs point at the board
+      buzzer.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), out.clone().negate());
+      buzzer.position.copy(L15).addScaledVector(out, -46).setY(deskTop);
       scene.add(buzzer);
+      const sPins = ['OUT', 'GND', 'VCC'].map((n) => sensor.getObjectByName('Pin_' + n));
       const wirePts = (a, b, h) => new THREE.CatmullRomCurve3([a, a.clone().setY(a.y + h), a.clone().lerp(b, 0.5).setY(Math.max(a.y, b.y) + h + 6), b.clone().setY(b.y + h), b]);
       const tube = (pts, color) => { const m = new THREE.Mesh(new THREE.TubeGeometry(pts, 48, 0.9, 8, false), mat(color, 0.45)); scene.add(m); return m; };
-      const pinTop = (m) => m.getWorldPosition(new THREE.Vector3()).setY(m.getWorldPosition(new THREE.Vector3()).y - 4);
-      sensor.updateMatrixWorld(true);
-      const bz = (k) => buzzer.position.clone().addScaledVector(along, -3 + k * 6).addScaledVector(out, 12).setY(top + 1);
+      const pinTop = (m) => (m ? m.getWorldPosition(new THREE.Vector3()) : null); // the tip of a header pin
+      sensor.updateMatrixWorld(true); buzzer.updateMatrixWorld(true);
+      const bz = (k) => nodeAt(buzzer, k ? 'Pin_MINUS' : 'Pin_PLUS');
       const wires = [
         [pinTop(sPins[2]), pad('R15_3V3'), '#E03A3A', '3V3'],
         [pinTop(sPins[1]), pad('R14_GND'), '#2B2B2B', 'GND'],
@@ -558,6 +565,7 @@ while True:
       const k = Math.max(1, 1.3 / camera.aspect); // step back on tall, narrow phone screens so the whole desk fits
       camera.position.copy(aim).addScaledVector(along, 180 * k).add(new THREE.Vector3(0, 140 * k, 0)); controls.target.copy(aim);
       $('wireMsg').remove();
+      });
     }, undefined, () => { $('wireMsg').textContent = 'The board model could not load. Please reload the page.'; });
   }
 

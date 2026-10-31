@@ -14,6 +14,20 @@ Everything is modelled in code: no downloads. The results are in `assets/story/m
 Shared: `lib.py` (materials, shapes, baked contact shadows in the vertex colours, glTF export, preview render)
 and `textures.py` (plaster, wood, tin, solar cells, banana leaves, cardboard, painted with Pillow).
 
+### Sensor-module models ("Pick a sensor")
+
+`parts.py` builds the small parts for the wiring desks, one GLB each in `assets/models/modules/`, at real sizes with header pins pointing to -X and a `Pin_<NAME>` empty at each pin tip: `dht11`, `soil-probe`, `raindrop`, `ir-obstacle`, `buzzer`, `hc-sr04p`, `breadboard` (LEDs, resistors, `Hole_A/B/Rail`) and `foil-card`. Build: `blender -b --factory-startup -P parts.py -- out/ [names...]`.
+Each module's story scene has its own script (run the same way, `-- out/<name>.glb`); the docstring at the top lists the nodes the page animates:
+
+| Script | Model | Module |
+|---|---|---|
+| `kitchen.py` | `too-hot-kitchen.glb` | Too Hot in Here: tiled kitchen, hob ring, pot, project box with two lamps, the DHT11 on the wall |
+| `radar.py` | `radar-room.glb` | Radar Scanner: the sensor on its servo, a radar screen on a desk, three things to find |
+| `garden.py` | `plant-garden.glb` | The Thirsty Plant: raised bed with plants that wilt, the soil probe, the LED box |
+| `fence.py` | `goat-garden.glb` | Don't Touch the Fence: vegetable patch, foil fence, a goat, the buzzer |
+| `porch.py` | `front-porch.glb` | Who's at the Door?: front porch at night, the IR sensor and buzzer by the door |
+| `washing.py` | `rain-yard.glb` | Rain, Rain, Go Away: house, washing line, sliding roof, raindrop sensor |
+
 Rules every model follows: metres, Y up and front facing +Z in three.js (−Y in Blender), clean node names,
 PBR materials only, small textures, Draco compression, a triangle budget (about 20k for a hero model).
 
