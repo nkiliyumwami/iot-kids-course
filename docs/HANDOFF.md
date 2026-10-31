@@ -1,6 +1,6 @@
 # IoT for Young Makers (KundaKode): project handoff for an AI with agents
 
-Written 2026-10-31 at `main` = `9b4fbbf`. This file covers what has been built, where things stand today, what is
+Written 2026-10-31 at `main` = `954e3c4`. This file covers what has been built, where things stand today, what is
 still missing, and a suggested way to split the remaining work across agents. If anything here disagrees with the
 repository, the repository is right, so check before you act.
 
@@ -50,6 +50,7 @@ repository, the repository is right, so check before you act.
 | Oct 18–27 | **Nine sensor modules** were built (they unlock after lesson 7, in any order): `m-servo`, `m-parking-gate`, `m-thirsty-plant`, `m-rain-roof`, `m-door`, `m-joystick`, `m-too-hot`, `m-touch-fence`, `m-radar`. |
 | Oct 20–21 | Assets for the Lesson 0 promo or teaching video (`video/lesson-00/`): 12 4K clips, 3 code clips and stills, plus an editor-ready package. |
 | Oct 28 | The landing-page project cards now link to their modules and back again, and the kit panel was updated. |
+| Oct 29–31 | The daily workflow added troubleshooting cards to lessons 6, 7 and 5 (#82, #83, #94). |
 | Oct 31 | **The 3D in all seven "Pick a sensor" modules was upgraded with Blender scenes** (PRs #86–#92, one porch/kitchen/garden/yard/desk scene per module, plus shared `tools/blender/parts.py`). **A Breadboard step and a 🧩 Breadboard tab were added to all nine modules** (PR #93: `assets/breadboard-view.js` plus `tools/blender/proto.py`). Everything is merged and live. |
 
 ---
@@ -110,7 +111,7 @@ repository, the repository is right, so check before you act.
    on the canvas. They need keyboard and ARIA equivalents.
 
 ### C. Course content gaps
-1. "Check these, in order" troubleshooting cards for **lessons 1–5** (lessons 6–10 already have them).
+1. "Check these, in order" troubleshooting cards for **lessons 1–4** (lessons 5–10 already have them; the daily workflow is adding them one a day).
 2. **Landing-story chapters for lessons 5–10.** The story only covers 0–4.
 3. **Narration** for lessons 1–10, the nine modules and the Circuit Challenge Lab. Only the story, Lesson 0 and the
    labs are recorded. ElevenLabs costs money, so **ask the owner first**.
@@ -181,7 +182,7 @@ each one its own git worktree and branch.
 | Agent | Mission | Owns or edits | Inputs → outputs | Tools | Can run in parallel? |
 |---|---|---|---|---|---|
 | **0. Orchestrator / release manager** | Picks backlog items, assigns them, merges approved PRs in order (merging `main` into each branch first, keeping both ROADMAP lines), watches the Pages deploy | `ROADMAP.md` merges only | Backlog → PR queue, release notes | `gh`, git | Always on |
-| **1. Lesson and module author** | Builds or improves lesson pages: troubleshooting cards for lessons 1–5, the lesson 6 ADC text fix, new swap boxes, new modules from `_module-template` | `lessons/<one slug>/` | A backlog item → a PR plus screenshots | Editor, Playwright | Yes, one agent per lesson folder |
+| **1. Lesson and module author** | Builds or improves lesson pages: troubleshooting cards for lessons 1–4, the lesson 6 ADC text fix, new swap boxes, new modules from `_module-template` | `lessons/<one slug>/` | A backlog item → a PR plus screenshots | Editor, Playwright | Yes, one agent per lesson folder |
 | **2. Pedagogy reviewer** (read-only) | Reviews every content PR against `AGENT.md`: one idea, a "Why?" everywhere, age-appropriate words, correct MicroPython, the safety list | Nothing (comments only) | PR → review | Read, `gh pr review` | Yes |
 | **3. Electronics / wiring verifier** (read-only) | Checks pins, power, resistor values, breadboard hole maps (`MODULE.proto` specs) and code against ESP32/MicroPython documentation, then produces the **real-board test sheet** for the human | Writes only test checklists (`docs/tests/`) | Module → hole-by-hole checklist, findings | Read, web docs | Yes |
 | **4. 3D asset builder** | Improves or creates Blender-scripted models (cars #29, the characters #61/#62 if approved, story chapters for 5–10), shrinks GLBs, keeps triangle budgets | `tools/blender/<own script>.py`, its GLB | Brief → GLB plus renders | Blender CLI / Blender MCP | Yes, one per script. **`parts.py` and `proto.py` are serial only** |
@@ -194,7 +195,7 @@ each one its own git worktree and branch.
 
 ### A suggested first wave (no file overlaps)
 1. **QA agent:** fix `tools/check.sh` and add `tools/smoke-all.mjs`. Every other agent depends on this.
-2. **Author agent:** the lesson 6 ADC text fix, then troubleshooting cards for lessons 1–5 (one PR each).
+2. **Author agent:** the lesson 6 ADC text fix, then troubleshooting cards for lessons 1–4 if the daily workflow hasn't done them yet (one PR each).
 3. **Wiring verifier:** a printable real-board test sheet for all nine modules' breadboard layouts. Then hand it to
    the owner (the human does the testing).
 4. **Accessibility agent:** reduced motion in Lab 1, then a keyboard path through `kit3d.js`.
