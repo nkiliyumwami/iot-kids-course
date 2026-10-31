@@ -284,6 +284,12 @@ pre.code .dim { color: #7F98A6; }
 .sl2 input#g6near { accent-color: var(--sonar); }
 .deskshell { margin-top: 6px; }
 @media (max-width: 440px) { .meas { font-size: 13px; } .meas td { font-size: 12.5px; } .view .readout { top: 40px; } }
+.proto-box { margin-top: 14px; border-top: 2px dashed var(--line); padding-top: 10px; }
+.proto-place { margin: 0 0 10px; padding-left: 22px; display: grid; gap: 6px; font-size: 15px; }
+.proto-wires { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 6px; }
+.proto-wires li { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 10px; align-items: center; font-size: 15px; }
+.proto-wires i { width: 14px; height: 14px; border-radius: 4px; display: block; }
+.proto-tip { font-size: 14px; color: var(--muted, #50606c); }
 </style>
 </head>
 <body>
@@ -306,6 +312,7 @@ pre.code .dim { color: #7F98A6; }
     <div class="tabs" role="tablist">
       <button type="button" role="tab" id="tabGate" aria-selected="true" aria-controls="viewGate">🚗 The gate</button>
       <button type="button" role="tab" id="tabWire" aria-selected="false" aria-controls="viewWire">🔧 The wiring</button>
+      <button type="button" role="tab" id="tabProto" aria-selected="false" aria-controls="viewProto">🧩 Breadboard</button>
       <span class="sp"></span>
       <button type="button" class="btn ghost mini" id="resetView">⟲ Reset view</button>
     </div>
@@ -321,6 +328,11 @@ pre.code .dim { color: #7F98A6; }
       <div class="labels" id="wireLabels"></div>
       <span class="tag" id="wireTag">Your desk: ESP32, distance sensor, servo and a 5 V supply</span>
       <span class="hint">Drag to turn · pinch or scroll to zoom · tap a pin</span>
+    </div>
+    <div class="view" id="viewProto" role="tabpanel" aria-labelledby="tabProto" hidden>
+      <div class="msg">Loading the breadboard…</div>
+      <span class="tag">Prototype: the same circuit on two breadboards</span>
+      <span class="hint">Drag to turn · pinch or scroll to zoom</span>
     </div>
     <div class="controls" id="controls">
       <div class="row" id="distRow" hidden>
@@ -370,6 +382,7 @@ pre.code .dim { color: #7F98A6; }
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
+<script src="../../assets/breadboard-view.js"></script>
 <script src="../../course.js"></script>
 <script src="../../assets/ohm/ohm.js"></script>
 <script src="../../assets/rewards.js"></script>
@@ -1031,7 +1044,39 @@ while True:
       <details class="more"><summary>🧪 What if my sensor is a plain 5 V HC-SR04?</summary>
         <p>Its ECHO answers with 5 V, too much for an ESP32 pin. Two resistors make a ${W('divider', 'voltage divider')} that shares the 5 V like a pipe split into a short and a long piece: <b>1 kΩ</b> from ECHO to D21, and <b>2 kΩ</b> from D21 down to GND. D21 then gets 5 × 2 ÷ 3 ≈ <b>3.3 V</b>.</p>
         <svg viewBox="0 0 360 120" class="divsvg" role="img" aria-label="ECHO, then 1 kilo-ohm to D21, then 2 kilo-ohm to GND">${dividerSvg(1, 2)}</svg>
-        <p class="note">Check what your module really is: its label or the shop listing. If you aren’t sure, use the divider, and ask an adult to measure ECHO with a multimeter. The plain HC-SR04 also needs its VCC on 5 V.</p></details></div>`;
+        <p class="note">Check what your module really is: its label or the shop listing. If you aren’t sure, use the divider, and ask an adult to measure ECHO with a multimeter. The plain HC-SR04 also needs its VCC on 5 V.</p></details>
+      <div class="proto-box" id="protoCard"><h3>🧩 Breadboard: build it to keep</h3>
+        <p>When it works, build the same circuit on breadboards, so nothing hangs loose (tap <b>🧩 Breadboard</b> above the 3D to see it). You need two half-size breadboards and male–male jumper wires. The pins and the program stay the same.</p>
+        <ol class="proto-place" id="protoPlace"></ol><p>Then add these wires (unplug the USB cable first):</p><ul class="proto-wires" id="protoWires"></ul>
+        <p class="proto-tip">Each numbered column has two strips of 5 holes: <b>a–e</b> and <b>f–j</b>. Holes in one strip are joined underneath, so a wire in <b>c2</b> touches the pin in <b>a2</b>. The long <b>+</b> and <b>−</b> rails along the edges share power with every part.</p>
+        <p class="proto-tip" id="protoNote"></p></div></div>`;
+  const PROTO = {
+    parts: [
+      { id: 'hc', glb: 'hc-sr04p', name: 'sensor', label: 'HC-SR04P', color: '#1f5fbf', board: 'front', row: 'e', pins: { VCC: 23, TRIG: 24, ECHO: 25, GND: 26 }, stand: true,
+        place: 'Push the <b>HC-SR04P</b> into the front board, its two “eyes” facing you: VCC in <b>e23</b>, TRIG in <b>e24</b>, ECHO in <b>e25</b>, GND in <b>e26</b>.' },
+      { id: 'servo', glb: 'sg90-servo', name: 'servo', label: 'SG90 servo', color: '#2a63c9', desk: { x: 46, z: -124, y: 4 }, hide: ['Hand'],
+        pinNames: { Signal: 'orange', Power: 'red', Ground: 'brown' },
+        place: 'Stand the <b>servo</b> behind, its cable on the desk. Push one end of each male–male jumper into its plug.' },
+    ],
+    wires: [
+      { c: '#E03A3A', from: { esp: '3V3' }, to: { rail: 'front+' }, label: '3V3' },
+      { c: '#2B2B2B', from: { esp: 'GND', side: 'R' }, to: { rail: 'front-' }, label: 'GND' },
+      { c: '#E03A3A', from: { part: 'hc', pin: 'VCC' }, to: { rail: 'front+' } },
+      { c: '#2B2B2B', from: { part: 'hc', pin: 'GND' }, to: { rail: 'front-' } },
+      { c: '#2F7DE1', from: { esp: 'D19' }, to: { part: 'hc', pin: 'TRIG' }, label: 'D19 · TRIG' },
+      { c: '#18A558', from: { esp: 'D21' }, to: { part: 'hc', pin: 'ECHO' }, label: 'D21 · ECHO' },
+      { c: '#F08A24', from: { esp: 'D18' }, to: { part: 'servo', pin: 'Signal' }, label: 'D18 · signal' },
+      { c: '#C1272D', from: { esp: 'VIN' }, to: { part: 'servo', pin: 'Power' }, label: 'VIN · quick test' },
+      { c: '#6B4226', from: { esp: 'GND', side: 'L' }, to: { part: 'servo', pin: 'Ground' }, label: 'GND' },
+    ],
+    note: 'With the separate 5 V supply (recommended): put its <b>+</b> in the back board’s red + rail and its <b>−</b> in the blue − rail, move the servo’s red wire from VIN to the + rail, and add a wire from the − rail to the ESP32 GND strip (back h3), so the grounds join.',
+  };
+  if (window.Breadboard) {
+    const pb = Breadboard.steps(PROTO);
+    P('m3').querySelector('#protoPlace').innerHTML = pb.place.map((x) => `<li>${x}</li>`).join('');
+    P('m3').querySelector('#protoWires').innerHTML = pb.wires.map((w) => `<li><i style="background:${w.c}"></i><span>${w.html}</span></li>`).join('');
+    if (PROTO.note) P('m3').querySelector('#protoNote').innerHTML = PROTO.note;
+  }
   function dividerSvg(top, bottom) {
     const v = 5 * bottom / (top + bottom);
     const k = (x) => (x >= 1 ? x + ' kΩ' : x * 1000 + ' Ω');
@@ -2447,16 +2492,18 @@ while True:
   }
 
   /* ================= 14. Tabs, start-up ================= */
+  let protoView = null;
   function showTab(which) {
-    const g = which === 'gate';
-    $('tabGate').setAttribute('aria-selected', String(g)); $('tabWire').setAttribute('aria-selected', String(!g));
-    $('viewGate').hidden = !g; $('viewWire').hidden = g;
+    [['gate', 'tabGate', 'viewGate'], ['wire', 'tabWire', 'viewWire'], ['proto', 'tabProto', 'viewProto']].forEach(([k, tb, vw]) => { $(tb).setAttribute('aria-selected', String(k === which)); $(vw).hidden = k !== which; });
     if (!hasGL) return;
-    if (!g && !wireView) buildWireView();
-    if (gateView) gateView.show(g);
-    if (wireView) wireView.show(!g);
+    if (which === 'wire' && !wireView) buildWireView();
+    if (which === 'proto' && !protoView && window.Breadboard) protoView = Breadboard.build($('viewProto'), PROTO, { base: '../../', lib: LIB });
+    if (gateView) gateView.show(which === 'gate');
+    if (wireView) wireView.show(which === 'wire');
+    if (protoView) protoView.show(which === 'proto');
   }
   $('tabGate').addEventListener('click', () => { showTab('gate'); $('controls').hidden = false; });
+  $('tabProto').addEventListener('click', () => { showTab('proto'); $('controls').hidden = true; });
   $('tabWire').addEventListener('click', () => { showTab('wire'); $('controls').hidden = true; if (!wiringShown) { wiringShown = 'learner'; drawWiring(S.wiring); } });
   $('resetView').addEventListener('click', () => { if ($('viewGate').hidden) { if (wireView && wireView.home) { wireView.still(); wireView.home(); wireView.controls.update(); } } else setCamera(curCam); });
 
@@ -2468,7 +2515,7 @@ while True:
   window.__lesson = { goTo: go, state: S, sim: SIM, geom: G, readProgram, decide, checkWiring, connect, curWire, showSub, steps: STEPS, faults: FAULTS, scenario, setMode, ping, desk: DS,
     views: () => ({ gate: gateView, wire: wireView, pads, sensorPins, socks }) };
   if (hasGL) buildGate();
-  else { $('gateMsg').textContent = 'The 3D scene needs an internet connection. Everything else on this page still works.'; $('wireMsg').textContent = $('gateMsg').textContent; }
+  else { $('gateMsg').textContent = 'The 3D scene needs an internet connection. Everything else on this page still works.'; $('wireMsg').textContent = $('gateMsg').textContent; $('viewProto').querySelector('.msg').textContent = $('gateMsg').textContent; }
   refreshAll();
   maybeFinish();
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => go(S.step)); else go(S.step);

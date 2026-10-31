@@ -30,6 +30,8 @@ Each module's story scene has its own script (run the same way, `-- out/<name>.g
 | `porch.py` | `front-porch.glb` | Who's at the Door?: front porch at night, the IR sensor and buzzer by the door |
 | `washing.py` | `rain-yard.glb` | Rain, Rain, Go Away: house, washing line, sliding roof, raindrop sensor |
 
+`proto.py` builds the "Breadboard" tab's parts (`-- out/ [names...]`): `proto-board` (a 400-point half-size breadboard; holes, letters and rails are a texture, grid documented in the script), `proto-buzzer`, `proto-led` (recolour its `Lens`) and `proto-resistor`, each with `Pin_*` empties at the leg tips. `assets/breadboard-view.js` lays them out with the ESP32 across two boards from a short spec in each module page (`MODULE.proto` or `PROTO`).
+
 Rules every model follows: metres, Y up and front facing +Z in three.js (−Y in Blender), clean node names,
 PBR materials only, small textures, Draco compression, a triangle budget (about 20k for a hero model).
 

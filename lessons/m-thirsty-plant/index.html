@@ -64,6 +64,8 @@ main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); g
 .parts .new { display: inline-block; font-size: 11.5px; font-weight: 800; background: #FFF1C2; color: #7A5400; border-radius: 99px; padding: 0 8px; margin-left: 4px; vertical-align: 1px; }
 .wires { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 6px; }
 .wires li { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 10px; align-items: center; font-size: 15px; }
+.proto-place { margin: 0 0 10px; padding-left: 22px; display: grid; gap: 6px; font-size: 15px; }
+.proto-tip { font-size: 14px; color: var(--muted, #50606c); }
 .wires i { width: 14px; height: 14px; border-radius: 4px; display: block; }
 .why { display: grid; gap: 6px; margin-top: 8px; }
 .why-item button { width: 100%; text-align: left; font: inherit; font-weight: 800; color: var(--accent-strong); background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 7px 12px; cursor: pointer; }
@@ -135,6 +137,7 @@ main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); g
     <div class="tabs" role="tablist">
       <button type="button" role="tab" id="tabPlace" aria-selected="true" aria-controls="viewPlace">🌱 The garden</button>
       <button type="button" role="tab" id="tabWire" aria-selected="false" aria-controls="viewWire">🔧 The wiring</button>
+      <button type="button" role="tab" id="tabProto" aria-selected="false" aria-controls="viewProto">🧩 Breadboard</button>
     </div>
     <div class="view" id="viewPlace" role="tabpanel" aria-labelledby="tabPlace">
       <div class="msg" id="placeMsg">Loading the 3D garden…</div>
@@ -145,6 +148,11 @@ main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); g
     <div class="view" id="viewWire" role="tabpanel" aria-labelledby="tabWire" hidden>
       <div class="msg" id="wireMsg">Loading the wiring…</div>
       <span class="tag">Your desk: the probe, the LED and the ESP32</span>
+      <span class="hint">Drag to turn · pinch or scroll to zoom</span>
+    </div>
+    <div class="view" id="viewProto" role="tabpanel" aria-labelledby="tabProto" hidden>
+      <div class="msg">Loading the breadboard…</div>
+      <span class="tag">Prototype: the same circuit on two breadboards</span>
       <span class="hint">Drag to turn · pinch or scroll to zoom</span>
     </div>
     <p class="note">The 3D scene is an educational animation, not a safety test. Ask an adult to check your real circuit before you plug it in.</p>
@@ -173,8 +181,17 @@ main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); g
       <div class="why" id="wireWhy"></div>
     </article>
 
-    <article class="card" data-part="3">
-      <h2><span class="n">4</span> The program</h2>
+    <article class="card" data-part="3" id="protoCard">
+      <h2><span class="n">4</span> Breadboard</h2>
+      <p>Ready to build it to keep? Here is the same circuit on breadboards, so nothing hangs loose (tap <b>🧩 Breadboard</b> to see it in 3D). You need two half-size breadboards and male–male jumper wires. The pins and the program stay the same.</p>
+      <ol class="proto-place" id="protoPlace"></ol>
+      <p>Then add these wires (unplug the USB cable first):</p>
+      <ul class="wires" id="protoWires"></ul>
+      <p class="proto-tip">Each numbered column has two strips of 5 holes: <b>a–e</b> and <b>f–j</b>. Holes in one strip are joined underneath, so a wire in <b>c2</b> touches the pin in <b>a2</b>. The long <b>+</b> and <b>−</b> rails along the edges share power with every part.</p>
+    </article>
+
+    <article class="card" data-part="4">
+      <h2><span class="n">5</span> The program</h2>
       <p id="codeIntro"></p>
       <section id="codePanel" aria-label="Your MicroPython program"></section>
       <div class="why" id="codeWhy"></div>
@@ -190,13 +207,13 @@ main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); g
       <div class="swap" id="swap"></div>
     </article>
 
-    <article class="card" data-part="4">
-      <h2><span class="n">5</span> Three challenges</h2>
+    <article class="card" data-part="5">
+      <h2><span class="n">6</span> Three challenges</h2>
       <ol class="challenges" id="challenges"></ol>
     </article>
 
-    <article class="card" data-part="5">
-      <h2><span class="n">6</span> Quick quiz</h2>
+    <article class="card" data-part="6">
+      <h2><span class="n">7</span> Quick quiz</h2>
       <div id="quiz"></div>
     </article>
   </div>
@@ -207,6 +224,7 @@ main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); g
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
+<script src="../../assets/breadboard-view.js"></script>
 <script src="../../course.js"></script>
 <script src="../../assets/ohm/ohm.js"></script>
 <script src="../../assets/rewards.js"></script>
@@ -225,6 +243,7 @@ main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); g
       { ic: '💡', name: 'One red LED + a 330 Ω resistor', why: 'The “water me!” light, the same pair as in Lesson 1. The resistor protects the LED and the pin.' },
       { ic: '🟩', name: 'A small breadboard', why: 'Holds the resistor and the LED, just like in Lesson 1.' },
       { ic: '🧵', name: 'Jumper wires', why: '<b>Female–female</b> wires for the probe (they plug onto its pins and onto the ESP32’s header pins). <b>Female–male</b> wires from the ESP32 to the breadboard.' },
+      { ic: '🧩', name: 'Two half-size breadboards + male–male jumper wires', why: 'For the Breadboard build: the circuit sits firmly on the breadboards instead of hanging on loose wires. Two are needed because the ESP32 is too wide for one.' },
     ],
     wires: [
       { c: '#F08A24', text: 'Probe <b>VCC</b> → <b>3V3</b>' },
@@ -277,6 +296,27 @@ while True:
       { q: 'You water the plant. What happens to the number from the probe?', opts: ['It gets bigger', 'It gets smaller', 'It stays the same'], right: 1, why: 'More water means a smaller number. That is why the test is <code>moisture &gt; DRY</code>: “bigger than DRY” means too dry.' },
       { q: 'Why does the probe’s signal wire go to D33?', opts: ['D33 can measure a range of voltages and give a number', 'D33 is the only pin that gives power', 'D33 is the same as GND'], right: 0, why: 'D33 is an analog (ADC) pin, so <code>soil.read()</code> returns a number from 0 to 4095 instead of just ON or OFF.' },
     ],
+    // the Breadboard tab and card (assets/breadboard-view.js): the same circuit on two half-size breadboards
+    proto: {
+      parts: [
+        { id: 'probe', glb: 'soil-probe', name: 'soil probe', label: 'Soil probe', color: '#1f5fbf', desk: { x: 58, z: 32, y: 2.8 },
+          place: 'Lay the <b>soil probe</b> on the desk to the right, pins towards the boards (in real life it goes in the pot). Its pins take male–female jumper wires.' },
+        { id: 'r1', glb: 'proto-resistor', pinNames: { A: '', B: '' }, name: 'resistor', board: 'back', row: 'd', pins: { A: 19, B: 23 },
+          place: 'Push the <b>330 Ω resistor</b> into the back board: one leg in <b>d19</b>, the other in <b>d23</b>.' },
+        { id: 'led', glb: 'proto-led', pinNames: { SHORT: 'short leg', LONG: 'long leg' }, name: 'LED', label: 'LED', color: '#c0392b', board: 'back', row: 'b', pins: { SHORT: 22, LONG: 23 }, share: ['LONG'],
+          place: 'Push the <b>LED</b> into the back board: its short leg in <b>b22</b>, its long leg in <b>b23</b> (the same strip as the resistor’s end).' },
+      ],
+      wires: [
+        { c: '#E03A3A', from: { esp: '3V3' }, to: { rail: 'front+' }, label: '3V3' },
+        { c: '#2B2B2B', from: { esp: 'GND', side: 'R' }, to: { rail: 'front-' }, label: 'GND' },
+        { c: '#F08A24', from: { rail: 'front+' }, to: { part: 'probe', pin: 'VCC' }, label: 'probe VCC' },
+        { c: '#2B2B2B', from: { rail: 'front-' }, to: { part: 'probe', pin: 'GND' } },
+        { c: '#8A4FD6', from: { esp: 'D33' }, to: { part: 'probe', pin: 'AOUT' }, label: 'D33 · AOUT' },
+        { c: '#E03A3A', from: { esp: 'D25' }, to: { part: 'r1', pin: 'A' }, label: 'D25 · resistor' },
+        { c: '#6B4226', from: { part: 'led', pin: 'SHORT' }, to: { rail: 'back-' }, label: 'short leg · −' },
+        { c: '#2B2B2B', from: { esp: 'GND', side: 'L' }, to: { rail: 'back-' }, label: 'GND · − rail' },
+      ],
+    },
     wiringOneLine: 'Soil probe: VCC → 3V3, GND → GND (left), AOUT → D33. LED: D25 → 330 Ω resistor → LED long leg; LED short leg → GND (right).',
   };
 
@@ -305,6 +345,11 @@ while True:
   $('story').innerHTML = MODULE.story;
   $('parts').innerHTML = MODULE.parts.map((p) => `<li><span class="ic" aria-hidden="true">${p.ic}</span><span><span class="nm">${p.name}${p.isNew ? '<span class="new">NEW</span>' : ''}</span>${p.why}</span></li>`).join('');
   $('wires').innerHTML = MODULE.wires.map((w) => `<li><i style="background:${w.c}"></i><span>${w.text}</span></li>`).join('');
+  if (window.Breadboard) {
+    const pb = Breadboard.steps(MODULE.proto);
+    $('protoPlace').innerHTML = pb.place.map((s) => `<li>${s}</li>`).join('');
+    $('protoWires').innerHTML = pb.wires.map((w) => `<li><i style="background:${w.c}"></i><span>${w.html}</span></li>`).join('');
+  }
   $('codeIntro').innerHTML = MODULE.codeIntro;
   $('swap').innerHTML = MODULE.swap;
   function whyList(host, list) {
@@ -602,20 +647,22 @@ while True:
   }
 
   // tabs: build each view the first time it is shown
+  let protoView = null;
   function showTab(which) {
-    const place = which === 'place';
-    $('tabPlace').setAttribute('aria-selected', String(place)); $('tabWire').setAttribute('aria-selected', String(!place));
-    $('viewPlace').hidden = !place; $('viewWire').hidden = place;
+    [['place', 'tabPlace', 'viewPlace'], ['wire', 'tabWire', 'viewWire'], ['proto', 'tabProto', 'viewProto']].forEach(([k, tb, vw]) => { $(tb).setAttribute('aria-selected', String(k === which)); $(vw).hidden = k !== which; });
     if (!hasGL) return;
-    if (!place && !wireView) buildWiring();
-    if (placeView) placeView.show(place);
-    if (wireView) wireView.show(!place);
+    if (which === 'wire' && !wireView) buildWiring();
+    if (which === 'proto' && !protoView && window.Breadboard) protoView = Breadboard.build($('viewProto'), MODULE.proto, { base: '../../', lib: LIB });
+    if (placeView) placeView.show(which === 'place');
+    if (wireView) wireView.show(which === 'wire');
+    if (protoView) protoView.show(which === 'proto');
   }
   $('tabPlace').addEventListener('click', () => showTab('place'));
   $('tabWire').addEventListener('click', () => showTab('wire'));
+  $('tabProto').addEventListener('click', () => showTab('proto'));
   window.__module.showTab = showTab;
   if (hasGL) buildPlace();
-  else { $('placeMsg').textContent = 'The 3D scene needs an internet connection. Everything else on this page still works.'; $('wireMsg').textContent = $('placeMsg').textContent; }
+  else { $('placeMsg').textContent = 'The 3D scene needs an internet connection. Everything else on this page still works.'; $('wireMsg').textContent = $('placeMsg').textContent; $('viewProto').querySelector('.msg').textContent = $('placeMsg').textContent; }
 })();
 </script>
 <script src="../../assets/board-link.js"></script>
