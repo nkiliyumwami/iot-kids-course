@@ -2212,6 +2212,12 @@ function renderExtra(s) {
     extra.appendChild(codeCard);
   }
   if (s.why) extra.appendChild(whyCard(s.why()));
+  if (s.title === 'Beep while walkers cross') extra.appendChild(el(`<div class="card"><h4>🔧 No sound, a constant buzz, or an error? Check these, in order</h4><ul class="list">
+      <li><span style="font-size:20px">1️⃣</span><span>Is the buzzer a <b>passive</b> one? An active buzzer makes its own sound and ignores <b>freq()</b>. Check the wire runs D13 → 330 Ω resistor → buzzer <b>+</b> leg, and the other leg → ground rail.</span></li>
+      <li><span style="font-size:20px">2️⃣</span><span>Silent, but the lights work? Wait for <b>red</b>: the beeps only happen in the red part. Check you have <b>PWM(Pin(13))</b> and that <b>duty_u16(32768)</b> comes before the sleep.</span></li>
+      <li><span style="font-size:20px">3️⃣</span><span>A buzz that never stops? The <b>duty_u16(0)</b> line after each beep is missing or in the wrong place, so the buzzer is never switched OFF.</span></li>
+      <li><span style="font-size:20px">4️⃣</span><span>An error about <b>PWM</b>? Check the import line says <b>from machine import Pin, PWM</b>, with a capital PWM.</span></li>
+    </ul><p class="note" style="margin-top:8px">Engineers debug like this too: change one thing at a time and check after each.</p></div>`));
   if (s.extra === 'E1') {
     const row = (key, label, lo, hi, step, val, unit) => `<div class="var-row"><label class="mono" for="s_${key}">${label}</label>
       <div class="slider-row"><input type="range" id="s_${key}" data-k="${key}" min="${lo}" max="${hi}" step="${step}" value="${val}" aria-label="${label}"><span class="slider-val" data-val="${key}">${val}${unit}</span></div></div>`;
