@@ -79,7 +79,7 @@
     { slug: 'm-servo', badge: 'm-servo', title: 'Servo Says Hello', sensor: 'None (an output module)', output: 'SG90 servo', needs: '07-night-mode', uses: [], status: 'ready', minutes: 45,
       idea: 'Meet a motor that turns to the angle you choose: wave hello with a servo arm.',
       skills: ['Powered a servo safely from its own 5 V supply', 'Set a servo angle with a 50 Hz PWM signal', 'Turned a number of degrees into a pulse'] },
-    { slug: 'm-parking-gate', badge: 'm-parking-gate', title: 'The Parking Gate', sensor: 'HC-SR04 distance sensor', output: 'SG90 servo', needs: '07-night-mode', uses: ['m-servo'], status: 'ready', minutes: 45,
+    { slug: 'm-parking-gate', badge: 'm-parking-gate', title: 'The Parking Gate', sensor: 'HC-SR04P distance sensor', output: 'SG90 servo', needs: '07-night-mode', uses: ['m-servo'], status: 'ready', minutes: 60,
       idea: 'A car drives up, the gate lifts. Measure distance with sound and open a servo gate.',
       skills: ['Measured distance with an ultrasonic echo', 'Turned echo time into centimetres', 'Opened a gate when something came close'] },
     { slug: 'm-thirsty-plant', badge: 'm-thirsty-plant', title: 'The Thirsty Plant', sensor: 'Soil moisture probe', output: 'LED', needs: '07-night-mode', uses: [], status: 'ready', minutes: 40,
