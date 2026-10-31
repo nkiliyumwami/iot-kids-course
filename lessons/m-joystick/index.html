@@ -10,7 +10,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <!--
   SENSOR MODULE: Follow My Hand (m-joystick). Built from lessons/_module-template/ (see AGENT.md, "Sensor modules").
-  3D: a code-built desk crane, plus the course ESP32 model with a code-built joystick and SG90 for the wiring.
+  3D: a Blender-made tabletop crane (assets/models/modules/joystick-crane.glb, with the SG90 from Servo Says Hello in its tower)
+  and KY-023 joystick (ky023-joystick.glb) beside the course's ESP32 model; the wiring desk uses the same three models.
 -->
 <style>
 :root {
@@ -188,6 +189,8 @@ main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); g
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
 <script src="../../course.js"></script>
 <script src="../../assets/ohm/ohm.js"></script>
 <script src="../../assets/rewards.js"></script>
@@ -349,7 +352,29 @@ while True:
   window.__module = MODULE;
 
   /* ================= 4. 3D: the place (the crane) and the wiring ================= */
-  const hasGL = !!(window.THREE && THREE.OrbitControls && THREE.GLTFLoader);
+  const hasGL = !!(window.THREE && THREE.OrbitControls && THREE.GLTFLoader && THREE.DRACOLoader);
+  const LIB = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/';
+  function gltfLoader() { const g = new THREE.GLTFLoader(), d = new THREE.DRACOLoader(); d.setDecoderPath(LIB + 'libs/draco/gltf/'); g.setDRACOLoader(d); return g; }
+  function woodTexture(c1, c2, lines) {
+    const cv = document.createElement('canvas'); cv.width = 512; cv.height = 512; const g = cv.getContext('2d');
+    g.fillStyle = c1; g.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < lines; i++) { g.strokeStyle = c2; g.globalAlpha = 0.12 + ((i * 37) % 17) / 90; g.lineWidth = 1 + (i % 3); g.beginPath(); const y = (i * 97) % 512; g.moveTo(0, y); for (let x = 0; x <= 512; x += 32) g.lineTo(x, y + Math.sin(x / 70 + i) * 6); g.stroke(); }
+    const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+  }
+  // the ESP32 model turned so its pins 1 → 15 run along +x with the D23…3V3 header at the back, its underside at y = 0
+  function layBoard(board) {
+    board.updateMatrixWorld(true);
+    const pw = (n) => { const o = board.getObjectByName('pad_' + n); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
+    const L1 = pw('L01_EN'), L15 = pw('L15_VIN'), R1 = pw('R01_GPIO23');
+    if (!L1 || !L15 || !R1) return false;
+    const along = L15.clone().sub(L1).setY(0).normalize(), out = R1.clone().sub(L1).setY(0).normalize();
+    const q = new THREE.Quaternion().setFromUnitVectors(along, new THREE.Vector3(1, 0, 0));
+    if (out.clone().applyQuaternion(q).z > 0) q.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI));
+    board.quaternion.premultiply(q); board.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(board), c = box.getCenter(new THREE.Vector3());
+    board.position.sub(new THREE.Vector3(c.x, box.min.y, c.z)); board.updateMatrixWorld(true);
+    return true;
+  }
   const lin = (hex) => new THREE.Color(hex).convertSRGBToLinear(); // r128: colours are linear, so convert sRGB picks
   function makeView(host, opts) {
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -387,49 +412,69 @@ while True:
     const host = $('viewPlace');
     const v = placeView = makeView(host, { fov: 42, near: 0.1, far: 200 });
     const { renderer, scene, camera, controls } = v;
-    renderer.physicallyCorrectLights = false; renderer.toneMapping = THREE.NoToneMapping; // bright and simple, like the wiring desk
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.physicallyCorrectLights = true;
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    scene.background = new THREE.Color(0xdfe9f0);
-    camera.position.set(0.5, 6.4, 9.6); controls.target.set(0, 0.9, -0.3);
-    controls.maxPolarAngle = Math.PI * 0.49; controls.minDistance = 4; controls.maxDistance = 22;
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xb8c4cc, 0.95));
-    const sun = new THREE.DirectionalLight(0xffffff, 0.75); sun.position.set(-5, 12, 7); sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9, near: 1, far: 40 });
-    sun.shadow.bias = -0.0006; scene.add(sun);
-    const mat = (c, r, o) => new THREE.MeshStandardMaterial(Object.assign({ color: lin(c), roughness: r == null ? 0.7 : r }, o || {}));
-    const add = (geo, m, x, y, z, parent) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = o.receiveShadow = true; (parent || scene).add(o); return o; };
+    scene.background = lin(0xe4ecf2);
+    scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+    const home = () => { const k = Math.max(1, 1.25 / camera.aspect); camera.position.set(0.6, 4.6 * k, 8.4 * k); controls.target.set(0.2, 0.9, 0.2); };
+    home(); host.addEventListener('dblclick', home);
+    controls.maxPolarAngle = Math.PI * 0.47; controls.minDistance = 2.5; controls.maxDistance = 18;
+    scene.add(new THREE.HemisphereLight(lin(0xffffff), lin(0xb8c4cc), 1.1));
+    const sun = new THREE.DirectionalLight(lin(0xffffff), 2.2); sun.position.set(-4, 10, 6); sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -7, right: 7, top: 6, bottom: -6, near: 1, far: 30 });
+    sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02; scene.add(sun);
 
-    // the desk
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), mat(0xc9d4dc, 0.95)); floor.rotation.x = -Math.PI / 2; floor.position.y = -0.6; floor.receiveShadow = true; scene.add(floor);
-    add(new THREE.BoxGeometry(11, 0.5, 7.4), mat(0xd8c3a0, 0.85), 0, -0.25, 0);
-    // two trays, left and right, where the crane drops its load
-    add(new THREE.BoxGeometry(2.2, 0.08, 2.2), mat(0xc93131, 0.6), -3.9, 0.04, -1.4);
-    add(new THREE.BoxGeometry(2.2, 0.08, 2.2), mat(0x16834a, 0.6), 3.9, 0.04, -1.4);
-    // the crane: a base with the servo inside, and an arm that turns around it
-    const BASE = new THREE.Vector3(0, 0, -1.4);
-    add(new THREE.CylinderGeometry(0.75, 0.9, 0.9, 24), mat(0x2a63c9, 0.5), BASE.x, 0.45, BASE.z);
-    add(new THREE.CylinderGeometry(0.28, 0.28, 0.2, 16), mat(0xf4f4f4, 0.5), BASE.x, 1.0, BASE.z);
-    const boom = new THREE.Group(); boom.position.set(BASE.x, 1.2, BASE.z); scene.add(boom);
-    add(new THREE.BoxGeometry(3.9, 0.22, 0.34), mat(0xf2b705, 0.55), 1.85, 0, 0, boom);   // the arm along local +x
-    add(new THREE.BoxGeometry(0.34, 0.34, 0.34), mat(0x15202a, 0.5), 3.9, 0, 0, boom);    // the tip
-    const hook = new THREE.Group(); hook.position.set(3.9, 0, 0); boom.add(hook);
-    add(new THREE.CylinderGeometry(0.02, 0.02, 0.7, 6), mat(0x333333, 0.5), 0, -0.35, 0, hook);
-    add(new THREE.BoxGeometry(0.5, 0.4, 0.5), mat(0xe0524d, 0.6), 0, -0.9, 0, hook);
-    // the joystick on the desk: a base, a ball on a stick that leans left and right
-    const JX = 0, JZ = 2.5;
-    add(new THREE.BoxGeometry(1.9, 0.22, 1.9), mat(0x1f5fbf, 0.5), JX, 0.11, JZ);
-    add(new THREE.CylinderGeometry(0.55, 0.65, 0.18, 24), mat(0x222a33, 0.5), JX, 0.31, JZ);
-    const stick = new THREE.Group(); stick.position.set(JX, 0.4, JZ); scene.add(stick);
-    add(new THREE.CylinderGeometry(0.09, 0.09, 0.9, 12), mat(0x333333, 0.4), 0, 0.45, 0, stick);
-    add(new THREE.SphereGeometry(0.3, 18, 12), mat(0xc93131, 0.4), 0, 1.0, 0, stick);
-    const sprite = (text, color, x, y, z) => {
+    // the desk: a wooden top big enough to fill the view, and a soft wall behind it (1 unit = 40 mm)
+    const wood = woodTexture('#d8c3a0', '#9b7a4f', 60); wood.repeat.set(2, 1.2);
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(26, 0.5, 14), new THREE.MeshStandardMaterial({ map: wood, roughness: 0.8 }));
+    desk.position.set(0, -0.25, -1); desk.receiveShadow = true; scene.add(desk);
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(40, 16), new THREE.MeshStandardMaterial({ color: lin(0xdfe8ee), roughness: 0.95 }));
+    wall.position.set(0, 7, -8); scene.add(wall);
+
+    // the crane, the joystick and the ESP32: three Blender models at their real sizes
+    const U = 1000 / 40; // the models are in metres; the scene counts 40 mm as 1 unit
+    let boom = null, stick = null;
+    const shadows = (root) => root.traverse((o) => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; } });
+    const sm = (c, r) => new THREE.MeshStandardMaterial({ color: lin(c), roughness: r == null ? 0.45 : r });
+    const jumper = (a, b, color, h) => {
+      const mid = a.clone().lerp(b, 0.5); mid.y = Math.max(a.y, b.y) + h;
+      const curve = new THREE.CatmullRomCurve3([a, a.clone().setY(a.y + h * 0.5), mid, b.clone().setY(b.y + h * 0.5), b]);
+      const m = new THREE.Mesh(new THREE.TubeGeometry(curve, 40, 0.035, 8, false), sm(color)); m.castShadow = true; scene.add(m);
+    };
+    const sprite = (text, color, x, y, z, k = 1) => {
       const cv = document.createElement('canvas'); cv.width = 320; cv.height = 64;
       const g = cv.getContext('2d'); g.fillStyle = color; g.beginPath(); if (g.roundRect) g.roundRect(4, 8, 312, 48, 14); else g.rect(4, 8, 312, 48); g.fill();
       g.fillStyle = '#fff'; g.font = 'bold 28px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 160, 33);
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false })); sp.scale.set(2.2, 0.44, 1); sp.position.set(x, y, z); sp.renderOrder = 10; scene.add(sp);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false, toneMapped: false })); sp.scale.set(2.0 * k, 0.4 * k, 1); sp.position.set(x, y, z); sp.renderOrder = 10; scene.add(sp);
     };
-    sprite('Joystick', '#1f5fbf', JX, 2.0, JZ); sprite('Crane arm (servo)', '#2a63c9', 0, 2.3, BASE.z);
-    sprite('Left · 0°', '#C93131', -3.9, 0.8, -1.4); sprite('Right · 180°', '#16834A', 3.9, 0.8, -1.4);
+    gltfLoader().load('../../assets/models/modules/joystick-crane.glb', (gc) => {
+      const crane = gc.scene; crane.scale.setScalar(U); shadows(crane); scene.add(crane); crane.updateMatrixWorld(true);
+      boom = crane.getObjectByName('Boom');
+      const at = (n) => crane.getObjectByName(n).getWorldPosition(new THREE.Vector3());
+      const JM = at('Joystick_Mount'), EM = at('ESP32_Mount'), socks = ['Sock_Signal', 'Sock_Power', 'Sock_Ground'].map(at);
+      const pivot = boom.getWorldPosition(new THREE.Vector3());
+      sprite('Crane arm (servo)', '#2a63c9', pivot.x + 0.9, 3.35, pivot.z);
+      sprite('Left · 0°', '#C93131', -3.9, 1.0, pivot.z + 0.2); sprite('Right · 180°', '#16834A', 3.9, 1.0, pivot.z + 0.2);
+      if (update) update(0);
+      gltfLoader().load('../../assets/models/modules/ky023-joystick.glb', (gj) => {
+        const joy = gj.scene; joy.scale.setScalar(U); joy.position.copy(JM); shadows(joy); scene.add(joy); joy.updateMatrixWorld(true);
+        stick = joy.getObjectByName('Stick');
+        sprite('Joystick', '#1f5fbf', JM.x, 1.55, JM.z, 0.7);
+        const pin = (n) => joy.getObjectByName('Pin_' + n).getWorldPosition(new THREE.Vector3());
+        new THREE.GLTFLoader().load('../../assets/models/esp32-devkit-v1.glb', (ge) => {
+          const board = ge.scene; board.scale.setScalar(U); scene.add(board);
+          if (!layBoard(board)) return;
+          board.position.add(EM); shadows(board); board.updateMatrixWorld(true);
+          const pad = (n) => { const o = board.getObjectByName('pad_' + n); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
+          // the same six jumpers as on the wiring desk
+          [[pin('GND'), pad('R14_GND'), '#2B2B2B'], [pin('5V'), pad('R15_3V3'), '#E03A3A'], [pin('VRx'), pad('L05_GPIO35'), '#8A4FD3'],
+           [socks[0], pad('R07_GPIO18'), '#F08A24'], [socks[1], pad('L15_VIN'), '#C1272D'], [socks[2], pad('L14_GND'), '#6B4226']]
+            .forEach(([a, b, c], i) => { if (a && b) jumper(a, b, c, 0.35 + (i % 3) * 0.12); });
+          sprite('ESP32', '#15202A', EM.x, 0.75, EM.z + 0.75, 0.7);
+        });
+      });
+      const msg = $('placeMsg'); if (msg) msg.remove();
+    }, undefined, () => { $('placeMsg').textContent = 'The 3D crane could not load. Please reload the page.'; });
 
     // controls: a slider to steer by hand, and a button that switches between the jumpy and the smooth program
     const S = { t: 0, mode: 'auto', smooth: false, x: 2048, angle: 90 };
@@ -451,28 +496,28 @@ while True:
       const target = S.smooth ? Math.floor(S.x * 180 / 4095) : (S.x < MIDDLE ? 0 : 180); // arm(x * 180 // 4095), or if / else
       const step = 260 * dt; // a servo needs a moment to turn
       S.angle += Math.max(-step, Math.min(step, target - S.angle));
-      boom.rotation.y = Math.PI - S.angle * Math.PI / 180;
-      stick.rotation.z = -(S.x / 4095 - 0.5) * 0.9;
+      if (boom) boom.rotation.y = Math.PI - S.angle * Math.PI / 180;
+      if (stick) stick.rotation.z = -(S.x / 4095 - 0.5) * 0.6; // a real thumb stick leans about 17° each way
       if (readout) readout.textContent = S.smooth ? `x = ${S.x}\narm(${S.x} * 180 // 4095)\n  = arm(${target})` : `x = ${S.x}\n${S.x < MIDDLE ? 'if → arm(0)' : 'else → arm(180)'}`;
     }
     v.tick = update;
     // grabbing the slider takes over from the demo; a tap on the 3D scene's reset starts the demo again
     host.addEventListener('dblclick', () => { S.mode = 'auto'; });
     if (/^#t\d+/.test(location.hash)) { const T = parseFloat(location.hash.slice(2)); for (let q = 0; q < T / 0.02; q++) update(0.02); }
-    $('placeMsg').remove();
   }
 
   function buildWiring() {
     const host = $('viewWire');
     const v = wireView = makeView(host, { fov: 36, near: 1, far: 3000 });
     const { renderer, scene, camera, controls } = v;
-    renderer.physicallyCorrectLights = false; // a bright desk, like the other lessons
-    renderer.toneMapping = THREE.NoToneMapping;
-    scene.background = new THREE.Color(0xf3f7fa);
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xb8c4cc, 0.9));
-    const key = new THREE.DirectionalLight(0xffffff, 0.8); key.position.set(40, 120, 70); scene.add(key);
-    const desk = new THREE.Mesh(new THREE.BoxGeometry(260, 4, 170), new THREE.MeshStandardMaterial({ color: 0xd8c3a0, roughness: 0.9 }));
-    desk.position.y = -6; scene.add(desk);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.physicallyCorrectLights = true; // lit like the Parking Gate desk
+    scene.background = lin(0xf0f4f7);
+    scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+    scene.add(new THREE.HemisphereLight(lin(0xffffff), lin(0xb8c4cc), 1.0));
+    const key = new THREE.DirectionalLight(lin(0xffffff), 1.6); key.position.set(60, 200, 120); scene.add(key);
+    const wood = woodTexture('#d8c3a0', '#9b7a4f', 50); wood.repeat.set(1.4, 1);
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(700, 8, 420), new THREE.MeshStandardMaterial({ map: wood, roughness: 0.85 }));
+    desk.position.y = -8; scene.add(desk);
     controls.minDistance = 40; controls.maxDistance = 420; controls.maxPolarAngle = Math.PI * 0.48;
     const label = (text, color) => {
       const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
@@ -480,12 +525,20 @@ while True:
       if (g.roundRect) g.roundRect(4, 8, 248, 48, 14); else g.rect(4, 8, 248, 48);
       g.fill();
       g.fillStyle = '#fff'; g.font = 'bold 30px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 128, 33);
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false }));
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false, toneMapped: false }));
       sp.scale.set(20, 5, 1); sp.renderOrder = 10; return sp;
     };
     const mat = (c, r) => new THREE.MeshStandardMaterial({ color: lin(c), roughness: r == null ? 0.6 : r });
-    new THREE.GLTFLoader().load('../../assets/models/esp32-devkit-v1.glb', (gltf) => {
-      const board = gltf.scene; board.scale.setScalar(1000); scene.add(board); board.updateMatrixWorld(true);
+    const models = {};
+    const got = (k) => (g) => { models[k] = g ? g.scene : null; if ('board' in models && 'joy' in models && 'servo' in models) lay(); };
+    const fail = () => { $('wireMsg').textContent = 'The board model could not load. Please reload the page.'; };
+    new THREE.GLTFLoader().load('../../assets/models/esp32-devkit-v1.glb', got('board'), undefined, fail);
+    gltfLoader().load('../../assets/models/modules/ky023-joystick.glb', got('joy'), undefined, () => got('joy')(null));
+    gltfLoader().load('../../assets/models/modules/sg90-servo.glb', got('servo'), undefined, () => got('servo')(null));
+    function lay() {
+      const board = models.board; board.scale.setScalar(1000); scene.add(board); board.updateMatrixWorld(true);
+      const deskTop = desk.position.y + 4;
+      board.position.y += deskTop + 3 - new THREE.Box3().setFromObject(board).min.y; board.updateMatrixWorld(true); // the board's pins rest on the desk
       const pad = (name) => { const o = board.getObjectByName('pad_' + name); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
       const box = new THREE.Box3().setFromObject(board), mid = box.getCenter(new THREE.Vector3());
       const L1 = pad('L01_EN'), L15 = pad('L15_VIN'), R1 = pad('R01_GPIO23'), R15 = pad('R15_3V3');
@@ -495,33 +548,35 @@ while True:
       const along = L15.clone().sub(L1).setY(0).normalize(); // down the headers, from pin 1 to pin 15
       const top = box.max.y;
       // joystick module beside the R header (3V3, GND), its VRx wire crossing to D35; servo beside the L header (VIN, GND) with its signal to D18
-      const sensor = new THREE.Group();
-      sensor.add(new THREE.Mesh(new THREE.BoxGeometry(34, 1.6, 26), mat(0x1f5fbf)));
-      const well = new THREE.Mesh(new THREE.CylinderGeometry(7, 8, 4, 24), mat(0x222a33, 0.5)); well.position.set(2, 2.8, 1); sensor.add(well);
-      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, 9, 12), mat(0x333333, 0.4)); shaft.position.set(2, 8, 1); sensor.add(shaft);
-      const cap = new THREE.Mesh(new THREE.SphereGeometry(4.2, 16, 12), mat(0xc93131, 0.4)); cap.position.set(2, 13.5, 1); sensor.add(cap);
-      const sPins = ['GND', '+5V', 'VRx', 'VRy', 'SW'].map((n, i) => { const p = new THREE.Mesh(new THREE.BoxGeometry(0.8, 8, 0.8), mat(0xd4af37, 0.3)); p.position.set(-6.5 + i * 2.54, 0, -11.2); sensor.add(p); return p; });
-      sensor.position.copy(pad('R06_GPIO19')).addScaledVector(out, 52).setY(top + 4);
-      sensor.lookAt(sensor.position.clone().add(out)); sensor.rotateY(-Math.PI / 2); // pins face the board
-      scene.add(sensor);
-      const servo = new THREE.Group();
-      const body = new THREE.Mesh(new THREE.BoxGeometry(23, 22, 12.5), mat(0x2a63c9)); servo.add(body);
-      const tabs = new THREE.Mesh(new THREE.BoxGeometry(32, 2.5, 12.5), mat(0x2a63c9)); tabs.position.y = 6; servo.add(tabs);
-      const hub = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 4, 20), mat(0xf4f4f4)); hub.position.set(5.5, 13, 0); servo.add(hub);
-      const horn = new THREE.Mesh(new THREE.BoxGeometry(22, 1.6, 4), mat(0xf4f4f4)); horn.position.set(5.5, 15, 0); servo.add(horn);
-      servo.position.copy(L15).addScaledVector(out, -55).setY(top + 6);
-      servo.lookAt(servo.position.clone().add(along)); servo.rotateY(Math.PI / 2);
-      scene.add(servo);
+      // the KY-023 beside the R header, its pins facing the board; the SG90 in its plywood bracket beside the L header, facing you
+      const sensor = models.joy || new THREE.Group();
+      sensor.scale.setScalar(1000);
+      sensor.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), out);
+      sensor.position.copy(pad('R06_GPIO19')).addScaledVector(out, 52).setY(deskTop + 6);
+      scene.add(sensor); sensor.updateMatrixWorld(true);
+      const sPins = ['GND', '5V', 'VRx'].map((n) => sensor.getObjectByName('Pin_' + n));
+      const servo = models.servo || new THREE.Group();
+      servo.scale.setScalar(1000);
+      // no plywood bracket on the desk (like the Parking Gate): the servo stands on a wooden block, its own cable and plug on the desk
+      ['Hand', 'Stand'].forEach((n) => { const o = servo.getObjectByName(n); if (o) o.visible = false; });
+      servo.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), along);
+      servo.position.copy(L15).addScaledVector(out, -58).addScaledVector(along, -6).setY(deskTop);
+      scene.add(servo); servo.updateMatrixWorld(true);
+      const block = new THREE.Mesh(new THREE.BoxGeometry(40, 23.8, 10), new THREE.MeshStandardMaterial({ map: woodTexture('#c9a46e', '#8a6538', 24), roughness: 0.8 }));
+      block.quaternion.copy(servo.quaternion); // the block sits behind the cable, under the case
+      block.position.copy(servo.position).add(new THREE.Vector3(0, 0, -6).applyQuaternion(servo.quaternion)).setY(deskTop + 11.9); scene.add(block);
+      [sensor, servo].forEach((r) => r.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.envMapIntensity = 0.7; } }));
       const wirePts = (a, b, h) => new THREE.CatmullRomCurve3([a, a.clone().setY(a.y + h), a.clone().lerp(b, 0.5).setY(Math.max(a.y, b.y) + h + 6), b.clone().setY(b.y + h), b]);
       const tube = (pts, color) => { const m = new THREE.Mesh(new THREE.TubeGeometry(pts, 48, 0.9, 8, false), mat(color, 0.45)); scene.add(m); return m; };
-      const pinTop = (m) => m.getWorldPosition(new THREE.Vector3()).setY(m.getWorldPosition(new THREE.Vector3()).y - 4);
+      const pinTop = (m) => m ? m.getWorldPosition(new THREE.Vector3()) : null; // the tip of a header pin
       sensor.updateMatrixWorld(true); servo.updateMatrixWorld(true);
       const wires = [
         [pinTop(sPins[0]), pad('R14_GND'), '#2B2B2B', 'GND'],
         [pinTop(sPins[1]), pad('R15_3V3'), '#E03A3A', '3V3 · power'],
         [pinTop(sPins[2]), pad('L05_GPIO35'), '#8A4FD3', 'D35 · VRx'],
       ];
-      const servoEnd = (k) => servo.position.clone().addScaledVector(along, -3 + k * 3).addScaledVector(out, 14).setY(top + 2);
+      const sock = (n) => { const o = servo.getObjectByName(n); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
+      const servoEnd = (k) => sock(['Sock_Signal', 'Sock_Power', 'Sock_Ground'][k]); // the servo plug's three sockets
       wires.push([servoEnd(0), pad('R07_GPIO18'), '#F08A24', 'D18 · signal']);
       wires.push([servoEnd(1), pad('L15_VIN'), '#C1272D', 'VIN · quick test']);
       wires.push([servoEnd(2), pad('L14_GND'), '#6B4226', 'GND']);
@@ -530,13 +585,13 @@ while True:
         const curve = wirePts(a, b, 10 + i * 2.5); tube(curve, c);
         const lb = label(t, c); lb.position.copy(curve.getPoint([0.2, 0.4, 0.65, 0.3, 0.55, 0.8][i])); lb.position.y += 5; scene.add(lb); // staggered so labels don't stack
       });
-      const sl = label('Joystick', '#1f5fbf'); sl.position.copy(sensor.position).setY(top + 26); scene.add(sl);
-      const vl = label('SG90 servo', '#2a63c9'); vl.position.copy(servo.position).addScaledVector(out, -14).setY(top + 26); scene.add(vl);
-      const aim = mid.clone().addScaledVector(along, 8).addScaledVector(out, 20);
+      const sl = label('Joystick', '#1f5fbf'); sl.position.copy(sensor.position).setY(top + 40); scene.add(sl);
+      const vl = label('SG90 servo', '#2a63c9'); vl.position.copy(servo.position).setY(deskTop + 72); scene.add(vl);
+      const aim = mid.clone().addScaledVector(along, 8).addScaledVector(out, -4);
       const k = Math.max(1, 1.3 / camera.aspect); // step back on tall, narrow phone screens so the whole desk fits
-      camera.position.copy(aim).addScaledVector(along, 240 * k).add(new THREE.Vector3(0, 190 * k, 0)); controls.target.copy(aim);
+      camera.position.copy(aim).addScaledVector(along, 205 * k).add(new THREE.Vector3(0, 165 * k, 0)); controls.target.copy(aim);
       $('wireMsg').remove();
-    }, undefined, () => { $('wireMsg').textContent = 'The board model could not load. Please reload the page.'; });
+    }
   }
 
 
