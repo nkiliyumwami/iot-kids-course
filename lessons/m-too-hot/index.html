@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=JetBrains+Mono:wght@400;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <!--
   SENSOR MODULE: Too Hot in Here (m-too-hot). Built from lessons/_module-template/ (see AGENT.md, "Sensor modules").
-  3D: a code-built kitchen (no model files) and the course's ESP32 model with a code-built DHT11, breadboard and two LEDs for the wiring.
+  3D: a Blender-made kitchen (assets/models/modules/too-hot-kitchen.glb) and the course ESP32 model with the Blender DHT11 and breadboard (dht11.glb, breadboard.glb) for the wiring.
 -->
 <style>
 :root {
@@ -204,6 +204,8 @@ main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); g
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
 <script src="../../course.js"></script>
 <script src="../../assets/ohm/ohm.js"></script>
 <script src="../../assets/rewards.js"></script>
@@ -368,7 +370,20 @@ while True:
 
   /* ================= 4. 3D: the place (the kitchen) and the wiring ================= */
   const LIB = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/';
-  const hasGL = !!(window.THREE && THREE.OrbitControls && THREE.GLTFLoader);
+  const hasGL = !!(window.THREE && THREE.OrbitControls && THREE.GLTFLoader && THREE.DRACOLoader);
+  function woodTexture(c1, c2, lines) {
+    const cv = document.createElement('canvas'); cv.width = 512; cv.height = 512; const g = cv.getContext('2d');
+    g.fillStyle = c1; g.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < lines; i++) { g.strokeStyle = c2; g.globalAlpha = 0.12 + ((i * 37) % 17) / 90; g.lineWidth = 1 + (i % 3); g.beginPath(); const y = (i * 97) % 512; g.moveTo(0, y); for (let x = 0; x <= 512; x += 32) g.lineTo(x, y + Math.sin(x / 70 + i) * 6); g.stroke(); }
+    const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+  }
+  // a Blender part (assets/models/modules/<name>.glb, in metres) at millimetre scale for the wiring desk
+  const PART = '../../assets/models/modules/';
+  function loadParts(names, done) {
+    const got = {}; let left = names.length;
+    names.forEach((n) => gltfLoader().load(PART + n + '.glb', (g) => { const r = g.scene; r.scale.setScalar(1000); r.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.envMapIntensity = 0.7; } }); got[n] = r; if (!--left) done(got); }, undefined, () => { got[n] = new THREE.Group(); if (!--left) done(got); }));
+  }
+  const nodeAt = (root, name) => { const o = root.getObjectByName(name); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
   function gltfLoader() {
     const g = new THREE.GLTFLoader(), d = new THREE.DRACOLoader();
     d.setDecoderPath(LIB + 'libs/draco/gltf/'); g.setDRACOLoader(d); return g;
@@ -410,60 +425,47 @@ while True:
     const host = $('viewPlace');
     const v = placeView = makeView(host, { fov: 38, near: 0.5, far: 3000 });
     const { renderer, scene, camera, controls } = v;
-    renderer.physicallyCorrectLights = false; renderer.toneMapping = THREE.NoToneMapping; // a bright, friendly kitchen
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.physicallyCorrectLights = true; // a bright, friendly kitchen
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     scene.background = lin(0xf2ead9);
-    const hemi = new THREE.HemisphereLight(0xffffff, 0xc8b79a, 0.95); scene.add(hemi);
-    const sun = new THREE.DirectionalLight(0xfff1de, 0.8); sun.position.set(-60, 120, 90); sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -110, right: 110, top: 90, bottom: -60, near: 20, far: 400 });
-    sun.shadow.bias = -0.0006; scene.add(sun);
+    scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+    const hemi = new THREE.HemisphereLight(0xffffff, 0xc8b79a, 1.2); scene.add(hemi);
+    const sun = new THREE.DirectionalLight(lin(0xfff1de), 2.4); sun.position.set(-60, 120, 90); sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -120, right: 120, top: 110, bottom: -70, near: 20, far: 400 });
+    sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.3; scene.add(sun);
     const std = (c, r) => new THREE.MeshStandardMaterial({ color: lin(c), roughness: r == null ? 0.85 : r });
     const add = (geo, m, x, y, z, parent) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = true; o.receiveShadow = true; (parent || scene).add(o); return o; };
-    camera.position.set(8, 80, 215); controls.target.set(8, 52, -10);
+    const kk = Math.max(1, 1.2 / camera.aspect); // step back on tall, narrow phone screens
+    camera.position.set(8, 80 * kk, 215 * kk); controls.target.set(8, 58, -10);
     controls.minDistance = 50; controls.maxDistance = 300; controls.maxPolarAngle = Math.PI * 0.49;
 
-    // floor, back wall (with a window) and a side wall
-    add(new THREE.BoxGeometry(220, 2, 140), std(0xc9b79a, 0.9), 0, -1, 0).castShadow = false;
-    add(new THREE.BoxGeometry(220, 100, 3), std(0xf6f1e4), 0, 50, -50).castShadow = false;
-    add(new THREE.BoxGeometry(3, 100, 100), std(0xefe8d6), -110, 50, 0).castShadow = false;
-    // window frame and sky
-    add(new THREE.BoxGeometry(40, 32, 1), new THREE.MeshBasicMaterial({ color: lin(0xbfe3f7) }), -60, 62, -48).castShadow = false;
-    const fr = std(0x8b6a43, 0.8);
-    add(new THREE.BoxGeometry(44, 2, 2), fr, -60, 79, -47.5); add(new THREE.BoxGeometry(44, 2, 2), fr, -60, 45, -47.5);
-    add(new THREE.BoxGeometry(2, 36, 2), fr, -82, 62, -47.5); add(new THREE.BoxGeometry(2, 36, 2), fr, -38, 62, -47.5); add(new THREE.BoxGeometry(2, 34, 2), fr, -60, 62, -47.5);
-    // counter with a hob and a cooking pot (pretend, electric, no flame)
-    add(new THREE.BoxGeometry(150, 36, 28), std(0x7b8a99, 0.7), 20, 18, -34);
-    add(new THREE.BoxGeometry(154, 3, 32), std(0xe9e6df, 0.4), 20, 37.5, -34);
-    const hobMat = new THREE.MeshStandardMaterial({ color: lin(0x232a30), roughness: 0.3 });
-    const ring = new THREE.MeshStandardMaterial({ color: lin(0x3a3f45), roughness: 0.4 });
-    add(new THREE.BoxGeometry(50, 0.8, 24), hobMat, 40, 39.4, -34);
-    const ringGlow = add(new THREE.CylinderGeometry(9, 9, 0.6, 28), ring, 40, 40, -34); ringGlow.castShadow = false;
-    const pot = add(new THREE.CylinderGeometry(9.5, 9, 11, 28), std(0x9aa5b1, 0.35), 40, 46, -34);
-    add(new THREE.CylinderGeometry(9.9, 9.9, 1, 28), std(0x9aa5b1, 0.35), 40, 52, -34);
-    add(new THREE.SphereGeometry(1.6, 10, 8), std(0x15202a), 40, 54, -34);
-    // upper cabinet
-    add(new THREE.BoxGeometry(70, 24, 18), std(0xc9d3dc, 0.8), 55, 82, -42);
-    // the sensor on the wall, and the ESP32 box with the red and green lamps
-    const sensor = new THREE.Group(); sensor.position.set(-8, 62, -47.5); scene.add(sensor);
-    add(new THREE.BoxGeometry(10, 13, 6), std(0x2f7de1, 0.45), 0, 0, 0, sensor);
-    for (let k = 0; k < 5; k++) add(new THREE.BoxGeometry(6.4, 0.5, 0.4), std(0x1d4f94), 0, -4 + k * 2, 3.1, sensor);
-    const box = add(new THREE.BoxGeometry(24, 15, 10), std(0x2d3a46, 0.5), -8, 90, -46);
-    const lampMat = (c) => new THREE.MeshStandardMaterial({ color: lin(c), roughness: 0.3 });
-    const redBulb = add(new THREE.SphereGeometry(3.4, 20, 14), lampMat(0x5a1010), -14, 90, -39);
-    const greenBulb = add(new THREE.SphereGeometry(3.4, 20, 14), lampMat(0x0f4a22), -2, 90, -39);
-    const mkGlow = (bulb, hex) => { const g = new THREE.Mesh(new THREE.SphereGeometry(8, 20, 14), new THREE.MeshBasicMaterial({ color: lin(hex), transparent: true, opacity: 0, depthWrite: false })); g.position.copy(bulb.position); scene.add(g); return g; };
-    const redGlow = mkGlow(redBulb, 0xff3a2a), greenGlow = mkGlow(greenBulb, 0x2aff6a);
-    const cable = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(-8, 70, -46), new THREE.Vector3(-4, 76, -45), new THREE.Vector3(-6, 82, -45), new THREE.Vector3(-8, 85, -45)]), 20, 0.45, 6), std(0x15202a, 0.5)); scene.add(cable);
+    // the kitchen: a Blender model (assets/models/modules/too-hot-kitchen.glb, in centimetres like this scene).
+    // The hob ring and the two lamps get the materials the story animates; the glows sit on the lamps once it loads.
+    const ringGlow = { material: new THREE.MeshStandardMaterial({ color: lin(0x3a3f45), roughness: 0.35 }) };
+    const lampMat = (c) => new THREE.MeshStandardMaterial({ color: lin(c), roughness: 0.15 });
+    const redBulb = { material: lampMat(0x5a1010) }, greenBulb = { material: lampMat(0x0f4a22) };
+    const mkGlow = (hex) => { const g = new THREE.Mesh(new THREE.SphereGeometry(8, 20, 14), new THREE.MeshBasicMaterial({ color: lin(hex), transparent: true, opacity: 0, depthWrite: false, toneMapped: false })); g.visible = false; scene.add(g); return g; };
+    const redGlow = mkGlow(0xff3a2a), greenGlow = mkGlow(0x2aff6a);
+    gltfLoader().load('../../assets/models/modules/too-hot-kitchen.glb', (g) => {
+      const room = g.scene; room.scale.setScalar(100); scene.add(room);
+      room.traverse((o) => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; } });
+      room.getObjectByName('Hob_Ring').material = ringGlow.material;
+      room.getObjectByName('Lamp_Red').material = redBulb.material;
+      room.getObjectByName('Lamp_Green').material = greenBulb.material;
+      room.updateMatrixWorld(true);
+      redGlow.position.copy(nodeAt(room, 'Lamp_Red')); greenGlow.position.copy(nodeAt(room, 'Lamp_Green')); redGlow.visible = greenGlow.visible = true;
+      const msg = $('placeMsg'); if (msg) msg.remove();
+    }, undefined, () => { $('placeMsg').textContent = 'The 3D kitchen could not load. Please reload the page.'; });
     const tag = (text, color, w) => {
       const cv = document.createElement('canvas'); cv.width = 320; cv.height = 72;
       const g = cv.getContext('2d'); g.fillStyle = color; g.beginPath();
       if (g.roundRect) g.roundRect(4, 8, 312, 56, 16); else g.rect(4, 8, 312, 56); g.fill();
       g.fillStyle = '#fff'; g.font = 'bold 32px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 160, 37);
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false })); sp.scale.set(w || 26, (w || 26) * 72 / 320, 1); sp.renderOrder = 10; return sp;
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false, toneMapped: false })); sp.scale.set(w || 26, (w || 26) * 72 / 320, 1); sp.renderOrder = 10; return sp;
     };
-    const t1 = tag('DHT11 sensor', '#2f7de1'); t1.position.set(-8, 50, -40); scene.add(t1);
+    const t1 = tag('DHT11 sensor', '#2f7de1'); t1.position.set(-8, 51, -40); scene.add(t1);
     const t2 = tag('ESP32 + LEDs', '#15202a'); t2.position.set(-8, 103, -40); scene.add(t2);
-    const t3 = tag('hob (pretend)', '#555f69'); t3.position.set(40, 66, -34); scene.add(t3);
+    const t3 = tag('hob (pretend)', '#555f69'); t3.position.set(40, 64, -30); scene.add(t3);
 
     // steam puffs rise from the pot while it is hot
     const puffs = []; const puffGeo = new THREE.SphereGeometry(2.4, 10, 8);
@@ -499,7 +501,6 @@ while True:
       for (const p of puffs) if (p.m.visible) { p.life += dt; p.m.position.y += 14 * dt; p.m.position.x += 2 * dt; p.m.scale.setScalar(1 + p.life * 0.9); p.m.material.opacity = 0.55 * (1 - p.life / 3); if (p.life > 3) p.m.visible = false; }
       readout.textContent = `temperature = ${S.shown} °C   humidity = ${Math.round(S.h)} %\n${isHot ? 'if → red on, green off' : 'else → green on, red off'}   (HOT = ${HOT})`;
     };
-    $('placeMsg').remove();
   }
 
   // the wiring: the course's ESP32 model, a code-built DHT11 module, breadboard, two resistors and two LEDs, and one tube per wire (millimetres)
@@ -507,25 +508,28 @@ while True:
     const host = $('viewWire');
     const v = wireView = makeView(host, { fov: 36, near: 1, far: 3000 });
     const { renderer, scene, camera, controls } = v;
-    renderer.physicallyCorrectLights = false; // a bright desk, like the other lessons
-    renderer.toneMapping = THREE.NoToneMapping;
-    scene.background = new THREE.Color(0xf3f7fa);
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xb8c4cc, 0.9));
-    const key = new THREE.DirectionalLight(0xffffff, 0.8); key.position.set(40, 120, 70); scene.add(key);
-    const desk = new THREE.Mesh(new THREE.BoxGeometry(380, 4, 230), new THREE.MeshStandardMaterial({ color: 0x9a7a52, roughness: 1 }));
-    desk.position.y = -6; scene.add(desk);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.physicallyCorrectLights = true; // lit like the Parking Gate desk
+    scene.background = lin(0xf0f4f7);
+    scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+    scene.add(new THREE.HemisphereLight(lin(0xffffff), lin(0xb8c4cc), 1.0));
+    const key = new THREE.DirectionalLight(lin(0xffffff), 1.6); key.position.set(60, 200, 120); scene.add(key);
+    const wood = woodTexture('#d8c3a0', '#9b7a4f', 50); wood.repeat.set(1.4, 1);
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(760, 8, 460), new THREE.MeshStandardMaterial({ map: wood, roughness: 0.85 }));
+    desk.position.y = -8; scene.add(desk);
+    const deskTop = desk.position.y + 4;
     controls.minDistance = 40; controls.maxDistance = 520; controls.maxPolarAngle = Math.PI * 0.48;
     const label = (text, color) => {
       const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
       const g = cv.getContext('2d'); g.fillStyle = color || '#15202A'; g.beginPath();
       if (g.roundRect) g.roundRect(4, 8, 248, 48, 14); else g.rect(4, 8, 248, 48); g.fill();
       g.fillStyle = '#fff'; g.font = 'bold 30px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 128, 33);
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false }));
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false, toneMapped: false }));
       sp.scale.set(20, 5, 1); sp.renderOrder = 10; return sp;
     };
     const mat = (c, r) => new THREE.MeshStandardMaterial({ color: lin(c), roughness: r == null ? 0.6 : r });
     new THREE.GLTFLoader().load('../../assets/models/esp32-devkit-v1.glb', (gltf) => {
       const board = gltf.scene; board.scale.setScalar(1000); scene.add(board); board.updateMatrixWorld(true);
+      board.position.y += deskTop + 3 - new THREE.Box3().setFromObject(board).min.y; board.updateMatrixWorld(true); // the board's pins rest on the desk
       const pad = (name) => { const o = board.getObjectByName('pad_' + name); return o ? o.getWorldPosition(new THREE.Vector3()) : null; };
       const box = new THREE.Box3().setFromObject(board), mid = box.getCenter(new THREE.Vector3());
       const L1 = pad('L01_EN'), L15 = pad('L15_VIN'), R1 = pad('R01_GPIO23'), R15 = pad('R15_3V3');
@@ -537,53 +541,35 @@ while True:
       // a group whose local +X points along `dir` (flat on the desk), local +Y is up
       const flat = (dir) => { const g = new THREE.Group(); g.matrixAutoUpdate = false; g.matrix.makeBasis(dir.clone(), up, new THREE.Vector3().crossVectors(dir, up)); g.matrixWorldNeedsUpdate = true; return g; };
       const put = (g, p) => { g.matrix.setPosition(p); g.matrixWorldNeedsUpdate = true; scene.add(g); g.updateMatrixWorld(true); return g; };
-      // DHT11 module beside the R header (D4, GND, 3V3); its pins face the board
-      const sn = flat(out.clone().negate());
-      const pcb = new THREE.Mesh(new THREE.BoxGeometry(24, 1.6, 21), mat(0x1f7a46)); pcb.position.set(14, 0, 0); sn.add(pcb);
-      const body = new THREE.Mesh(new THREE.BoxGeometry(16, 10, 12), mat(0x2f7de1, 0.45)); body.position.set(16, 6, 0); sn.add(body);
-      for (let k = 0; k < 5; k++) { const s = new THREE.Mesh(new THREE.BoxGeometry(0.4, 10.2, 8), mat(0x1d4f94)); s.position.set(8.5 + k * 0.01, 6, 0); sn.add(s); }
-      for (let k = 0; k < 4; k++) { const s = new THREE.Mesh(new THREE.BoxGeometry(12, 10.2, 0.4), mat(0x1d4f94)); s.position.set(16, 6, -4.5 + k * 3); sn.add(s); }
-      const sPins = [0, 1, 2].map((i) => { const p = new THREE.Mesh(new THREE.BoxGeometry(8, 0.8, 0.8), mat(0xd4af37, 0.3)); p.position.set(-0.5, 2.4, (i - 1) * 5); sn.add(p); return p; });
-      put(sn, pad('R11_GPIO4').clone().addScaledVector(out, 44).setY(top + 6));
-      // a mini breadboard with two 330 Ω resistors, a red and a green LED and a blue − rail, beside the L header
-      const bb = flat(along.clone());
-      const plate = new THREE.Mesh(new THREE.BoxGeometry(46, 8, 28), mat(0xb9c6d2, 0.8)); bb.add(plate);
-      for (let i = -9; i <= 7; i++) for (const zz of [-8, -5, -2, 2, 5, 8]) { const h = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.3, 1.4), mat(0x888d92)); h.position.set(i * 2.2, 4.1, zz); bb.add(h); }
-      const rail = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.4, 24), mat(0x2f7de1, 0.5)); rail.position.set(20, 4.2, 0); bb.add(rail);
-      const addPair = (z, ledHex) => {
-        const res = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 9, 14), mat(0xd9b27c, 0.7)); res.rotation.z = Math.PI / 2; res.position.set(-8, 6.4, z); bb.add(res);
-        for (const [k, c] of [[-10.5, 0x8a4a22], [-8.8, 0x15202a], [-7, 0x8a4a22]]) { const r = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 0.8, 14), mat(c)); r.rotation.z = Math.PI / 2; r.position.set(k + 0.8, 6.4, z); bb.add(r); }
-        const led = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.4, 6, 20), mat(ledHex, 0.3)); led.position.set(8, 8, z); bb.add(led);
-        const dome = new THREE.Mesh(new THREE.SphereGeometry(2.4, 20, 12), mat(ledHex, 0.3)); dome.position.set(8, 11, z); bb.add(dome);
-        const leg = new THREE.Mesh(new THREE.BoxGeometry(11, 0.5, 0.6), mat(0xc9ccd0, 0.3)); leg.position.set(14.5, 4.6, z - 0.9); bb.add(leg);
-      };
-      addPair(-6, 0x16a34a); addPair(6, 0xe03a3a);
-      put(bb, pad('L09_GPIO26').clone().addScaledVector(out, -50).setY(top + 2));
+      loadParts(['dht11', 'breadboard'], (P) => {
+      // the DHT11 module beside the R header (D4, GND, 3V3), its pins facing the board
+      const sn = flat(out.clone()); sn.add(P.dht11);
+      put(sn, pad('R11_GPIO4').clone().addScaledVector(out, 44).setY(deskTop));
+      // a mini breadboard with two 330 Ω resistors, a red and a green LED and the − rail, beside the L header
+      const bb = flat(out.clone().negate()); bb.add(P.breadboard); // resistor ends towards the ESP32, the − rail on the far side
+      put(bb, pad('L09_GPIO26').clone().addScaledVector(out, -42).setY(deskTop));
       const wirePts = (a, b, h) => new THREE.CatmullRomCurve3([a, a.clone().setY(a.y + h), a.clone().lerp(b, 0.5).setY(Math.max(a.y, b.y) + h + 6), b.clone().setY(b.y + h), b]);
       const tube = (pts, color) => { const m = new THREE.Mesh(new THREE.TubeGeometry(pts, 48, 0.9, 8, false), mat(color, 0.45)); scene.add(m); return m; };
-      const wp = (m) => m.getWorldPosition(new THREE.Vector3()).setY(top + 6);
-      const bbAt = (x, y, z) => bb.localToWorld(new THREE.Vector3(x, y, z));
-      // pair each module pin with the nearest-in-order header pad so the wires do not cross
-      const sorted = sPins.map(wp).sort((a, b) => a.dot(along) - b.dot(along));
       const wires = [
-        [sorted[0], pad('R11_GPIO4'), '#8A4FD6', 'D4 · DATA'],
-        [sorted[1], pad('R14_GND'), '#2B2B2B', 'GND'],
-        [sorted[2], pad('R15_3V3'), '#E03A3A', '3V3 · VCC'],
-        [bbAt(-12, 4.4, 6), pad('L08_GPIO25'), '#E8A317', 'D25 → resistor'],
-        [bbAt(-12, 4.4, -6), pad('L10_GPIO27'), '#16A34A', 'D27 → resistor'],
-        [bbAt(20, 4.4, 0), pad('L14_GND'), '#6B4226', '− rail → GND'],
+        [nodeAt(sn, 'Pin_DATA'), pad('R11_GPIO4'), '#8A4FD6', 'D4 · DATA'],
+        [nodeAt(sn, 'Pin_GND'), pad('R14_GND'), '#2B2B2B', 'GND'],
+        [nodeAt(sn, 'Pin_VCC'), pad('R15_3V3'), '#E03A3A', '3V3 · VCC'],
+        [nodeAt(bb, 'Hole_A'), pad('L08_GPIO25'), '#E8A317', 'D25 → resistor'],   // row A: the red LED
+        [nodeAt(bb, 'Hole_B'), pad('L10_GPIO27'), '#16A34A', 'D27 → resistor'],   // row B: the green LED
+        [nodeAt(bb, 'Hole_Rail'), pad('L14_GND'), '#6B4226', '− rail → GND'],
       ];
       wires.forEach(([a, b, c, t], i) => {
         if (!a || !b) return;
         const curve = wirePts(a, b, 8 + i * 3); tube(curve, c);
-        const lb = label(t, c); lb.position.copy(curve.getPoint([0.3, 0.45, 0.5, 0.5, 0.55, 0.5][i])); lb.position.y += 5 + (i % 2) * 4; scene.add(lb);
+        const lb = label(t, c); lb.position.copy(curve.getPoint([0.3, 0.45, 0.5, 0.3, 0.62, 0.5][i])); lb.position.y += 5 + (i % 2) * 4; scene.add(lb);
       });
-      const sl = label('DHT11 sensor', '#1d4f94'); sl.position.copy(sn.localToWorld(new THREE.Vector3(18, 22, 0))); scene.add(sl);
-      const bl = label('2 LEDs', '#b02a2a'); bl.position.copy(bb.localToWorld(new THREE.Vector3(0, 24, 0))); scene.add(bl);
-      const aim = mid.clone();
+      const sl = label('DHT11 sensor', '#1d4f94'); sl.position.copy(sn.localToWorld(new THREE.Vector3(-14, 26, 0))); scene.add(sl);
+      const bl = label('2 LEDs', '#b02a2a'); bl.position.copy(bb.localToWorld(new THREE.Vector3(14, 40, 0))); scene.add(bl);
+      const aim = mid.clone().addScaledVector(out, -6);
       const k = Math.max(1, 1.3 / camera.aspect); // step back on tall, narrow phone screens so the whole desk fits
-      camera.position.copy(aim).addScaledVector(along, 215 * k).add(new THREE.Vector3(0, 175 * k, 0)); controls.target.copy(aim);
+      camera.position.copy(aim).addScaledVector(along, 200 * k).add(new THREE.Vector3(0, 165 * k, 0)); controls.target.copy(aim);
       $('wireMsg').remove();
+      });
     }, undefined, () => { $('wireMsg').textContent = 'The board model could not load. Please reload the page.'; });
   }
 
