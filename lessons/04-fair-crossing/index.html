@@ -1887,6 +1887,12 @@ function renderExtra(s) {
     extra.appendChild(codeCard);
   }
   if (s.why) extra.appendChild(whyCard(s.why()));
+  if (s.title === 'Then take turns') extra.appendChild(el(`<div class="card"><h4>🔧 The walker never gets a turn, or red comes at the wrong time? Check these, in order</h4><ul class="list">
+      <li><span style="font-size:20px">1️⃣</span><span>Does a press ever count? The button is on <b>D32</b> with <b>Pin.PULL_UP</b>, so pressed reads <b>0</b>. The test must be <b>button.value() == 0</b> (two equals signs), not <b>1</b>.</span></li>
+      <li><span style="font-size:20px">2️⃣</span><span>Tap the button <b>while the light is green</b>. Presses during yellow or red are not looked at, and the note is cleared when the walker's turn ends.</span></li>
+      <li><span style="font-size:20px">3️⃣</span><span>The sticky note must be made <b>before</b> the big loop: <b>waiting = False</b> goes above <b>while True:</b>. Inside the loop it would forget every press.</span></li>
+      <li><span style="font-size:20px">4️⃣</span><span>Red every time, even with no press? Check <b>waiting = False</b> is inside the <b>if waiting:</b> block (indented), after the red <b>sleep</b>. Without it, the note stays True forever.</span></li>
+    </ul><p class="note" style="margin-top:8px">Engineers debug like this too: change one thing at a time and check after each.</p></div>`));
   if (s.extra === 'E1') {
     const row = (key, label, lo, hi) => `<div class="var-row"><label class="mono" for="s_${key}">${label}</label>
       <div class="slider-row"><input type="range" id="s_${key}" data-k="${key}" min="${lo}" max="${hi}" step="1" value="${sim.cfg[key]}" aria-label="${label} in seconds"><span class="slider-val" data-val="${key}">${sim.cfg[key]} s</span></div></div>`;
