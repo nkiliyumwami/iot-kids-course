@@ -1897,6 +1897,12 @@ function renderExtra(s) {
     extra.appendChild(card);
     setTimeout(() => setPull(sim.pull, $('#pullBtn')), 0);
   }
+  if (s.title === 'if: let the button decide') extra.appendChild(el(`<div class="card"><h4>🔧 The lights ignore the button, or do the opposite? Check these, in order</h4><ul class="list">
+      <li><span style="font-size:20px">1️⃣</span><span>Is the button wired to <b>D32</b> and to <b>ground</b>, across the middle gap? One wire loose and the pin never feels a press.</span></li>
+      <li><span style="font-size:20px">2️⃣</span><span>Does the setup line say <b>Pin.PULL_UP</b>? Without it the pin floats and the lights flicker by themselves.</span></li>
+      <li><span style="font-size:20px">3️⃣</span><span>Pressed reads <b>0</b>, so the test is <b>button.value() == 0</b> with two equals signs. Using <b>1</b> swaps the two lights.</span></li>
+      <li><span style="font-size:20px">4️⃣</span><span>Error on the <b>else</b>? It must line up exactly under its <b>if</b>, and both lines end with a colon.</span></li>
+    </ul><p class="note" style="margin-top:8px">Engineers debug like this too: change one thing at a time and check after each.</p></div>`));
   if (s.why) extra.appendChild(whyCard(s.why()));
   if (s.plan != null) extra.appendChild(planList(s.plan));
   if (s.extra === 'C6') {
