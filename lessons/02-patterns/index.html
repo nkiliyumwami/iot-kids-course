@@ -1793,6 +1793,12 @@ function varSliders(title) {
 }
 function renderExtra(s) {
   extra.innerHTML = '';
+  if (s.title === 'Call it from the loop') extra.appendChild(el(`<div class="card"><h4>🔧 A light stays off, the wrong light comes on, or there is an error? Check these, in order</h4><ul class="list">
+      <li><span style="font-size:20px">1️⃣</span><span>The three numbers in <b>set_lights(r, y, g)</b> go in order: red, yellow, green. <b>set_lights(0, 0, 1)</b> is green only.</span></li>
+      <li><span style="font-size:20px">2️⃣</span><span>Error saying <b>set_lights</b> is not defined? The <b>def</b> block must come <b>above</b> the <b>while True:</b> loop, because Python reads from the top down.</span></li>
+      <li><span style="font-size:20px">3️⃣</span><span>The lines inside <b>def</b> and <b>while</b> need the same spaces at the start, and the lines <b>def</b> and <b>while</b> end with a colon.</span></li>
+      <li><span style="font-size:20px">4️⃣</span><span>Nothing lights at all? Go back to Lesson 1 and check the wires and the short legs to GND. The code is not the problem if the wiring is.</span></li>
+    </ul><p class="note" style="margin-top:8px">Engineers debug like this too: change one thing at a time and check after each.</p></div>`));
   if (s.extra === 'A') {
     extra.appendChild(phaseList());
     extra.appendChild(el(`<div class="card"><h4>Your wiring stays the same</h4><ul class="list">
