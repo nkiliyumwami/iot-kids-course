@@ -1992,6 +1992,12 @@ function setNoResistor(on) {
 }
 function renderExtra(s) {
   extra.innerHTML = '';
+  if (s.title === 'while True: the code runs the lights') extra.appendChild(el(`<div class="card"><h4>🔧 A light stays dark, or two lights are on together? Check these, in order</h4><ul class="list">
+      <li><span style="font-size:20px">1️⃣</span><span>One light never comes on? Check its wire: the LED's <b>long leg</b> goes toward the resistor and the <b>short leg</b> toward the ground rail. A backwards LED stays dark.</span></li>
+      <li><span style="font-size:20px">2️⃣</span><span>The number in <b>Pin(25, Pin.OUT)</b> must match the pin the wire is in: red D25, yellow D26, green D27. A different number lights a different (or no) LED.</span></li>
+      <li><span style="font-size:20px">3️⃣</span><span>Two lights on at once? Every phase must set <b>all three</b> lights: one <b>value(1)</b> and two <b>value(0)</b>.</span></li>
+      <li><span style="font-size:20px">4️⃣</span><span>An error, or nothing repeats? The lines under <b>while True:</b> need the same spaces at the start, and <b>while True:</b> ends with a colon.</span></li>
+    </ul><p class="note" style="margin-top:8px">Engineers debug like this too: change one thing at a time and check after each.</p></div>`));
   if (s.extra === 'A') { extra.appendChild(phaseList()); extra.appendChild(roadCard()); }
   if (s.extra === 'B1') {
     const items = CORE_PARTS.map((p) => `<li class="part-item ${partsFound.has(p) ? 'done' : ''}" data-part="${p}" tabindex="0" role="button"><span class="check">✓</span><span><b>${PART_INFO[p].name}</b></span></li>`).join('');
